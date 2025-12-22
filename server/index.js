@@ -348,11 +348,13 @@ proxy.on('error', (err, req, res) => {
 
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
+// Proxy Icecast streams through the same port (Corrected Logic)
 app.use('/stream', (req, res) => {
-    const streamPath = req.path || '/';
-    const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${streamPath}`;
+    // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
+    // Previous bug: target ending in /mount + req.url /mount = /mount/mount -> 404
+    const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}`;
 
-    console.log(`[PROXY START] Forwarding request to: ${target}`);
+    console.log(`[PROXY START] Forwarding ${req.originalUrl} to: ${target}${req.url}`);
 
     // Use http-proxy to stream data robustly
     proxy.web(req, res, {
