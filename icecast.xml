@@ -33,7 +33,6 @@
     <fileserve>1</fileserve>
 
     <paths>
-        <!-- Alpine Linux icecast paths -->
         <basedir>/usr/share/icecast</basedir>
         <logdir>/var/log/icecast</logdir>
         <webroot>/usr/share/icecast/web</webroot>
@@ -48,5 +47,9 @@
 
     <security>
         <chroot>0</chroot>
+        <changeowner>
+            <user>nobody</user>
+            <group>nobody</group>
+        </changeowner>
     </security>
 </icecast>

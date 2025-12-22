@@ -260,8 +260,8 @@ app.get('/api/icecast-status', async (req, res) => {
 
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
-app.get('/stream/*', async (req, res) => {
-    const streamPath = req.path.replace('/stream', '');
+app.use('/stream', async (req, res) => {
+    const streamPath = req.path || '/';
     const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}${streamPath}`;
 
     try {
@@ -290,8 +290,8 @@ app.get('/stream/*', async (req, res) => {
 });
 
 // Proxy Icecast status page
-app.get('/status*', async (req, res) => {
-    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}${req.path}`;
+app.use('/status', async (req, res) => {
+    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}/status${req.path}`;
     try {
         const response = await fetch(icecastUrl);
         const data = await response.text();
