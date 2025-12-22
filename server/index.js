@@ -15,7 +15,8 @@ const PORT = process.env.PORT || 3001;
 // ICECAST_HOST is for internal API calls (localhost when in same container)
 // ICECAST_PUBLIC_HOST is what users see for connection info
 const ICECAST_HOST = process.env.ICECAST_HOST || 'localhost';
-const ICECAST_PORT = process.env.ICECAST_PORT || 8000;
+const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8000;
+const ICECAST_PUBLIC_PORT = process.env.ICECAST_PUBLIC_PORT || process.env.ICECAST_PORT || 8000;
 const ICECAST_PUBLIC_HOST = process.env.ICECAST_PUBLIC_HOST || process.env.ICECAST_HOST || 'localhost';
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
 
@@ -92,7 +93,7 @@ app.post('/api/stations', (req, res) => {
             },
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
-                port: ICECAST_PORT,
+                port: ICECAST_PUBLIC_PORT,
                 mountPoint: station.mountPoint,
                 sourcePassword: station.sourcePassword,
                 protocol: 'http',
@@ -150,7 +151,7 @@ app.get('/api/stations/:id', (req, res) => {
             createdAt: station.created_at,
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
-                port: ICECAST_PORT,
+                port: ICECAST_PUBLIC_PORT,
                 mountPoint: station.mount_point,
                 sourcePassword: station.source_password,
                 protocol: 'http',
@@ -181,14 +182,14 @@ app.delete('/api/stations/:id', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_PORT } });
+    res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_INTERNAL_PORT } });
 });
 
 // Get live status from Icecast server
 app.get('/api/icecast-status', async (req, res) => {
     try {
         // Icecast status endpoint (JSON format)
-        const statusUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}/status-json.xsl`;
+        const statusUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status-json.xsl`;
         console.log('Fetching Icecast status from:', statusUrl);
 
         const response = await fetch(statusUrl);
@@ -262,7 +263,7 @@ app.get('/api/icecast-status', async (req, res) => {
 // This allows everything to run on port 3000
 app.use('/stream', async (req, res) => {
     const streamPath = req.path || '/';
-    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}${streamPath}`;
+    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${streamPath}`;
     const controller = new AbortController();
 
     // Abort upstream request if client disconnects
@@ -316,7 +317,7 @@ app.use('/stream', async (req, res) => {
 
 // Proxy Icecast status page
 app.use('/status', async (req, res) => {
-    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}/status${req.path}`;
+    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status${req.path}`;
     try {
         const response = await fetch(icecastUrl);
         const data = await response.text();
@@ -340,5 +341,5 @@ if (process.env.NODE_ENV === 'production') {
 
 app.listen(PORT, () => {
     console.log(`StreamDock API running on port ${PORT}`);
-    console.log(`Icecast server: ${ICECAST_HOST}:${ICECAST_PORT}`);
+    console.log(`Icecast server: ${ICECAST_HOST}:${ICECAST_INTERNAL_PORT} (Public: ${ICECAST_PUBLIC_PORT})`);
 });
