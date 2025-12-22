@@ -263,9 +263,15 @@ app.get('/api/icecast-status', async (req, res) => {
 app.use('/stream', async (req, res) => {
     const streamPath = req.path || '/';
     const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}${streamPath}`;
+    const controller = new AbortController();
+
+    // Abort upstream request if client disconnects
+    req.on('close', () => {
+        controller.abort();
+    });
 
     try {
-        const response = await fetch(icecastUrl);
+        const response = await fetch(icecastUrl, { signal: controller.signal });
 
         // Forward headers
         res.set('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
@@ -274,18 +280,37 @@ app.use('/stream', async (req, res) => {
         // Pipe the stream
         const reader = response.body.getReader();
         const pump = async () => {
-            const { done, value } = await reader.read();
-            if (done) {
+            try {
+                const { done, value } = await reader.read();
+                if (done) {
+                    res.end();
+                    return;
+                }
+                // Stop if client disconnected
+                if (res.writableEnded || res.closed) { // Basic check
+                    controller.abort();
+                    return;
+                }
+                const canWrite = res.write(value);
+                if (!canWrite) {
+                    // Backpressure or close logic could go here, 
+                    // but usually just continuing pump is fine until write fails 
+                    // or 'close' event triggers controller.abort()
+                }
+                pump();
+            } catch (readErr) {
+                if (readErr.name === 'AbortError') return;
+                // If reading fails, just end
                 res.end();
-                return;
             }
-            res.write(value);
-            pump();
         };
         pump();
     } catch (error) {
+        if (error.name === 'AbortError') return;
         console.error('Stream proxy error:', error);
-        res.status(502).send('Stream unavailable');
+        if (!res.headersSent) {
+            res.status(502).send('Stream unavailable');
+        }
     }
 });
 
