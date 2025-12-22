@@ -339,52 +339,10 @@ proxy.on('error', (err, req, res) => {
 
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
-// Proxy Icecast streams through the same port (Corrected Logic)
 
-// HEAD request handler for ingestion software compatibility
-// Many ingestion tools (RadioBoss, etc.) test streams with HEAD requests
-// Icecast doesn't handle HEAD properly, so we fetch headers via GET and return them
-app.head('/stream/*', async (req, res) => {
-    const streamPath = req.path;
-    const targetUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${streamPath}`;
+// NOTE: HEAD handler removed temporarily - causing Node.js crash
+// TODO: Re-implement with http.request instead of fetch for proper stream handling
 
-    console.log(`[HEAD REQUEST] Testing stream: ${targetUrl}`);
-
-    try {
-        // Use a simple fetch with timeout instead of AbortController
-        const response = await fetch(targetUrl, {
-            method: 'GET',
-            headers: { 'Icy-MetaData': '1' }
-        });
-
-        // Set status and headers
-        res.status(response.status);
-        res.set('Server', 'Icecast 2.4.4');
-        res.set('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
-        res.set('Connection', 'Close');
-        res.set('Cache-Control', 'no-cache, no-store');
-
-        // Forward all icy-* headers
-        for (const [key, value] of response.headers.entries()) {
-            if (key.startsWith('icy-') || key.startsWith('ice-')) {
-                res.set(key, value);
-            }
-        }
-
-        // Cancel the body stream immediately (don't consume audio data)
-        if (response.body) {
-            response.body.cancel().catch(() => { });
-        }
-
-        console.log(`[HEAD REQUEST] Success for ${streamPath}`);
-        res.end();
-    } catch (error) {
-        console.error(`[HEAD REQUEST] Error: ${error.message}`);
-        if (!res.headersSent) {
-            res.status(502).end();
-        }
-    }
-});
 
 app.use('/stream', (req, res) => {
     // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
