@@ -11,9 +11,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Icecast server config - this app embeds Icecast
-const ICECAST_HOST = process.env.ICECAST_HOST || 'icecast.supersoul.top';
+// Icecast server config
+// ICECAST_HOST is for internal API calls (localhost when in same container)
+// ICECAST_PUBLIC_HOST is what users see for connection info
+const ICECAST_HOST = process.env.ICECAST_HOST || 'localhost';
 const ICECAST_PORT = process.env.ICECAST_PORT || 8000;
+const ICECAST_PUBLIC_HOST = process.env.ICECAST_PUBLIC_HOST || process.env.ICECAST_HOST || 'localhost';
+const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
 
 app.use(cors());
 app.use(express.json());
@@ -54,8 +58,9 @@ app.post('/api/stations', (req, res) => {
         }
 
         const id = uuidv4();
-        const sourcePassword = generatePassword();
-        const streamUrl = `https://${ICECAST_HOST}:${ICECAST_PORT}${mountPoint}`;
+        // All stations use the same Icecast source password from config
+        const sourcePassword = ICECAST_SOURCE_PASSWORD;
+        const streamUrl = `http://${ICECAST_PUBLIC_HOST}:${ICECAST_PORT}${mountPoint}`;
 
         const station = {
             id,
@@ -85,11 +90,11 @@ app.post('/api/stations', (req, res) => {
                 status: station.status
             },
             connectionInfo: {
-                server: ICECAST_HOST,
+                server: ICECAST_PUBLIC_HOST,
                 port: ICECAST_PORT,
                 mountPoint: station.mountPoint,
                 sourcePassword: station.sourcePassword,
-                protocol: 'https',
+                protocol: 'http',
                 streamUrl: station.streamUrl,
                 format: station.format,
                 bitrate: station.bitrate
@@ -143,11 +148,11 @@ app.get('/api/stations/:id', (req, res) => {
             listeners: station.listeners,
             createdAt: station.created_at,
             connectionInfo: {
-                server: ICECAST_HOST,
+                server: ICECAST_PUBLIC_HOST,
                 port: ICECAST_PORT,
                 mountPoint: station.mount_point,
                 sourcePassword: station.source_password,
-                protocol: 'https',
+                protocol: 'http',
                 streamUrl: station.stream_url
             }
         });
@@ -183,14 +188,19 @@ app.get('/api/icecast-status', async (req, res) => {
     try {
         // Icecast status endpoint (JSON format)
         const statusUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}/status-json.xsl`;
+        console.log('Fetching Icecast status from:', statusUrl);
+
         const response = await fetch(statusUrl);
 
         if (!response.ok) {
+            console.log('Icecast status response not ok:', response.status);
             return res.json({ live: false, mounts: [], error: 'Could not reach Icecast server' });
         }
 
         const data = await response.json();
         const icestats = data.icestats || {};
+
+        console.log('Icecast stats received:', JSON.stringify(icestats, null, 2));
 
         // Get active sources/mounts
         let sources = icestats.source || [];
@@ -198,13 +208,38 @@ app.get('/api/icecast-status', async (req, res) => {
             sources = sources ? [sources] : [];
         }
 
-        const liveMounts = sources.map(s => ({
-            mount: s.listenurl?.split('/').pop() ? '/' + s.listenurl.split('/').pop() : s.server_name,
-            listeners: s.listeners || 0,
-            title: s.title || s.server_name || 'Unknown',
-            bitrate: s.bitrate || 128,
-            genre: s.genre || ''
-        }));
+        console.log('Sources found:', sources.length);
+
+        const liveMounts = sources.map(s => {
+            // Try different ways to get the mount point
+            let mount = '';
+
+            // Option 1: Get from listenurl (e.g., "http://icecast.supersoul.top:8000/stationdock-test")
+            if (s.listenurl) {
+                const urlParts = s.listenurl.split('/');
+                mount = '/' + urlParts[urlParts.length - 1];
+            }
+            // Option 2: server_name might be the mount
+            else if (s.server_name && s.server_name.startsWith('/')) {
+                mount = s.server_name;
+            }
+            // Option 3: Just use server_name as-is
+            else if (s.server_name) {
+                mount = '/' + s.server_name;
+            }
+
+            console.log('Parsed mount:', mount, 'from source:', s.listenurl || s.server_name);
+
+            return {
+                mount,
+                listeners: s.listeners || 0,
+                title: s.title || s.server_name || 'Unknown',
+                bitrate: s.bitrate || 128,
+                genre: s.genre || ''
+            };
+        });
+
+        console.log('Live mounts:', liveMounts);
 
         res.json({
             live: liveMounts.length > 0,
@@ -213,7 +248,8 @@ app.get('/api/icecast-status', async (req, res) => {
                 admin: icestats.admin,
                 host: icestats.host,
                 location: icestats.location
-            }
+            },
+            debug: { sourceCount: sources.length }
         });
     } catch (error) {
         console.error('Error fetching Icecast status:', error);
