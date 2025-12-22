@@ -178,6 +178,49 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_PORT } });
 });
 
+// Get live status from Icecast server
+app.get('/api/icecast-status', async (req, res) => {
+    try {
+        // Icecast status endpoint (JSON format)
+        const statusUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}/status-json.xsl`;
+        const response = await fetch(statusUrl);
+
+        if (!response.ok) {
+            return res.json({ live: false, mounts: [], error: 'Could not reach Icecast server' });
+        }
+
+        const data = await response.json();
+        const icestats = data.icestats || {};
+
+        // Get active sources/mounts
+        let sources = icestats.source || [];
+        if (!Array.isArray(sources)) {
+            sources = sources ? [sources] : [];
+        }
+
+        const liveMounts = sources.map(s => ({
+            mount: s.listenurl?.split('/').pop() ? '/' + s.listenurl.split('/').pop() : s.server_name,
+            listeners: s.listeners || 0,
+            title: s.title || s.server_name || 'Unknown',
+            bitrate: s.bitrate || 128,
+            genre: s.genre || ''
+        }));
+
+        res.json({
+            live: liveMounts.length > 0,
+            mounts: liveMounts,
+            serverInfo: {
+                admin: icestats.admin,
+                host: icestats.host,
+                location: icestats.location
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching Icecast status:', error);
+        res.json({ live: false, mounts: [], error: error.message });
+    }
+});
+
 // Catch-all for React app in production (serves index.html for client-side routing)
 if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {

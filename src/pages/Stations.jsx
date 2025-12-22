@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-function StationCard({ station, onDelete }) {
+function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
     const [showPassword, setShowPassword] = useState(false);
     const [copiedField, setCopiedField] = useState(null);
     const [connectionInfo, setConnectionInfo] = useState(null);
@@ -26,21 +26,29 @@ function StationCard({ station, onDelete }) {
     }, [station.id]);
 
     return (
-        <Card>
+        <Card className={isLive ? 'ring-2 ring-[#4ade80]/50' : ''}>
             <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-[#4b7baf]/10">
-                            <Radio className="w-5 h-5 text-[#4b7baf]" />
+                        <div className={`p-2 rounded-lg ${isLive ? 'bg-[#4ade80]/10' : 'bg-[#4b7baf]/10'}`}>
+                            <Radio className={`w-5 h-5 ${isLive ? 'text-[#4ade80]' : 'text-[#4b7baf]'}`} />
                         </div>
                         <div>
                             <h3 className="font-heading font-bold text-white">{station.name}</h3>
                             <p className="text-sm text-[#64748b]">{station.mountPoint}</p>
                         </div>
                     </div>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${station.status === 'active' ? 'bg-[#4ade80]/10 text-[#4ade80]' : 'bg-[#f87171]/10 text-[#f87171]'}`}>
-                        {station.status}
-                    </div>
+                    {isLive ? (
+                        <div className="flex items-center gap-2 px-2 py-1 rounded bg-[#4ade80]/10 text-[#4ade80]">
+                            <span className="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse" />
+                            <span className="text-xs font-medium">LIVE</span>
+                            {listeners > 0 && <span className="text-xs">• {listeners}</span>}
+                        </div>
+                    ) : (
+                        <div className="px-2 py-1 rounded text-xs font-medium bg-[#64748b]/10 text-[#64748b]">
+                            offline
+                        </div>
+                    )}
                 </div>
 
                 {connectionInfo && (
@@ -104,6 +112,7 @@ export default function Stations() {
     const [error, setError] = useState('');
     const [deleteModal, setDeleteModal] = useState({ open: false, station: null });
     const [deleting, setDeleting] = useState(false);
+    const [liveStatus, setLiveStatus] = useState({ mounts: [] });
 
     const fetchStations = async () => {
         try {
@@ -118,9 +127,33 @@ export default function Stations() {
         }
     };
 
+    const fetchLiveStatus = async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/icecast-status`);
+            const data = await response.json();
+            setLiveStatus(data);
+        } catch (err) {
+            console.error('Error fetching live status:', err);
+        }
+    };
+
     useEffect(() => {
         fetchStations();
+        fetchLiveStatus();
+
+        // Poll live status every 5 seconds
+        const interval = setInterval(fetchLiveStatus, 5000);
+        return () => clearInterval(interval);
     }, []);
+
+    const isStationLive = (mountPoint) => {
+        return liveStatus.mounts?.some(m => m.mount === mountPoint);
+    };
+
+    const getListeners = (mountPoint) => {
+        const mount = liveStatus.mounts?.find(m => m.mount === mountPoint);
+        return mount?.listeners || 0;
+    };
 
     const openDeleteModal = (station) => {
         setDeleteModal({ open: true, station });
@@ -181,7 +214,13 @@ export default function Stations() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {stations.map(station => (
-                        <StationCard key={station.id} station={station} onDelete={openDeleteModal} />
+                        <StationCard
+                            key={station.id}
+                            station={station}
+                            onDelete={openDeleteModal}
+                            isLive={isStationLive(station.mountPoint)}
+                            listeners={getListeners(station.mountPoint)}
+                        />
                     ))}
                 </div>
             )}
