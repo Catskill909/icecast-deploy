@@ -343,8 +343,8 @@ proxy.on('error', (err, req, res) => {
 // HEAD handler for ingestion software compatibility
 // Icecast returns 400 on HEAD, but ingestion software expects 200
 // Return static 200 OK with standard Icecast headers (no proxy needed)
-app.head('/stream/*', (req, res) => {
-    console.log(`[HEAD] ${req.path} - returning static 200 OK`);
+app.head('/stream/:mount', (req, res) => {
+    console.log(`[HEAD] /stream/${req.params.mount} - returning static 200 OK`);
     res.status(200);
     res.set('Server', 'Icecast 2.4.4');
     res.set('Content-Type', 'audio/mpeg');
@@ -355,6 +355,7 @@ app.head('/stream/*', (req, res) => {
     res.set('icy-pub', '0');
     res.end();
 });
+
 
 app.use('/stream', (req, res) => {
     // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
