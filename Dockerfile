@@ -12,8 +12,8 @@ RUN npm run build
 # Production stage with Icecast + Node.js
 FROM node:20-alpine AS production
 
-# Install Icecast and supervisor to run multiple processes
-RUN apk add --no-cache icecast supervisor
+# Install Icecast, supervisor, and curl for healthcheck
+RUN apk add --no-cache icecast supervisor curl
 
 WORKDIR /app
 

@@ -14,11 +14,8 @@
     </limits>
 
     <authentication>
-        <!-- Source password - used by all encoders -->
         <source-password>streamdock_source</source-password>
-        <!-- Relay password -->
         <relay-password>streamdock_relay</relay-password>
-        <!-- Admin password for web interface -->
         <admin-user>admin</admin-user>
         <admin-password>streamdock_admin</admin-password>
     </authentication>
@@ -36,18 +33,17 @@
     <fileserve>1</fileserve>
 
     <paths>
+        <!-- Alpine Linux icecast paths -->
         <basedir>/usr/share/icecast</basedir>
         <logdir>/var/log/icecast</logdir>
         <webroot>/usr/share/icecast/web</webroot>
         <adminroot>/usr/share/icecast/admin</adminroot>
-        <alias source="/" destination="/status.xsl"/>
     </paths>
 
     <logging>
-        <accesslog>access.log</accesslog>
-        <errorlog>error.log</errorlog>
+        <accesslog>-</accesslog>
+        <errorlog>-</errorlog>
         <loglevel>3</loglevel>
-        <logsize>10000</logsize>
     </logging>
 
     <security>
