@@ -29,6 +29,7 @@ COPY server ./server
 
 # Create directories
 RUN mkdir -p /app/data /var/log/icecast /var/log/supervisor
+VOLUME ["/app/data"]
 
 # Copy Icecast config
 COPY icecast.xml /etc/icecast.xml
