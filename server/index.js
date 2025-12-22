@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
+import http from 'http';
 import * as db from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -261,65 +262,60 @@ app.get('/api/icecast-status', async (req, res) => {
 
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
-app.use('/stream', async (req, res) => {
+app.use('/stream', (req, res) => {
     const streamPath = req.path || '/';
-    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${streamPath}`;
-    const controller = new AbortController();
 
-    // Abort upstream request if client disconnects
-    req.on('close', () => {
-        controller.abort();
-    });
+    // Use native http request for better streaming support (no buffering)
+    const options = {
+        hostname: ICECAST_HOST,
+        port: ICECAST_INTERNAL_PORT,
+        path: streamPath,
+        method: 'GET',
+        headers: {
+            'Icy-MetaData': '1', // Request metadata from Icecast
+            'User-Agent': 'StreamDock-Proxy/1.0'
+        }
+    };
 
-    try {
-        const response = await fetch(icecastUrl, { signal: controller.signal });
+    const proxyReq = http.request(options, (proxyRes) => {
+        // Forward status code
+        res.status(proxyRes.statusCode);
 
         // Forward headers
-        res.set('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
-        res.set('Cache-Control', 'no-cache');
-
-        // Forward Icecast/Shoutcast headers (icy-*)
-        response.headers.forEach((value, key) => {
-            if (key.toLowerCase().startsWith('icy-')) {
-                res.set(key, value);
+        Object.keys(proxyRes.headers).forEach(key => {
+            // Forward Content-Type, Cache-Control, and icy-* headers
+            if (key.toLowerCase() === 'content-type' ||
+                key.toLowerCase() === 'cache-control' ||
+                key.toLowerCase().startsWith('icy-')) {
+                res.set(key, proxyRes.headers[key]);
             }
         });
 
-        // Pipe the stream
-        const reader = response.body.getReader();
-        const pump = async () => {
-            try {
-                const { done, value } = await reader.read();
-                if (done) {
-                    res.end();
-                    return;
-                }
-                // Stop if client disconnected
-                if (res.writableEnded || res.closed) { // Basic check
-                    controller.abort();
-                    return;
-                }
-                const canWrite = res.write(value);
-                if (!canWrite) {
-                    // Backpressure or close logic could go here, 
-                    // but usually just continuing pump is fine until write fails 
-                    // or 'close' event triggers controller.abort()
-                }
-                pump();
-            } catch (readErr) {
-                if (readErr.name === 'AbortError') return;
-                // If reading fails, just end
-                res.end();
-            }
-        };
-        pump();
-    } catch (error) {
-        if (error.name === 'AbortError') return;
-        console.error('Stream proxy error:', error);
+        // Ensure Cache-Control is set if missing
+        if (!res.get('Cache-Control')) {
+            res.set('Cache-Control', 'no-cache');
+        }
+
+        // Disable chunked encoding for better compatibility with strict recipients
+        // (Icecast usually sends a continuous stream without content-length)
+
+        // Pipe the stream directly
+        proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+        console.error('Stream proxy error:', err);
         if (!res.headersSent) {
             res.status(502).send('Stream unavailable');
         }
-    }
+    });
+
+    // Handle client disconnect
+    req.on('close', () => {
+        proxyReq.destroy();
+    });
+
+    proxyReq.end();
 });
 
 // Proxy Icecast status page
