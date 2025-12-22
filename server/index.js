@@ -340,63 +340,9 @@ proxy.on('error', (err, req, res) => {
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
 
-// HEAD request handler for ingestion software compatibility
-// Uses Node.js native http.request to properly handle stream destruction
-app.head('/stream/*', (req, res) => {
-    const streamPath = req.path;
+// HEAD handler removed - causing crashes
+// Ingestion software should use direct port: http://icecast.supersoul.top:8100/new
 
-    console.log(`[HEAD REQUEST] Testing stream: ${streamPath}`);
-
-    const options = {
-        hostname: ICECAST_HOST,
-        port: ICECAST_INTERNAL_PORT,
-        path: streamPath,
-        method: 'GET',  // Use GET because Icecast doesn't handle HEAD properly
-        headers: { 'Icy-MetaData': '1' }
-    };
-
-    const proxyReq = http.request(options, (proxyRes) => {
-        console.log(`[HEAD REQUEST] Got response: ${proxyRes.statusCode}`);
-
-        // Set response status and headers
-        res.status(proxyRes.statusCode);
-        res.set('Server', 'Icecast 2.4.4');
-        res.set('Content-Type', proxyRes.headers['content-type'] || 'audio/mpeg');
-        res.set('Connection', 'Close');
-        res.set('Cache-Control', 'no-cache, no-store');
-        res.set('Pragma', 'no-cache');
-
-        // Forward all icy-* and ice-* headers
-        for (const [key, value] of Object.entries(proxyRes.headers)) {
-            if (key.startsWith('icy-') || key.startsWith('ice-')) {
-                res.set(key, value);
-            }
-        }
-
-        // CRITICAL: Destroy the stream immediately - don't consume audio data
-        proxyRes.destroy();
-
-        console.log(`[HEAD REQUEST] Success for ${streamPath}`);
-        res.end();
-    });
-
-    proxyReq.on('error', (error) => {
-        console.error(`[HEAD REQUEST] Error: ${error.message}`);
-        if (!res.headersSent) {
-            res.status(502).end();
-        }
-    });
-
-    // Set a timeout to avoid hanging
-    proxyReq.setTimeout(5000, () => {
-        proxyReq.destroy();
-        if (!res.headersSent) {
-            res.status(504).end();
-        }
-    });
-
-    proxyReq.end();
-});
 
 app.use('/stream', (req, res) => {
     // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
