@@ -43,7 +43,7 @@ COPY supervisord.conf /etc/supervisord.conf
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV ICECAST_HOST=localhost
-ENV ICECAST_PORT=8080
+ENV ICECAST_PORT=8100
 ENV ICECAST_PUBLIC_HOST=icecast.supersoul.top
 ENV ICECAST_SOURCE_PASSWORD=streamdock_source
 ENV DATABASE_PATH=/app/data/stations.db
