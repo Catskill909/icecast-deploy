@@ -340,9 +340,21 @@ proxy.on('error', (err, req, res) => {
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
 
-// HEAD handler removed - causing crashes
-// Ingestion software should use direct port: http://icecast.supersoul.top:8100/new
-
+// HEAD handler for ingestion software compatibility
+// Icecast returns 400 on HEAD, but ingestion software expects 200
+// Return static 200 OK with standard Icecast headers (no proxy needed)
+app.head('/stream/*', (req, res) => {
+    console.log(`[HEAD] ${req.path} - returning static 200 OK`);
+    res.status(200);
+    res.set('Server', 'Icecast 2.4.4');
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Connection', 'Close');
+    res.set('Cache-Control', 'no-cache, no-store');
+    res.set('Pragma', 'no-cache');
+    res.set('icy-name', 'StreamDock');
+    res.set('icy-pub', '0');
+    res.end();
+});
 
 app.use('/stream', (req, res) => {
     // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
