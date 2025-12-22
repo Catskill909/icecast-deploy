@@ -60,7 +60,8 @@ app.post('/api/stations', (req, res) => {
         const id = uuidv4();
         // All stations use the same Icecast source password from config
         const sourcePassword = ICECAST_SOURCE_PASSWORD;
-        const streamUrl = `http://${ICECAST_PUBLIC_HOST}:${ICECAST_PORT}${mountPoint}`;
+        // Stream URL goes through /stream/ proxy (same port as web UI)
+        const streamUrl = `https://${ICECAST_PUBLIC_HOST}/stream${mountPoint}`;
 
         const station = {
             id,
@@ -257,11 +258,55 @@ app.get('/api/icecast-status', async (req, res) => {
     }
 });
 
+// Proxy Icecast streams through the same port
+// This allows everything to run on port 3000
+app.get('/stream/*', async (req, res) => {
+    const streamPath = req.path.replace('/stream', '');
+    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}${streamPath}`;
+
+    try {
+        const response = await fetch(icecastUrl);
+
+        // Forward headers
+        res.set('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
+        res.set('Cache-Control', 'no-cache');
+
+        // Pipe the stream
+        const reader = response.body.getReader();
+        const pump = async () => {
+            const { done, value } = await reader.read();
+            if (done) {
+                res.end();
+                return;
+            }
+            res.write(value);
+            pump();
+        };
+        pump();
+    } catch (error) {
+        console.error('Stream proxy error:', error);
+        res.status(502).send('Stream unavailable');
+    }
+});
+
+// Proxy Icecast status page
+app.get('/status*', async (req, res) => {
+    const icecastUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}${req.path}`;
+    try {
+        const response = await fetch(icecastUrl);
+        const data = await response.text();
+        res.set('Content-Type', response.headers.get('content-type') || 'text/html');
+        res.send(data);
+    } catch (error) {
+        res.status(502).send('Icecast status unavailable');
+    }
+});
+
 // Catch-all for React app in production (serves index.html for client-side routing)
 if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
-        // Skip API routes
-        if (req.path.startsWith('/api')) {
+        // Skip API routes and streams
+        if (req.path.startsWith('/api') || req.path.startsWith('/stream') || req.path.startsWith('/status')) {
             return next();
         }
         res.sendFile(path.join(__dirname, '../dist/index.html'));

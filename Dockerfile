@@ -39,7 +39,7 @@ RUN chown -R node:node /var/log/icecast
 # Supervisor config to run both Icecast and Node
 COPY supervisord.conf /etc/supervisord.conf
 
-# All config hardcoded - no env vars needed
+# All config hardcoded
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV ICECAST_HOST=localhost
@@ -48,10 +48,8 @@ ENV ICECAST_PUBLIC_HOST=icecast.supersoul.top
 ENV ICECAST_SOURCE_PASSWORD=streamdock_source
 ENV DATABASE_PATH=/app/data/stations.db
 
-# Expose both ports
-# 3000 = Web UI (StreamDock)
-# 8000 = Icecast streams
-EXPOSE 3000 8000
+# Single port - Node.js proxies streams from internal Icecast
+EXPOSE 3000
 
 # Start supervisor (runs both icecast and node)
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
