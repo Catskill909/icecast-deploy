@@ -49,8 +49,8 @@
     <security>
         <chroot>0</chroot>
         <changeowner>
-            <user>nobody</user>
-            <group>nobody</group>
+            <user>node</user>
+            <group>node</group>
         </changeowner>
     </security>
 </icecast>

@@ -51,6 +51,7 @@ ENV DATABASE_PATH=/app/data/stations.db
 
 # Single port - Node.js proxies streams from internal Icecast
 EXPOSE 3000
+EXPOSE 8100
 
 # Start supervisor (runs both icecast and node)
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
