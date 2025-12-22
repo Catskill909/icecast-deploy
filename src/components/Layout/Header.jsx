@@ -41,6 +41,15 @@ export default function Header() {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await fetch(`${API_URL}/api/alerts/mark-all-read`, { method: 'POST' });
+      fetchAlerts(); // Refresh
+    } catch (err) {
+      console.error('Failed to mark all read:', err);
+    }
+  };
+
   return (
     <header className="h-16 bg-[#0a0e27] border-b border-[#1e2337] flex items-center justify-end px-8 sticky top-0 z-40">
       <div className="flex items-center gap-3">
@@ -80,12 +89,12 @@ export default function Header() {
                       <div className="flex items-start gap-3">
                         <div
                           className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${alert.type === 'error'
-                              ? 'bg-[#f87171]'
-                              : alert.type === 'warning'
-                                ? 'bg-[#fbbf24]'
-                                : alert.type === 'success'
-                                  ? 'bg-[#4ade80]'
-                                  : 'bg-[#4b7baf]'
+                            ? 'bg-[#f87171]'
+                            : alert.type === 'warning'
+                              ? 'bg-[#fbbf24]'
+                              : alert.type === 'success'
+                                ? 'bg-[#4ade80]'
+                                : 'bg-[#4b7baf]'
                             }`}
                         />
                         <div className="flex-1 min-w-0">
@@ -115,10 +124,18 @@ export default function Header() {
                   ))
                 )}
               </div>
-              <div className="px-4 py-2 border-t border-[#2d3555]">
+              <div className="px-4 py-2 border-t border-[#2d3555] flex items-center justify-between">
                 <a href="/alerts" className="text-sm text-[#4b7baf] hover:text-[#5d8aa8] transition-colors">
-                  View all notifications
+                  View all
                 </a>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-xs text-[#64748b] hover:text-white transition-colors"
+                  >
+                    Mark all read
+                  </button>
+                )}
               </div>
             </div>
           )}

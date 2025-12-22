@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, Info, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Info, RefreshCw, CheckCheck } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Toggle from '../components/ui/Toggle';
@@ -70,6 +70,15 @@ export default function Alerts() {
     setRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await fetch(`${API_URL}/api/alerts/mark-all-read`, { method: 'POST' });
+      fetchAlerts(); // Refresh
+    } catch (err) {
+      console.error('Failed to mark all read:', err);
+    }
+  };
+
   return (
     <div className="space-y-10">
       {/* Header */}
@@ -78,9 +87,16 @@ export default function Alerts() {
           <h1 className="heading-1 text-white">Alerts</h1>
           <p className="text-[#8896ab] mt-2">Notifications and alert rules</p>
         </div>
-        <Button variant="secondary" size="sm" icon={RefreshCw} onClick={fetchAlerts}>
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <Button variant="secondary" size="sm" icon={CheckCheck} onClick={handleMarkAllRead}>
+              Mark All Read
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" icon={RefreshCw} onClick={fetchAlerts}>
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
