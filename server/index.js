@@ -273,8 +273,10 @@ app.use('/stream', (req, res) => {
         method: 'GET',
         headers: {
             'Icy-MetaData': '1', // Request metadata from Icecast
-            'User-Agent': 'StreamDock-Proxy/1.0'
-        }
+            'User-Agent': 'StreamDock-Proxy/1.0',
+            'Connection': 'close'
+        },
+        agent: false // Disable connection pooling
     };
 
     const proxyReq = http.request(options, (proxyRes) => {
@@ -284,20 +286,28 @@ app.use('/stream', (req, res) => {
         // Forward headers
         Object.keys(proxyRes.headers).forEach(key => {
             // Forward Content-Type, Cache-Control, and icy-* headers
-            if (key.toLowerCase() === 'content-type' ||
-                key.toLowerCase() === 'cache-control' ||
-                key.toLowerCase().startsWith('icy-')) {
+            const lowerKey = key.toLowerCase();
+            if (lowerKey === 'content-type' ||
+                lowerKey === 'cache-control' ||
+                lowerKey.startsWith('icy-')) {
                 res.set(key, proxyRes.headers[key]);
             }
         });
+
+        // MIMIC ICECAST EXACTLY:
+        // 1. Force 'Server' header to look like Icecast
+        res.set('Server', 'Icecast 2.4.4');
+
+        // 2. DISABLE CHUNKED ENCODING (Critical for ingestion tools)
+        // Express/Node defaults to chunked for streams. We must kill it.
+        // Connection: close + no Content-Length = Raw Stream in HTTP/1.0 style
+        res.set('Connection', 'close');
+        res.set('Transfer-Encoding', 'identity');
 
         // Ensure Cache-Control is set if missing
         if (!res.get('Cache-Control')) {
             res.set('Cache-Control', 'no-cache');
         }
-
-        // Disable chunked encoding for better compatibility with strict recipients
-        // (Icecast usually sends a continuous stream without content-length)
 
         // Pipe the stream directly
         proxyRes.pipe(res);
