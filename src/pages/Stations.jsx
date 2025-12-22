@@ -110,39 +110,79 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                 )}
 
                 {connectionInfo && (
-                    <div className="space-y-2 bg-[#0d1229] rounded-lg p-3 text-sm">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[#64748b]">Server:</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-white font-mono">{connectionInfo.server}</span>
-                                <button onClick={() => handleCopy(connectionInfo.server, 'server')} className="text-[#64748b] hover:text-white">
-                                    {copiedField === 'server' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
-                                </button>
+                    <div className="space-y-4 bg-[#0d1229] rounded-lg p-3 text-sm">
+                        {/* Connection Info for Encoders */}
+                        <div className="space-y-2 border-b border-[#1e2337] pb-3 mb-3">
+                            <p className="text-xs font-bold text-[#8896ab] uppercase tracking-wider mb-2">Encoder Settings</p>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#64748b]">Server:</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-white font-mono">{connectionInfo.server}</span>
+                                    <button onClick={() => handleCopy(connectionInfo.server, 'server')} className="text-[#64748b] hover:text-white">
+                                        {copiedField === 'server' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#64748b]">Port:</span>
+                                <span className="text-white font-mono">{connectionInfo.port}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#64748b]">Mount:</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-white font-mono">{connectionInfo.mountPoint}</span>
+                                    <button onClick={() => handleCopy(connectionInfo.mountPoint, 'mount')} className="text-[#64748b] hover:text-white">
+                                        {copiedField === 'mount' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#64748b]">Password:</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-white font-mono">{showPassword ? connectionInfo.sourcePassword : '••••••••'}</span>
+                                    <button onClick={() => setShowPassword(!showPassword)} className="text-[#64748b] hover:text-white">
+                                        {showPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                                    </button>
+                                    <button onClick={() => handleCopy(connectionInfo.sourcePassword, 'password')} className="text-[#64748b] hover:text-white">
+                                        {copiedField === 'password' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-[#64748b]">Port:</span>
-                            <span className="text-white font-mono">{connectionInfo.port}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-[#64748b]">Mount:</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-white font-mono">{connectionInfo.mountPoint}</span>
-                                <button onClick={() => handleCopy(connectionInfo.mountPoint, 'mount')} className="text-[#64748b] hover:text-white">
-                                    {copiedField === 'mount' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
-                                </button>
+
+                        {/* Public Listening Links */}
+                        <div className="space-y-2">
+                            <p className="text-xs font-bold text-[#8896ab] uppercase tracking-wider mb-2">Public Links</p>
+
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#64748b]">Secure Stream:</span>
+                                <div className="flex items-center gap-2">
+                                    <a href={connectionInfo.streamUrl} target="_blank" rel="noopener noreferrer" className="text-[#4b7baf] hover:underline font-mono truncate max-w-[140px]">
+                                        /stream{connectionInfo.mountPoint}
+                                    </a>
+                                    <button onClick={() => handleCopy(connectionInfo.streamUrl, 'secure')} className="text-[#64748b] hover:text-white">
+                                        {copiedField === 'secure' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-[#64748b]">Password:</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-white font-mono">{showPassword ? connectionInfo.sourcePassword : '••••••••'}</span>
-                                <button onClick={() => setShowPassword(!showPassword)} className="text-[#64748b] hover:text-white">
-                                    {showPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                                </button>
-                                <button onClick={() => handleCopy(connectionInfo.sourcePassword, 'password')} className="text-[#64748b] hover:text-white">
-                                    {copiedField === 'password' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
-                                </button>
+
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#64748b]">Direct (HTTP):</span>
+                                <div className="flex items-center gap-2">
+                                    <a href={`http://${connectionInfo.server}:${connectionInfo.port}${connectionInfo.mountPoint}`} target="_blank" rel="noopener noreferrer" className="text-[#64748b] hover:text-white font-mono truncate max-w-[140px]">
+                                        :{connectionInfo.port}{connectionInfo.mountPoint}
+                                    </a>
+                                    <button onClick={() => handleCopy(`http://${connectionInfo.server}:${connectionInfo.port}${connectionInfo.mountPoint}`, 'direct')} className="text-[#64748b] hover:text-white">
+                                        {copiedField === 'direct' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <span className="text-[#64748b]">Status Page:</span>
+                                <a href={`http://${connectionInfo.server}:${connectionInfo.port}/`} target="_blank" rel="noopener noreferrer" className="text-[#64748b] hover:text-white flex items-center gap-1">
+                                    Open <ExternalLink className="w-3 h-3" />
+                                </a>
                             </div>
                         </div>
                     </div>
