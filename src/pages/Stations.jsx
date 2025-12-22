@@ -66,20 +66,20 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                         </div>
                     </div>
                     <div className="absolute top-4 right-4 flex items-center gap-2">
-                        {isLive ? (
+                        {isStationLive(station.mount) ? (
                             <div className="flex items-center gap-2">
-                                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-medium rounded-full border border-green-500/20 animate-pulse">
+                                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-bold uppercase tracking-wider rounded-full border border-green-500/20 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.2)]">
                                     <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                                    LIVE
+                                    ON AIR
                                 </span>
-                                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-[#1e2337] text-white text-xs font-medium rounded-full border border-[#2a3044]">
+                                <span className="flex items-center gap-1.5 px-3 py-1 bg-[#0f1633] text-white text-xs font-medium rounded-full border border-[#2a3044] shadow-sm">
                                     <Headphones className="w-3 h-3 text-[#64748b]" />
-                                    {listeners}
+                                    {getListeners(station.mount)} Listening
                                 </span>
                             </div>
                         ) : (
-                            <span className="px-2.5 py-1 bg-gray-500/20 text-gray-400 text-xs font-medium rounded-full border border-gray-500/20">
-                                offline
+                            <span className="px-2.5 py-1 bg-[#1e2337] text-[#64748b] text-[10px] font-bold uppercase tracking-wider rounded-full border border-[#2a3044]">
+                                OFFLINE
                             </span>
                         )}
                     </div>
