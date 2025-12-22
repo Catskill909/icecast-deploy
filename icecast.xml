@@ -20,10 +20,11 @@
         <admin-password>streamdock_admin</admin-password>
     </authentication>
 
-    <hostname>localhost</hostname>
+    <hostname>0.0.0.0</hostname>
 
     <listen-socket>
         <port>8100</port>
+        <bind-address>0.0.0.0</bind-address>
     </listen-socket>
 
     <http-headers>
