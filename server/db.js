@@ -90,6 +90,46 @@ const updateListeners = (mountPoint, listeners) => {
     return db.prepare('UPDATE stations SET listeners = ? WHERE mount_point = ?').run(listeners, mountPoint);
 };
 
+// ==========================================
+// ALERTS TABLE
+// ==========================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    station_id TEXT,
+    read INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+const createAlert = (type, title, message, stationId = null) => {
+    const stmt = db.prepare(`
+        INSERT INTO alerts (type, title, message, station_id, created_at)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+    return stmt.run(type, title, message, stationId, new Date().toISOString());
+};
+
+const getAllAlerts = (limit = 50) => {
+    return db.prepare('SELECT * FROM alerts ORDER BY created_at DESC LIMIT ?').all(limit);
+};
+
+const getUnreadAlertCount = () => {
+    const result = db.prepare('SELECT COUNT(*) as count FROM alerts WHERE read = 0').get();
+    return result.count;
+};
+
+const markAlertRead = (id) => {
+    return db.prepare('UPDATE alerts SET read = 1 WHERE id = ?').run(id);
+};
+
+const markAllAlertsRead = () => {
+    return db.prepare('UPDATE alerts SET read = 1 WHERE read = 0').run();
+};
+
 export {
     createStation,
     getAllStations,
@@ -97,5 +137,10 @@ export {
     getStationByMount,
     deleteStation,
     updateStation,
-    updateListeners
+    updateListeners,
+    createAlert,
+    getAllAlerts,
+    getUnreadAlertCount,
+    markAlertRead,
+    markAllAlertsRead
 };

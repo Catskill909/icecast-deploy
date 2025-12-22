@@ -22,6 +22,10 @@ const ICECAST_PUBLIC_PORT = process.env.ICECAST_PUBLIC_PORT || process.env.ICECA
 const ICECAST_PUBLIC_HOST = process.env.ICECAST_PUBLIC_HOST || process.env.ICECAST_HOST || 'localhost';
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
 
+// Track previous mount status for alert generation
+let previousMountStatus = {}; // { "/mount": { live: true, listeners: 0 } }
+let lastAlertTime = {}; // Prevent alert spam
+
 app.use(cors());
 app.use(express.json());
 
@@ -360,6 +364,9 @@ app.get('/api/icecast-status', async (req, res) => {
             };
         });
 
+        // Generate alerts based on status changes
+        checkAndGenerateAlerts(liveMounts);
+
         console.log('Live mounts:', liveMounts);
 
         res.json({
@@ -377,6 +384,82 @@ app.get('/api/icecast-status', async (req, res) => {
         res.json({ live: false, mounts: [], error: error.message });
     }
 });
+
+// Check for status changes and generate alerts
+function checkAndGenerateAlerts(currentMounts) {
+    const now = Date.now();
+    const ALERT_COOLDOWN = 60000; // 1 minute between same alerts
+
+    // Build current status map
+    const currentStatus = {};
+    currentMounts.forEach(m => {
+        currentStatus[m.mount] = { live: true, listeners: m.listeners };
+    });
+
+    // Check for mounts that went LIVE (weren't live before)
+    for (const mount in currentStatus) {
+        if (!previousMountStatus[mount] || !previousMountStatus[mount].live) {
+            const alertKey = `live_${mount}`;
+            if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN) {
+                // Find station by mount
+                const station = db.getStationByMount(mount);
+                db.createAlert(
+                    'success',
+                    'Station Now Broadcasting!',
+                    `${station?.name || mount} is now live`,
+                    station?.id
+                );
+                lastAlertTime[alertKey] = now;
+                console.log(`[ALERT] Station ${mount} went LIVE`);
+            }
+        }
+    }
+
+    // Check for mounts that went OFFLINE (were live before)
+    for (const mount in previousMountStatus) {
+        if (previousMountStatus[mount].live && !currentStatus[mount]) {
+            const alertKey = `offline_${mount}`;
+            if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN) {
+                const station = db.getStationByMount(mount);
+                db.createAlert(
+                    'error',
+                    'Broadcast Ended',
+                    `${station?.name || mount} has gone offline`,
+                    station?.id
+                );
+                lastAlertTime[alertKey] = now;
+                console.log(`[ALERT] Station ${mount} went OFFLINE`);
+            }
+        }
+    }
+
+    // Check for listener milestones (50, 100, 250, 500)
+    const milestones = [50, 100, 250, 500];
+    for (const mount in currentStatus) {
+        const current = currentStatus[mount].listeners;
+        const previous = previousMountStatus[mount]?.listeners || 0;
+
+        for (const milestone of milestones) {
+            if (current >= milestone && previous < milestone) {
+                const alertKey = `milestone_${mount}_${milestone}`;
+                if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN * 5) {
+                    const station = db.getStationByMount(mount);
+                    db.createAlert(
+                        'info',
+                        'Listener Milestone!',
+                        `${station?.name || mount} reached ${milestone} listeners!`,
+                        station?.id
+                    );
+                    lastAlertTime[alertKey] = now;
+                    console.log(`[ALERT] Station ${mount} reached ${milestone} listeners!`);
+                }
+            }
+        }
+    }
+
+    // Update previous status
+    previousMountStatus = currentStatus;
+}
 
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
@@ -411,8 +494,66 @@ proxy.on('error', (err, req, res) => {
     }
 });
 
-// Proxy Icecast streams through the same port
-// This allows everything to run on port 3000
+// ==========================================
+// ALERTS API
+// ==========================================
+
+// Get all alerts
+app.get('/api/alerts', (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 50;
+        const alerts = db.getAllAlerts(limit);
+        res.json(alerts.map(a => ({
+            id: a.id,
+            type: a.type,
+            title: a.title,
+            message: a.message,
+            stationId: a.station_id,
+            read: a.read === 1,
+            createdAt: a.created_at
+        })));
+    } catch (error) {
+        console.error('Error fetching alerts:', error);
+        res.status(500).json({ error: 'Failed to fetch alerts' });
+    }
+});
+
+// Get unread count (for header badge)
+app.get('/api/alerts/unread-count', (req, res) => {
+    try {
+        const count = db.getUnreadAlertCount();
+        res.json({ count });
+    } catch (error) {
+        console.error('Error fetching unread count:', error);
+        res.status(500).json({ error: 'Failed to fetch count' });
+    }
+});
+
+// Mark single alert as read
+app.post('/api/alerts/:id/read', (req, res) => {
+    try {
+        db.markAlertRead(req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error marking alert read:', error);
+        res.status(500).json({ error: 'Failed to mark read' });
+    }
+});
+
+// Mark all alerts as read
+app.post('/api/alerts/mark-all-read', (req, res) => {
+    try {
+        db.markAllAlertsRead();
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error marking all read:', error);
+        res.status(500).json({ error: 'Failed to mark all read' });
+    }
+});
+
+// ==========================================
+// STREAM PROXY
+// ==========================================
 
 // HEAD handler for ingestion software compatibility
 // Icecast returns 400 on HEAD, but ingestion software expects 200
