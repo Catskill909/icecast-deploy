@@ -1,4 +1,4 @@
-# IceCast Pro - Station Management Dashboard
+# StreamDock - Station Management Dashboard
 
 A modern Icecast streaming server management interface with a clean dark-mode UI. Create stations, manage connection credentials, and monitor live streams.
 

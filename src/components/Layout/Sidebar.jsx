@@ -38,7 +38,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             <Radio className="w-5 h-5 text-white" />
           </div>
           {!collapsed && (
-            <span className="font-heading font-bold text-lg text-white whitespace-nowrap tracking-wide">ICECAST PRO</span>
+            <span className="font-heading font-bold text-lg text-white whitespace-nowrap tracking-wide">STREAMDOCK</span>
           )}
         </div>
       </div>

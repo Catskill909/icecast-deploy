@@ -39,8 +39,8 @@ function StationQuickCard({ station }) {
           <span className="font-medium text-white">{station.name}</span>
         </div>
         <span className={`text-xs px-2 py-0.5 rounded ${station.status === 'active'
-            ? 'bg-[#4ade80]/10 text-[#4ade80]'
-            : 'bg-[#f87171]/10 text-[#f87171]'
+          ? 'bg-[#4ade80]/10 text-[#4ade80]'
+          : 'bg-[#f87171]/10 text-[#f87171]'
           }`}>
           {station.status}
         </span>
@@ -81,7 +81,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="heading-1 text-white">Dashboard</h1>
-          <p className="text-[#8896ab] mt-1">IceCast Pro station management</p>
+          <p className="text-[#8896ab] mt-1">StreamDock station management</p>
         </div>
         <Link to="/create">
           <Button icon={Plus}>New Station</Button>

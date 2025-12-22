@@ -233,6 +233,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.listen(PORT, () => {
-    console.log(`IceCast Pro API running on port ${PORT}`);
+    console.log(`StreamDock API running on port ${PORT}`);
     console.log(`Icecast server: ${ICECAST_HOST}:${ICECAST_PORT}`);
 });

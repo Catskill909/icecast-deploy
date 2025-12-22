@@ -1,25 +1,25 @@
 # Future Development Roadmap
 
-Brainstorming session for IceCast Pro features and StationDock integration.
+Brainstorming session for StreamDock features and StationDock integration.
 
 ---
 
 ## 🎯 Vision
 
-**Make IceCast Pro the simplest, most powerful way for public radio stations to manage their streaming infrastructure** - with seamless integration to StationDock for a complete broadcast-to-listener experience.
+**Make StreamDock the simplest, most powerful way for public radio stations to manage their streaming infrastructure** - with seamless integration to StationDock for a complete broadcast-to-listener experience.
 
 ---
 
 ## 🔗 StationDock Integration
 
 ### Stream Source Integration
-- [ ] **Auto-populate streams** in StationDock from IceCast Pro stations
+- [ ] **Auto-populate streams** in StationDock from StreamDock stations
 - [ ] **Sync station metadata** (name, description, genre) between apps
 - [ ] **Stream health alerts** - notify StationDock when a stream goes down
 - [ ] **Failover triggers** - automatically switch to backup stream in StationDock
 
 ### Shared Authentication
-- [ ] Single sign-on between IceCast Pro and StationDock
+- [ ] Single sign-on between StreamDock and StationDock
 - [ ] Unified user management
 - [ ] Role-based access (admin, DJ, listener)
 
