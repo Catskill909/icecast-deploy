@@ -1,6 +1,9 @@
 # Build stage for React
 FROM node:20-alpine AS builder
 
+# Install Python and build tools for better-sqlite3
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -12,14 +15,14 @@ RUN npm run build
 # Production stage with Icecast + Node.js
 FROM node:20-alpine AS production
 
-# Install Icecast, supervisor, and curl for healthcheck
-RUN apk add --no-cache icecast supervisor curl
+# Install Icecast, supervisor, curl, and build tools for better-sqlite3
+RUN apk add --no-cache icecast supervisor curl python3 make g++
 
 WORKDIR /app
 
 # Copy package files and install production deps
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && apk del python3 make g++
 
 # Copy built React app
 COPY --from=builder /app/dist ./dist
