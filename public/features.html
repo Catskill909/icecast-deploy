@@ -8,24 +8,20 @@
     <meta name="description"
         content="StreamDock - Modern Icecast streaming server management. Create stations, manage encoders, and monitor live streams with a beautiful dark-mode interface.">
     <link rel="icon" href="/icon.png">
-    <!-- Google Fonts - Oswald for headers, Inter for body -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
-            --bg-dark: #0a0f1c;
-            --bg-card: #111827;
-            --bg-card-hover: #1a2234;
-            --accent: #4ade80;
-            --accent-secondary: #22d3ee;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border: #1e2937;
+            --bg-dark: #0d1117;
+            --bg-card: #161b22;
+            --accent: #58a6ff;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --border: #30363d;
         }
 
         * {
@@ -35,166 +31,156 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.6;
-        }
-
-        h1,
-        h2,
-        h3,
-        .header-font {
-            font-family: 'Oswald', sans-serif;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 15px;
         }
 
         .header {
-            background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, var(--bg-dark) 100%);
-            padding: 2rem;
+            padding: 2rem 2rem 3rem;
             text-align: center;
-            border-bottom: 1px solid var(--border);
         }
 
         .logo {
-            height: 60px;
-            margin-bottom: 1rem;
+            height: 50px;
+            margin-bottom: 2rem;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
         }
 
         .header p {
             color: var(--text-secondary);
-            font-size: 1.2rem;
-            font-family: 'Inter', sans-serif;
-            text-transform: none;
+            font-size: 1rem;
+            max-width: 500px;
+            margin: 0 auto 2rem;
+        }
+
+        .header-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--accent);
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .header-btn:hover {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: var(--accent);
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
-            padding: 3rem 2rem;
+            padding: 0 2rem 3rem;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 900px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .feature-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .feature-card:hover {
-            background: var(--bg-card-hover);
-            border-color: var(--accent);
-            transform: translateY(-2px);
+            border-radius: 8px;
+            padding: 1.25rem;
         }
 
         .feature-card h3 {
-            color: var(--accent);
-            font-size: 1.1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
             margin-bottom: 0.75rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
+            color: var(--text-primary);
         }
 
         .feature-icon {
-            font-size: 1.25rem;
-            width: 1.5rem;
-            text-align: center;
             color: var(--accent);
+            font-size: 0.9rem;
+            width: 1rem;
         }
 
-        .feature-card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
+        .feature-card ul {
+            list-style: none;
             margin-bottom: 1rem;
+        }
+
+        .feature-card li {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.75rem;
+            position: relative;
+        }
+
+        .feature-card li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--text-secondary);
         }
 
         .gallery-btn {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            background: rgba(74, 222, 128, 0.1);
-            border: 1px solid rgba(74, 222, 128, 0.3);
+            gap: 0.4rem;
+            background: transparent;
+            border: 1px solid var(--border);
             color: var(--accent);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-family: 'Inter', sans-serif;
+            padding: 0.4rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .gallery-btn:hover {
-            background: rgba(74, 222, 128, 0.2);
+            background: rgba(88, 166, 255, 0.1);
             border-color: var(--accent);
-        }
-
-        .cta-section {
-            text-align: center;
-            padding: 3rem 2rem;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border);
-        }
-
-        .cta-section h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
-            color: var(--bg-dark);
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            font-family: 'Oswald', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
         }
 
         .integration-badge {
             display: inline-block;
-            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            background: #8b5cf6;
             color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 9999px;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
             font-size: 0.65rem;
             font-weight: 600;
-            font-family: 'Inter', sans-serif;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             margin-left: 0.5rem;
         }
 
-        /* Modal Styles */
+        /* Modal */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -202,7 +188,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.8);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -216,11 +202,11 @@
         .modal-content {
             background: var(--bg-card);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            max-width: 800px;
-            max-height: 90vh;
+            border-radius: 12px;
+            max-width: 700px;
+            max-height: 85vh;
             overflow-y: auto;
-            padding: 2rem;
+            padding: 1.5rem;
             position: relative;
         }
 
@@ -231,9 +217,8 @@
             background: none;
             border: none;
             color: var(--text-secondary);
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             cursor: pointer;
-            line-height: 1;
         }
 
         .modal-close:hover {
@@ -241,71 +226,69 @@
         }
 
         .modal-title {
-            color: var(--accent);
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
         }
 
         .modal-description {
             color: var(--text-secondary);
-            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
         }
 
         .modal-gallery {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             overflow-x: auto;
-            padding: 1rem 0;
+            padding: 0.5rem 0;
         }
 
         .gallery-placeholder {
-            min-width: 300px;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px dashed var(--border);
-            border-radius: 8px;
+            min-width: 250px;
+            height: 160px;
+            background: var(--bg-dark);
+            border: 1px dashed var(--border);
+            border-radius: 6px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
             color: var(--text-secondary);
+            font-size: 0.8rem;
         }
 
         .gallery-placeholder i {
-            font-size: 2rem;
-            opacity: 0.5;
+            font-size: 1.5rem;
+            opacity: 0.4;
         }
 
         footer {
             text-align: center;
             padding: 2rem;
             color: var(--text-secondary);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
         }
 
         footer a {
             color: var(--accent);
             text-decoration: none;
         }
-
-        @media (max-width: 768px) {
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-        }
     </style>
 </head>
 
 <body>
     <header class="header">
-        <img src="/header.png" alt="StreamDock Logo" class="logo">
-        <h1>StreamDock Features</h1>
-        <p>Everything you need to manage your Icecast streaming server</p>
+        <img src="/header.png" alt="StreamDock" class="logo">
+        <h1>Everything you need to manage your streams</h1>
+        <p>StreamDock is a modern interface for Icecast streaming. Create stations, manage encoders, and monitor live
+            streams with ease.</p>
+        <a href="/servers" class="header-btn">
+            <i class="fa-solid fa-images"></i> View App Screenshots
+        </a>
     </header>
 
     <main class="container">
@@ -313,8 +296,11 @@
 
             <div class="feature-card">
                 <h3><i class="fa-solid fa-wand-magic-sparkles feature-icon"></i> Station Creation Wizard</h3>
-                <p>Create new radio stations with a guided 3-step wizard. Auto-generated credentials, mount points, and
-                    one-click copy for all connection details.</p>
+                <ul>
+                    <li>Create stations with a guided 3-step wizard</li>
+                    <li>Auto-generated credentials and mount points</li>
+                    <li>One-click copy for all connection details</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('station-wizard')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -322,18 +308,23 @@
 
             <div class="feature-card">
                 <h3><i class="fa-solid fa-tower-broadcast feature-icon"></i> Station Management</h3>
-                <p>View all your stations at a glance with station cards showing server, port, mount point, and
-                    password. Toggle password visibility and delete with confirmation.</p>
+                <ul>
+                    <li>View all stations at a glance with cards</li>
+                    <li>Show server, port, mount, and password</li>
+                    <li>Delete stations with confirmation modal</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('station-management')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
             </div>
 
             <div class="feature-card">
-                <h3><i class="fa-solid fa-circle-dot feature-icon" style="color: #ef4444;"></i> Live Status Detection
-                </h3>
-                <p>Real-time polling checks Icecast every 5 seconds. Animated LIVE badge and listener count. Visual
-                    highlights with green ring around active stations.</p>
+                <h3><i class="fa-solid fa-circle feature-icon" style="color: #f85149;"></i> Live Status Detection</h3>
+                <ul>
+                    <li>Real-time polling every 5 seconds</li>
+                    <li>Animated LIVE badge and listener count</li>
+                    <li>Green ring highlight on active stations</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('live-status')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -341,8 +332,11 @@
 
             <div class="feature-card">
                 <h3><i class="fa-solid fa-headphones feature-icon"></i> Built-in Audio Player</h3>
-                <p>One-click playback of live streams. Play/pause controls toggle stream audio in-browser. Auto-stops
-                    when station goes offline.</p>
+                <ul>
+                    <li>One-click playback of live streams</li>
+                    <li>Play/pause controls in browser</li>
+                    <li>Auto-stops when station goes offline</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('audio-player')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -350,8 +344,11 @@
 
             <div class="feature-card">
                 <h3><i class="fa-solid fa-chart-line feature-icon"></i> Dashboard</h3>
-                <p>Station overview with quick stats on active vs total stations. Server status indicator and quick
-                    start guide for new users.</p>
+                <ul>
+                    <li>Quick stats on active vs total stations</li>
+                    <li>Server status indicator</li>
+                    <li>Quick start guide for new users</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('dashboard')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -359,8 +356,11 @@
 
             <div class="feature-card">
                 <h3><i class="fa-solid fa-sliders feature-icon"></i> Encoder Settings</h3>
-                <p>Copy-ready connection details for BUTT, OBS, Mixxx, and other streaming software. MP3 or AAC format
-                    with Low/Standard/High quality presets.</p>
+                <ul>
+                    <li>Copy-ready details for BUTT, OBS, Mixxx</li>
+                    <li>MP3 or AAC format options</li>
+                    <li>Low/Standard/High quality presets</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('encoder-settings')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -368,8 +368,11 @@
 
             <div class="feature-card">
                 <h3><i class="fa-solid fa-lock feature-icon"></i> Secure HTTPS Streaming</h3>
-                <p>Stream securely via HTTPS proxy. Both secure and legacy (non-SSL) URLs provided. Compatible with
-                    StationDock stream monitoring.</p>
+                <ul>
+                    <li>Stream securely via HTTPS proxy</li>
+                    <li>Legacy HTTP URLs still available</li>
+                    <li>Compatible with StationDock monitoring</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('secure-streaming')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -377,8 +380,11 @@
 
             <div class="feature-card">
                 <h3><i class="fa-solid fa-server feature-icon"></i> Icecast Status Page</h3>
-                <p>Secure proxy to Icecast status page for debugging. JSON API for programmatic access. Full Icecast
-                    admin interface available.</p>
+                <ul>
+                    <li>Secure proxy to Icecast status page</li>
+                    <li>JSON API for programmatic access</li>
+                    <li>Full admin interface available</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('icecast-status')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -389,8 +395,11 @@
                     <i class="fa-solid fa-link feature-icon"></i> StationDock Integration
                     <span class="integration-badge">New</span>
                 </h3>
-                <p>Seamless integration with StationDock for stream monitoring and automated recording. Test streams
-                    directly from the monitoring dashboard.</p>
+                <ul>
+                    <li>Seamless stream monitoring integration</li>
+                    <li>Automated recording support</li>
+                    <li>Real-time health checks</li>
+                </ul>
                 <button class="gallery-btn" onclick="openModal('stationdock')">
                     <i class="fa-solid fa-images"></i> View Screenshots
                 </button>
@@ -398,11 +407,6 @@
 
         </div>
     </main>
-
-    <section class="cta-section">
-        <h2>Ready to start streaming?</h2>
-        <a href="/servers" class="cta-button"><i class="fa-solid fa-rocket"></i> Launch StreamDock</a>
-    </section>
 
     <footer>
         <p>StreamDock © 2024 • <a href="https://github.com/Catskill909/icecast-deploy"><i
@@ -429,47 +433,47 @@
         const featureDetails = {
             'station-wizard': {
                 title: 'Station Creation Wizard',
-                description: 'The 3-step wizard guides you through creating a new station. Step 1: Enter station name and description. Step 2: Choose format (MP3/AAC) and bitrate. Step 3: Review auto-generated credentials and copy connection details.',
+                description: 'The 3-step wizard guides you through creating a new station. Enter name and description, choose format and bitrate, then review auto-generated credentials.',
                 screenshots: ['wizard-step1.png', 'wizard-step2.png', 'wizard-step3.png']
             },
             'station-management': {
                 title: 'Station Management',
-                description: 'Station cards display all your configured stations. Each card shows server hostname, port, mount point, and masked password (click to reveal). Delete stations with a confirmation modal to prevent accidents.',
+                description: 'Station cards display all your configured stations with server, port, mount point, and masked password. Delete stations with a confirmation modal.',
                 screenshots: ['station-card.png', 'delete-confirm.png']
             },
             'live-status': {
                 title: 'Live Status Detection',
-                description: 'The system polls your Icecast server every 5 seconds to detect live streams. When a station goes live, it displays an animated pulsing LIVE badge and the current listener count. Active stations get a green ring highlight.',
+                description: 'Real-time polling detects live streams. Animated LIVE badge shows current listener count. Active stations get a green ring highlight.',
                 screenshots: ['live-badge.png', 'listener-count.png']
             },
             'audio-player': {
                 title: 'Built-in Audio Player',
-                description: 'Click the "Listen Now" button on any live station to start playback in your browser. The play/pause button toggles audio. When the stream goes offline, playback automatically stops.',
+                description: 'Click "Listen Now" to start playback in your browser. Play/pause toggles audio. Auto-stops when stream goes offline.',
                 screenshots: ['listen-button.png', 'player-controls.png']
             },
             'dashboard': {
                 title: 'Dashboard Overview',
-                description: 'The dashboard shows quick stats: total stations, currently live stations, and server status. A quick start guide helps new users get their first stream up and running.',
+                description: 'Quick stats show total stations, currently live stations, and server status. Quick start guide helps new users.',
                 screenshots: ['dashboard-stats.png', 'quick-start.png']
             },
             'encoder-settings': {
                 title: 'Encoder Settings',
-                description: 'Each station card displays encoder-ready connection details. One-click copy for server, port, mount point, and password. Compatible with BUTT, OBS, Mixxx, ReaCast, and other streaming software.',
+                description: 'One-click copy for server, port, mount, and password. Compatible with BUTT, OBS, Mixxx, ReaCast, and other streaming software.',
                 screenshots: ['encoder-copy.png', 'butt-settings.png']
             },
             'secure-streaming': {
                 title: 'Secure HTTPS Streaming',
-                description: 'Streams are available via both secure HTTPS proxy (/stream/mount) and direct Icecast URLs (:8100/mount). The secure proxy works with all modern browsers and supports StationDock integration.',
+                description: 'Streams available via HTTPS proxy (/stream/mount) and direct Icecast (:8100/mount). Works with all modern browsers and StationDock.',
                 screenshots: ['secure-url.png', 'legacy-url.png']
             },
             'icecast-status': {
                 title: 'Icecast Status Page',
-                description: 'Access the full Icecast status page securely via /icecast-status. A JSON API at /icecast-status.json provides programmatic access for integrations. Great for debugging and monitoring.',
+                description: 'Access Icecast status securely via /icecast-status. JSON API at /icecast-status.json for integrations.',
                 screenshots: ['icecast-status.png', 'json-api.png']
             },
             'stationdock': {
                 title: 'StationDock Integration',
-                description: 'StreamDock integrates seamlessly with StationDock for comprehensive stream monitoring. Add your StreamDock streams to StationDock for real-time health checks, automated recording, and failover support.',
+                description: 'StreamDock integrates with StationDock for stream monitoring, automated recording, and failover support.',
                 screenshots: ['stationdock-streams.png', 'integration-settings.png']
             }
         };
