@@ -189,54 +189,83 @@ app.get('/api/health', (req, res) => {
 
 // DEBUG: Test internal connection to Icecast
 app.get('/api/debug-connection', async (req, res) => {
+    const streamMount = req.query.mount || '/new';
     const targetUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status.xsl`;
-    const targetIp = ICECAST_HOST === 'localhost' ? '127.0.0.1' : ICECAST_HOST;
-    const targetUrlIp = `http://${targetIp}:${ICECAST_INTERNAL_PORT}/status.xsl`;
+    const targetStreamUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${streamMount}`;
 
+    // Config info
     const results = {
-        config: { ICECAST_HOST, ICECAST_INTERNAL_PORT },
+        config: { ICECAST_HOST, ICECAST_INTERNAL_PORT, streamMount },
         tests: []
     };
 
-    // Test 1: Configured Host
-    try {
-        const start = Date.now();
-        const response = await fetch(targetUrl);
-        results.tests.push({
-            url: targetUrl,
-            status: response.status,
-            latency: Date.now() - start,
-            success: true
-        });
-    } catch (e) {
-        results.tests.push({
-            url: targetUrl,
-            error: e.message,
-            code: e.code,
-            success: false
-        });
-    }
+    // Helper function for testing
+    const testUrl = async (url, label) => {
+        try {
+            const start = Date.now();
+            const response = await fetch(url);
+            results.tests.push({
+                label,
+                url,
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                latency: Date.now() - start,
+                success: response.ok
+            });
+        } catch (e) {
+            results.tests.push({
+                label,
+                url,
+                error: e.message,
+                code: e.code,
+                success: false
+            });
+        }
+    };
 
-    // Test 2: Explicit IP (127.0.0.1)
-    try {
-        const start = Date.now();
-        const response = await fetch(targetUrlIp);
-        results.tests.push({
-            url: targetUrlIp,
-            status: response.status,
-            latency: Date.now() - start,
-            success: true
-        });
-    } catch (e) {
-        results.tests.push({
-            url: targetUrlIp,
-            error: e.message,
-            code: e.code,
-            success: false
-        });
-    }
+    await testUrl(targetUrl, "Icecast Status Page");
+    await testUrl(targetStreamUrl, "Icecast Stream Mount");
 
     res.json(results);
+});
+
+// ... (existing icecast-status endpoint) ...
+
+// Proxy Icecast streams through the same port (Corrected Logic)
+app.use('/stream', (req, res) => {
+    // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
+    const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}`;
+
+    const targetUrl = `${target}${req.url}`;
+    console.log(`[PROXY START] Forwarding ${req.originalUrl} to: ${targetUrl}`);
+
+    // Use http-proxy to stream data robustly
+    proxy.web(req, res, {
+        target: target,
+        headers: {
+            'Icy-MetaData': '1',
+            'User-Agent': 'StreamDock-Proxy/1.0',
+            'Connection': 'close'
+        }
+    });
+});
+
+proxy.on('proxyRes', (proxyRes, req, res) => {
+    console.log(`[PROXY RESPONSE] Status: ${proxyRes.statusCode} from Target`);
+
+    // MIMIC ICECAST EXACTLY:
+    proxyRes.headers['server'] = 'Icecast 2.4.4';
+
+    // 2. DISABLE CHUNKED ENCODING (Detailed fix)
+    delete proxyRes.headers['transfer-encoding'];
+    if (res.chunkedEncoding) {
+        res.chunkedEncoding = false;
+        res.useChunkedEncodingByDefault = false;
+    }
+
+    // 3. Ensure Connection Close
+    proxyRes.headers['connection'] = 'close';
 });
 
 // Get live status from Icecast server
