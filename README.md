@@ -25,6 +25,13 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Listener Count**: Shows current listeners per station
 - **Visual Highlights**: Green ring around active stations
 
+### 🔔 Real-Time Alerts (NEW)
+- **Station Now Broadcasting**: Notified when stream goes live
+- **Broadcast Ended**: Alert when stream goes offline  
+- **Listener Milestones**: Celebrate 50, 100, 250, 500+ listeners
+- **Header Notifications**: Bell icon with unread count badge
+- **Mark as Read**: Dismiss alerts from the alerts page
+
 ### 🎧 Built-in Audio Player
 - **Listen Button**: One-click playback of live streams
 - **Play/Pause Controls**: Toggle stream audio in-browser
@@ -122,7 +129,11 @@ docker run -p 3000:3000 -p 8100:8100 streamdock
 | GET | `/api/stations` | List all stations |
 | GET | `/api/stations/:id` | Get station details |
 | POST | `/api/stations` | Create new station |
+| PUT | `/api/stations/:id` | Update station |
 | DELETE | `/api/stations/:id` | Delete station |
+| GET | `/api/alerts` | List all alerts |
+| GET | `/api/alerts/unread-count` | Get unread alert count |
+| POST | `/api/alerts/:id/read` | Mark alert as read |
 | GET | `/api/health` | Health check |
 | GET | `/icecast-status` | Secure Icecast status page |
 | GET | `/icecast-status.json` | Icecast status as JSON |

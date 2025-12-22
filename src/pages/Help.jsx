@@ -54,6 +54,31 @@ const ARTICLES = {
                 </ul>
             </div>
         )
+    },
+    'alerts': {
+        title: 'Understanding Alerts',
+        content: (
+            <div className="space-y-4 text-[#8896ab]">
+                <p>StreamDock automatically generates alerts to keep you informed about your stream status.</p>
+
+                <h4 className="text-white font-medium mt-4">Alert Types:</h4>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li><strong className="text-[#4ade80]">Station Now Broadcasting:</strong> When your stream goes live</li>
+                    <li><strong className="text-[#f87171]">Broadcast Ended:</strong> When your stream goes offline</li>
+                    <li><strong className="text-[#4b7baf]">Listener Milestone:</strong> When you hit 50, 100, 250, or 500+ listeners</li>
+                </ul>
+
+                <h4 className="text-white font-medium mt-4">Where to Find Alerts:</h4>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li><strong>Bell Icon:</strong> Click the bell in the header to see recent alerts</li>
+                    <li><strong>Alerts Page:</strong> Full alert history in the sidebar</li>
+                </ul>
+
+                <div className="bg-[#4b7baf]/10 p-4 rounded-lg border border-[#4b7baf]/20 mt-4">
+                    <p className="text-[#4b7baf] text-sm font-medium">💡 Tip: Keep the Dashboard open while streaming - this is what triggers the status checks that generate alerts.</p>
+                </div>
+            </div>
+        )
     }
 };
 
@@ -100,7 +125,8 @@ export default function Help() {
             links: [
                 { id: 'quick-start', label: "Quick Start Guide" },
                 { id: 'mount-points', label: "Understanding Mount Points" },
-                { id: 'encoders', label: "Connecting your Encoder" }
+                { id: 'encoders', label: "Connecting your Encoder" },
+                { id: 'alerts', label: "Understanding Alerts" }
             ]
         },
         {
@@ -119,8 +145,8 @@ export default function Help() {
             description: "Common issues and how to resolve them quickly.",
             links: [
                 { id: 'quick-start', label: "Connection Refused" },
-                { id: 'mount-points', label: "Audio Buffering" },
-                { id: 'encoders', label: "Listener Count Issues" }
+                { id: 'mount-points', label: "Audio Buffering Issues" },
+                { id: 'alerts', label: "Alerts Not Appearing" }
             ]
         }
     ];

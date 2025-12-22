@@ -92,13 +92,15 @@ Brainstorming session for StreamDock features and StationDock integration.
 ## 🔔 Alerts & Notifications
 
 ### Alert Types
-- [ ] **Stream down** notification
-- [ ] **High listener count** threshold
+- [x] **Stream down** notification ✅ DONE (Dec 2024)
+- [x] **Stream live** notification ✅ DONE (Dec 2024)
+- [x] **High listener count** threshold ✅ DONE (Dec 2024) - Milestones at 50, 100, 250, 500
 - [ ] **Low listener** warning
 - [ ] **Encoder disconnect** alert
 - [ ] **Silent stream** detection
 
 ### Notification Channels
+- [x] **In-app alerts** with bell icon ✅ DONE (Dec 2024)
 - [ ] **Email** alerts
 - [ ] **SMS** via Twilio
 - [ ] **Webhook** for custom integrations
@@ -219,9 +221,11 @@ Based on immediate needs for public radio stations:
 3. **Secure HTTPS streaming** ✅ DONE (Dec 2024)
 4. **StationDock stream integration** ✅ DONE (Dec 2024)
 5. **Secure Icecast status page** ✅ DONE (Dec 2024)
-6. **DJ account management**
-7. **Alert emails when stream drops**
-8. **Listener count history**
+6. **Real-time alerts (stream live/offline)** ✅ DONE (Dec 2024)
+7. **Listener milestone alerts** ✅ DONE (Dec 2024)
+8. **DJ account management**
+9. **Alert emails when stream drops**
+10. **Listener count history**
 
 
 ---
@@ -234,8 +238,10 @@ Based on immediate needs for public radio stations:
 - Listen button ✅
 
 ### Phase 2: Alerts & Monitoring
-- Email notifications
-- Listener analytics
+- In-app alerts ✅ DONE (Dec 2024)
+- Listener milestones ✅ DONE (Dec 2024)
+- Email notifications (coming)
+- Real Icecast log parsing (coming)
 - Uptime tracking
 
 ### Phase 3: Multi-User
