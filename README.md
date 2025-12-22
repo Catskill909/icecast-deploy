@@ -1,105 +1,135 @@
-# IceCast Pro - Deployment & Monitoring Service
+# IceCast Pro - Station Management Dashboard
 
-A modern Icecast streaming server management interface with a clean dark-mode UI.
+A modern Icecast streaming server management interface with a clean dark-mode UI. Create stations, manage connection credentials, and monitor live streams.
 
 **Production URL:** https://icecast.supersoul.top
 
-## Features
+## ✨ Features
 
-### 🚀 Server Deployment
-- **Quick Deploy**: One-click Icecast server deployment with intelligent defaults
-- **Custom Configuration**: Advanced configuration editor for experienced users
-- **Multiple Server Support**: Manage multiple Icecast instances from one dashboard
-- **Server Templates**: Pre-configured templates for podcasting, radio, music streaming, and live events
+### � Station Creation Wizard
+- **3-Step Setup**: Create new radio stations with a guided wizard
+- **Auto-Generated Credentials**: Secure passwords and mount points created automatically
+- **Copy-to-Clipboard**: One-click copy for all connection details
+- **Format Options**: MP3 or AAC with quality presets (Low/Standard/High)
 
-### 📡 Mount Point Management
-- Visual interface to create/edit/delete mount points
-- Configure codecs (MP3, AAC, Opus, Vorbis) and bitrates
-- Stream metadata and ICY protocol options
-- Listener limits and connection settings
+### 🎯 Station Management
+- **Station Cards**: View all your stations at a glance
+- **Connection Info**: Server, port, mount point, and password display
+- **Password Toggle**: Show/hide source passwords securely
+- **Delete Stations**: Remove stations with confirmation modal
 
-### 📊 Real-Time Monitoring
-- Live listener count (total and per mount point)
-- Bandwidth usage (real-time and historical)
-- Server resource usage (CPU, RAM, network)
-- Stream quality metrics
-- Geographic listener distribution
-- User agent statistics
+### � Live Status Detection
+- **Real-Time Polling**: Checks Icecast server every 5 seconds
+- **LIVE Badge**: Animated pulsing indicator when streaming
+- **Listener Count**: Shows current listeners per station
+- **Visual Highlights**: Green ring around active stations
 
-### 🔔 Alert System
-- Real-time notifications for server issues
-- Source disconnection alerts
-- Threshold-based alerts
-- Multiple notification channels (email, SMS, webhooks, in-app)
-- Custom alert rules
+### 🎧 Built-in Audio Player
+- **Listen Button**: One-click playback of live streams
+- **Play/Pause Controls**: Toggle stream audio in-browser
+- **Auto-Stop**: Stops playback when station goes offline
 
-### 📝 Log Management
-- Real-time log streaming
-- Log filtering and search
-- Error highlighting
-- Downloadable log archives
+### 📊 Dashboard
+- **Station Overview**: Quick stats on active vs total stations
+- **Server Status**: Online/offline indicator
+- **Quick Start Guide**: Step-by-step onboarding for new users
 
-### 🔒 Security
-- SSL/TLS certificate management
-- IP whitelisting/blacklisting
-- DDoS protection settings
-- Source authentication management
-- Two-factor authentication support
+## 🛠 Tech Stack
 
-### 🎵 Stream Player
-- Built-in audio player for testing streams
-- Preview any active mount point
-- Encoder connection information
+| Frontend | Backend | Deployment |
+|----------|---------|------------|
+| React 19 | Node.js/Express | Docker |
+| Vite | SQLite | Coolify |
+| Tailwind CSS v4 | REST API | |
+| Lucide React | | |
 
-## Tech Stack
-
-- **React 19** - UI framework
-- **Vite** - Build tool
-- **Tailwind CSS v4** - Styling
-- **Recharts** - Data visualization
-- **Lucide React** - Icons
-- **React Router** - Navigation
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
-### Installation
+### Development
 
 ```bash
 # Install dependencies
 npm install
 
-# Start development server
-npm run dev
+# Start both frontend and backend
+npm run dev:all
 ```
 
-The application will be available at `http://localhost:5173`
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:3001
 
-### Build for Production
+### Production Build
 
 ```bash
+# Build for production
 npm run build
+
+# Start production server
+npm start
 ```
 
-## Project Structure
+### Docker Deployment
 
-```
-src/
-├── components/
-│   ├── Layout/          # Sidebar, Header, Layout
-│   └── ui/              # Reusable UI components
-├── data/
-│   └── mockData.js      # Mock data for demo
-├── pages/               # Page components
-├── App.jsx              # Main app with routing
-├── index.css            # Global styles + Tailwind
-└── main.jsx             # Entry point
+```bash
+# Build Docker image
+docker build -t icecast-pro .
+
+# Run container
+docker run -p 3000:3000 icecast-pro
 ```
 
-## License
+## 📁 Project Structure
+
+```
+├── server/
+│   ├── index.js         # Express API server
+│   └── db.js            # SQLite database layer
+├── src/
+│   ├── components/ui/   # Reusable UI components
+│   ├── pages/           # Page components
+│   │   ├── Dashboard.jsx
+│   │   ├── CreateStation.jsx
+│   │   └── Stations.jsx
+│   └── App.jsx          # Main app with routing
+├── Dockerfile           # Production Docker config
+└── package.json
+```
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/stations` | List all stations |
+| GET | `/api/stations/:id` | Get station details |
+| POST | `/api/stations` | Create new station |
+| DELETE | `/api/stations/:id` | Delete station |
+| GET | `/api/icecast-status` | Get live stream status |
+| GET | `/api/health` | Health check |
+
+## ⚙️ Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ICECAST_HOST` | `icecast.supersoul.top` | Icecast server hostname |
+| `ICECAST_PORT` | `8000` | Icecast server port |
+| `PORT` | `3001` | API server port |
+| `DATABASE_PATH` | `server/stations.db` | SQLite database path |
+
+## 📻 Connecting Your Encoder
+
+Use these settings in BUTT, ReaCast, OBS, or other streaming software:
+
+| Setting | Value |
+|---------|-------|
+| **Host:port** | `icecast.supersoul.top:8000/your-mount-point` |
+| **Password** | (from station card) |
+| **Format** | MP3 or AAC |
+| **Bitrate** | 64-320 kbps |
+
+## 📄 License
 
 MIT License

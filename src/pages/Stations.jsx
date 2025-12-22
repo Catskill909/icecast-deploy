@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -11,6 +11,8 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
     const [showPassword, setShowPassword] = useState(false);
     const [copiedField, setCopiedField] = useState(null);
     const [connectionInfo, setConnectionInfo] = useState(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const audioRef = useRef(null);
 
     const handleCopy = (value, field) => {
         navigator.clipboard.writeText(value);
@@ -25,9 +27,34 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
             .catch(err => console.error('Error fetching station details:', err));
     }, [station.id]);
 
+    const togglePlay = () => {
+        if (!audioRef.current || !connectionInfo) return;
+
+        if (isPlaying) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+            setIsPlaying(false);
+        } else {
+            audioRef.current.src = connectionInfo.streamUrl;
+            audioRef.current.play().catch(err => console.error('Playback error:', err));
+            setIsPlaying(true);
+        }
+    };
+
+    // Stop playing if station goes offline
+    useEffect(() => {
+        if (!isLive && isPlaying && audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+            setIsPlaying(false);
+        }
+    }, [isLive]);
+
     return (
         <Card className={isLive ? 'ring-2 ring-[#4ade80]/50' : ''}>
             <CardContent className="p-5">
+                <audio ref={audioRef} />
+
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-lg ${isLive ? 'bg-[#4ade80]/10' : 'bg-[#4b7baf]/10'}`}>
@@ -50,6 +77,30 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                         </div>
                     )}
                 </div>
+
+                {/* Listen Button - only show when live */}
+                {isLive && connectionInfo && (
+                    <button
+                        onClick={togglePlay}
+                        className={`w-full mb-4 py-2.5 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${isPlaying
+                                ? 'bg-[#4b7baf] text-white'
+                                : 'bg-[#4b7baf]/10 text-[#4b7baf] hover:bg-[#4b7baf]/20'
+                            }`}
+                    >
+                        {isPlaying ? (
+                            <>
+                                <Pause className="w-4 h-4" />
+                                <span>Stop Listening</span>
+                                <Volume2 className="w-4 h-4 animate-pulse" />
+                            </>
+                        ) : (
+                            <>
+                                <Play className="w-4 h-4" />
+                                <span>Listen Now</span>
+                            </>
+                        )}
+                    </button>
+                )}
 
                 {connectionInfo && (
                     <div className="space-y-2 bg-[#0d1229] rounded-lg p-3 text-sm">
