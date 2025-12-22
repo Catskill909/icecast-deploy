@@ -180,8 +180,8 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
 
                             <div className="flex items-center justify-between">
                                 <span className="text-[#64748b]">Status Page:</span>
-                                <a href={`http://${connectionInfo.server}:${connectionInfo.port}/status.xsl`} target="_blank" rel="noopener noreferrer" className="text-[#64748b] hover:text-white flex items-center gap-1">
-                                    Public <ExternalLink className="w-3 h-3" />
+                                <a href="/icecast-status" target="_blank" rel="noopener noreferrer" className="text-[#64748b] hover:text-white flex items-center gap-1">
+                                    Public (Secure) <ExternalLink className="w-3 h-3" />
                                 </a>
                             </div>
 
