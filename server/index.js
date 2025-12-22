@@ -178,9 +178,13 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_PORT } });
 });
 
-// Catch-all for React app in production
+// Catch-all for React app in production (serves index.html for client-side routing)
 if (process.env.NODE_ENV === 'production') {
-    app.get('*', (req, res) => {
+    app.use((req, res, next) => {
+        // Skip API routes
+        if (req.path.startsWith('/api')) {
+            return next();
+        }
         res.sendFile(path.join(__dirname, '../dist/index.html'));
     });
 }
