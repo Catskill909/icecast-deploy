@@ -352,7 +352,8 @@ app.get('/api/icecast-status', async (req, res) => {
 
             return {
                 mount,
-                listeners: s.listeners || 0,
+                listeners: s.listeners || 0,  // s.listeners = current, s.listener_peak = peak
+                listenerPeak: s.listener_peak || 0,
                 title: s.title || s.server_name || 'Unknown',
                 bitrate: s.bitrate || 128,
                 genre: s.genre || ''
