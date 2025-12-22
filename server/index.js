@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import http from 'http';
+import httpProxy from 'http-proxy';
 import * as db from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -262,70 +263,47 @@ app.get('/api/icecast-status', async (req, res) => {
 
 // Proxy Icecast streams through the same port
 // This allows everything to run on port 3000
+
+// Create Proxy Server with standard robust handling
+const proxy = httpProxy.createProxyServer({
+    ignorePath: true,
+    changeOrigin: true
+});
+
+proxy.on('proxyRes', (proxyRes, req, res) => {
+    // MIMIC ICECAST EXACTLY:
+    // 1. Force 'Server' header to look like Icecast
+    proxyRes.headers['server'] = 'Icecast 2.4.4';
+
+    // 2. DISABLE CHUNKED ENCODING
+    delete proxyRes.headers['transfer-encoding'];
+
+    // 3. Ensure Connection Close (for strict compatibility)
+    proxyRes.headers['connection'] = 'close';
+});
+
+proxy.on('error', (err, req, res) => {
+    console.error('Proxy Error:', err);
+    if (!res.headersSent) {
+        res.status(502).end();
+    }
+});
+
+// Proxy Icecast streams through the same port
+// This allows everything to run on port 3000
 app.use('/stream', (req, res) => {
     const streamPath = req.path || '/';
+    const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${streamPath}`;
 
-    // Use native http request for better streaming support (no buffering)
-    const options = {
-        hostname: ICECAST_HOST,
-        port: ICECAST_INTERNAL_PORT,
-        path: streamPath,
-        method: 'GET',
+    // Use http-proxy to stream data robustly
+    proxy.web(req, res, {
+        target: target,
         headers: {
-            'Icy-MetaData': '1', // Request metadata from Icecast
+            'Icy-MetaData': '1',
             'User-Agent': 'StreamDock-Proxy/1.0',
             'Connection': 'close'
-        },
-        agent: false // Disable connection pooling
-    };
-
-    const proxyReq = http.request(options, (proxyRes) => {
-        // Forward status code
-        res.status(proxyRes.statusCode);
-
-        // Forward headers
-        Object.keys(proxyRes.headers).forEach(key => {
-            // Forward Content-Type, Cache-Control, and icy-* headers
-            const lowerKey = key.toLowerCase();
-            if (lowerKey === 'content-type' ||
-                lowerKey === 'cache-control' ||
-                lowerKey.startsWith('icy-')) {
-                res.set(key, proxyRes.headers[key]);
-            }
-        });
-
-        // MIMIC ICECAST EXACTLY:
-        // 1. Force 'Server' header to look like Icecast
-        res.set('Server', 'Icecast 2.4.4');
-
-        // 2. DISABLE CHUNKED ENCODING (Critical for ingestion tools)
-        // Express/Node defaults to chunked for streams. We must kill it.
-        // Connection: close + no Content-Length = Raw Stream in HTTP/1.0 style
-        res.set('Connection', 'close');
-        res.set('Transfer-Encoding', 'identity');
-
-        // Ensure Cache-Control is set if missing
-        if (!res.get('Cache-Control')) {
-            res.set('Cache-Control', 'no-cache');
-        }
-
-        // Pipe the stream directly
-        proxyRes.pipe(res);
-    });
-
-    proxyReq.on('error', (err) => {
-        console.error('Stream proxy error:', err);
-        if (!res.headersSent) {
-            res.status(502).send('Stream unavailable');
         }
     });
-
-    // Handle client disconnect
-    req.on('close', () => {
-        proxyReq.destroy();
-    });
-
-    proxyReq.end();
 });
 
 // Proxy Icecast status page
