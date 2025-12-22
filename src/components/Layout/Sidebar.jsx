@@ -8,8 +8,10 @@ import {
   FileText,
   Settings,
   HelpCircle,
+  HelpCircle,
   GripVertical
 } from 'lucide-react';
+import Tooltip from '../ui/Tooltip';
 
 const navItems = [
   { path: '/create', icon: Radio, label: 'Create Station', highlight: true },
@@ -45,19 +47,20 @@ export default function Sidebar({ collapsed, onToggle }) {
         <ul className="space-y-1 px-3">
           {navItems.map((item) => (
             <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all duration-150 ${isActive
-                    ? 'bg-[#4b7baf]/15 text-[#6b9fd4]'
-                    : 'text-[#8896ab] hover:bg-[#151b30] hover:text-white'
-                  }`
-                }
-                title={collapsed ? item.label : undefined}
-              >
-                <item.icon className="w-6 h-6 flex-shrink-0" />
-                {!collapsed && <span className="text-base font-medium">{item.label}</span>}
-              </NavLink>
+              <Tooltip content={collapsed ? item.label : null} side="right">
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all duration-150 ${isActive
+                      ? 'bg-[#4b7baf]/15 text-[#6b9fd4]'
+                      : 'text-[#8896ab] hover:bg-[#151b30] hover:text-white'
+                    }`
+                  }
+                >
+                  <item.icon className="w-6 h-6 flex-shrink-0" />
+                  {!collapsed && <span className="text-base font-medium">{item.label}</span>}
+                </NavLink>
+              </Tooltip>
             </li>
           ))}
         </ul>
