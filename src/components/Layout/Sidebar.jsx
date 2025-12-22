@@ -22,7 +22,7 @@ const navItems = [
 ];
 
 const SIDEBAR_WIDTH = 224; // 14rem
-const SIDEBAR_COLLAPSED_WIDTH = 64; // 4rem
+const SIDEBAR_COLLAPSED_WIDTH = 80; // 5rem
 
 export default function Sidebar({ collapsed, onToggle }) {
   const width = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
@@ -32,11 +32,11 @@ export default function Sidebar({ collapsed, onToggle }) {
       style={{ width: `${width}px` }}
       className="fixed left-0 top-0 h-screen bg-[#0d1229] border-r border-[#1e2337] flex flex-col z-50 transition-all duration-300 ease-in-out"
     >
-      <div className={`h-16 flex items-center justify-center border-b border-[#1e2337] ${collapsed ? 'px-2' : 'px-4'}`}>
+      <div className={`h-20 flex items-center justify-center border-b border-[#1e2337] ${collapsed ? 'px-2' : 'px-4'}`}>
         {collapsed ? (
-          <img src="/icon.png" alt="StreamDock" className="w-8 h-8 object-contain" />
+          <img src="/icon.png" alt="StreamDock" className="w-10 h-10 object-contain" />
         ) : (
-          <img src="/header.png" alt="StreamDock" className="h-10 object-contain" />
+          <img src="/header.png" alt="StreamDock" className="h-12 object-contain" />
         )}
       </div>
 
@@ -48,15 +48,15 @@ export default function Sidebar({ collapsed, onToggle }) {
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${isActive
+                  `flex items-center gap-4 px-4 py-3.5 rounded-lg transition-all duration-150 ${isActive
                     ? 'bg-[#4b7baf]/15 text-[#6b9fd4]'
                     : 'text-[#8896ab] hover:bg-[#151b30] hover:text-white'
                   }`
                 }
                 title={collapsed ? item.label : undefined}
               >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                <item.icon className="w-6 h-6 flex-shrink-0" />
+                {!collapsed && <span className="text-base font-medium">{item.label}</span>}
               </NavLink>
             </li>
           ))}
