@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
