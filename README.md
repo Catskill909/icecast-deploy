@@ -2,11 +2,12 @@
 
 A modern Icecast streaming server management interface with a clean dark-mode UI. Create stations, manage connection credentials, and monitor live streams.
 
-**Production URL:** https://icecast.supersoul.top
+**Production URL:** https://icecast.supersoul.top  
+**Features Page:** https://icecast.supersoul.top/features.html
 
 ## ✨ Features
 
-### � Station Creation Wizard
+### 🎙️ Station Creation Wizard
 - **3-Step Setup**: Create new radio stations with a guided wizard
 - **Auto-Generated Credentials**: Secure passwords and mount points created automatically
 - **Copy-to-Clipboard**: One-click copy for all connection details
@@ -18,7 +19,7 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Password Toggle**: Show/hide source passwords securely
 - **Delete Stations**: Remove stations with confirmation modal
 
-### � Live Status Detection
+### 🔴 Live Status Detection
 - **Real-Time Polling**: Checks Icecast server every 5 seconds
 - **LIVE Badge**: Animated pulsing indicator when streaming
 - **Listener Count**: Shows current listeners per station
@@ -34,6 +35,17 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Server Status**: Online/offline indicator
 - **Quick Start Guide**: Step-by-step onboarding for new users
 
+### 🔒 Secure Streaming (NEW)
+- **HTTPS Proxy**: Secure streams via `/stream/mount`
+- **StationDock Compatible**: HEAD request support for stream monitoring
+- **Legacy Support**: Direct Icecast URLs on port 8100 still available
+- **Secure Status Page**: Access Icecast status via HTTPS at `/icecast-status`
+
+### 🔗 StationDock Integration (NEW)
+- **Stream Monitoring**: Works with StationDock's real-time stream health checks
+- **Automated Recording**: Streams can be recorded by StationDock
+- **Shared Architecture**: Part of the SuperSoul Radio Suite
+
 ## 🛠 Tech Stack
 
 | Frontend | Backend | Deployment |
@@ -41,7 +53,7 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 | React 19 | Node.js/Express | Docker |
 | Vite | SQLite | Coolify |
 | Tailwind CSS v4 | REST API | |
-| Lucide React | | |
+| Lucide React | http-proxy | |
 
 ## 🚀 Getting Started
 
@@ -76,10 +88,10 @@ npm start
 
 ```bash
 # Build Docker image
-docker build -t icecast-pro .
+docker build -t streamdock .
 
 # Run container
-docker run -p 3000:3000 icecast-pro
+docker run -p 3000:3000 -p 8100:8100 streamdock
 ```
 
 ## 📁 Project Structure
@@ -95,6 +107,10 @@ docker run -p 3000:3000 icecast-pro
 │   │   ├── CreateStation.jsx
 │   │   └── Stations.jsx
 │   └── App.jsx          # Main app with routing
+├── public/
+│   ├── features.html    # Public features page
+│   ├── header.png       # StreamDock logo
+│   └── icon.png         # Favicon
 ├── Dockerfile           # Production Docker config
 └── package.json
 ```
@@ -107,29 +123,47 @@ docker run -p 3000:3000 icecast-pro
 | GET | `/api/stations/:id` | Get station details |
 | POST | `/api/stations` | Create new station |
 | DELETE | `/api/stations/:id` | Delete station |
-| GET | `/api/icecast-status` | Get live stream status |
 | GET | `/api/health` | Health check |
+| GET | `/icecast-status` | Secure Icecast status page |
+| GET | `/icecast-status.json` | Icecast status as JSON |
+| GET | `/stream/:mount` | Proxy stream via HTTPS |
+| HEAD | `/stream/:mount` | Stream health check |
 
 ## ⚙️ Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ICECAST_HOST` | `icecast.supersoul.top` | Icecast server hostname |
-| `ICECAST_PORT` | `8000` | Icecast server port |
-| `PORT` | `3001` | API server port |
-| `DATABASE_PATH` | `server/stations.db` | SQLite database path |
+| `ICECAST_HOST` | `127.0.0.1` | Internal Icecast hostname |
+| `ICECAST_PORT` | `8100` | Internal Icecast port |
+| `ICECAST_PUBLIC_HOST` | `icecast.supersoul.top` | Public hostname |
+| `PORT` | `3000` | API server port |
+| `DATABASE_PATH` | `/app/data/stations.db` | SQLite database path |
 
 ## 📻 Connecting Your Encoder
 
-Use these settings in BUTT, ReaCast, OBS, or other streaming software:
+Use these settings in BUTT, Mixxx, OBS, or other streaming software:
 
 | Setting | Value |
 |---------|-------|
-| **Host:port** | `icecast.supersoul.top:8000/your-mount-point` |
+| **Server** | `icecast.supersoul.top` |
+| **Port** | `8100` |
+| **Mount** | `/your-mount-point` |
 | **Password** | (from station card) |
 | **Format** | MP3 or AAC |
 | **Bitrate** | 64-320 kbps |
 
+## 🔗 Stream URLs
+
+| Type | URL | Use Case |
+|------|-----|----------|
+| **Secure (HTTPS)** | `https://icecast.supersoul.top/stream/mount` | Web browsers, StationDock |
+| **Direct (HTTP)** | `http://icecast.supersoul.top:8100/mount` | Encoders, legacy players |
+| **Status Page** | `https://icecast.supersoul.top/icecast-status` | Debugging |
+
 ## 📄 License
 
 MIT License
+
+---
+
+*Part of the [SuperSoul Radio Suite](https://radio.supersoul.top)*

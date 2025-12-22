@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamDock Features - Icecast Streaming Made Simple</title>
+    <meta name="description"
+        content="StreamDock - Modern Icecast streaming server management. Create stations, manage encoders, and monitor live streams with a beautiful dark-mode interface.">
+    <link rel="icon" href="/icon.png">
+    <style>
+        :root {
+            --bg-dark: #0a0f1c;
+            --bg-card: #111827;
+            --bg-card-hover: #1a2234;
+            --accent: #4ade80;
+            --accent-secondary: #22d3ee;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #1e2937;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, var(--bg-dark) 100%);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            height: 60px;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .feature-card h3 {
+            color: var(--accent);
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+        }
+
+        .cta-section {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+            color: var(--bg-dark);
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+        }
+
+        .screenshot-placeholder {
+            display: none;
+            margin-top: 1rem;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            text-align: center;
+            color: var(--text-secondary);
+            border: 2px dashed var(--border);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-title {
+            color: var(--accent);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-gallery {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 1rem 0;
+        }
+
+        .gallery-placeholder {
+            min-width: 300px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .integration-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <img src="/header.png" alt="StreamDock Logo" class="logo">
+        <h1>StreamDock Features</h1>
+        <p>Everything you need to manage your Icecast streaming server</p>
+    </header>
+
+    <main class="container">
+        <div class="features-grid">
+
+            <div class="feature-card" onclick="openModal('station-wizard')">
+                <h3><span class="feature-icon">🎙️</span> Station Creation Wizard</h3>
+                <p>Create new radio stations with a guided 3-step wizard. Auto-generated credentials, mount points, and
+                    one-click copy for all connection details.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('station-management')">
+                <h3><span class="feature-icon">📻</span> Station Management</h3>
+                <p>View all your stations at a glance with station cards showing server, port, mount point, and
+                    password. Toggle password visibility and delete stations with confirmation.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('live-status')">
+                <h3><span class="feature-icon">🔴</span> Live Status Detection</h3>
+                <p>Real-time polling checks Icecast every 5 seconds. Animated LIVE badge and listener count. Visual
+                    highlights with green ring around active stations.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('audio-player')">
+                <h3><span class="feature-icon">🎧</span> Built-in Audio Player</h3>
+                <p>One-click playback of live streams. Play/pause controls toggle stream audio in-browser. Auto-stops
+                    when station goes offline.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('dashboard')">
+                <h3><span class="feature-icon">📊</span> Dashboard</h3>
+                <p>Station overview with quick stats on active vs total stations. Server status indicator and quick
+                    start guide for new users.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('encoder-settings')">
+                <h3><span class="feature-icon">🔧</span> Encoder Settings</h3>
+                <p>Copy-ready connection details for BUTT, OBS, Mixxx, and other streaming software. MP3 or AAC format
+                    with Low/Standard/High quality presets.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('secure-streaming')">
+                <h3><span class="feature-icon">🔒</span> Secure HTTPS Streaming</h3>
+                <p>Stream securely via HTTPS proxy. Both secure and legacy (non-SSL) URLs provided. Compatible with
+                    StationDock stream monitoring.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('icecast-status')">
+                <h3><span class="feature-icon">📈</span> Icecast Status Page</h3>
+                <p>Secure proxy to Icecast status page for debugging. JSON API for programmatic access. Full Icecast
+                    admin interface available.</p>
+            </div>
+
+            <div class="feature-card" onclick="openModal('stationdock')">
+                <h3>
+                    <span class="feature-icon">🔗</span> StationDock Integration
+                    <span class="integration-badge">NEW</span>
+                </h3>
+                <p>Seamless integration with StationDock for stream monitoring and automated recording. Test streams
+                    directly from the monitoring dashboard.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <section class="cta-section">
+        <h2 style="margin-bottom: 1rem; font-size: 1.5rem;">Ready to start streaming?</h2>
+        <a href="/servers" class="cta-button">Launch StreamDock →</a>
+    </section>
+
+    <footer>
+        <p>StreamDock © 2024 • <a href="https://github.com/Catskill909/icecast-deploy">GitHub</a> • Part of the <a
+                href="https://radio.supersoul.top">SuperSoul Radio Suite</a></p>
+    </footer>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <h2 class="modal-title" id="modal-title">Feature Title</h2>
+            <p id="modal-description">Feature description goes here.</p>
+            <div class="modal-gallery" id="modal-gallery">
+                <div class="gallery-placeholder">Screenshot placeholder</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const featureDetails = {
+            'station-wizard': {
+                title: 'Station Creation Wizard',
+                description: 'The 3-step wizard guides you through creating a new station. Step 1: Enter station name and description. Step 2: Choose format (MP3/AAC) and bitrate. Step 3: Review auto-generated credentials and copy connection details.',
+                screenshots: ['wizard-step1.png', 'wizard-step2.png', 'wizard-step3.png']
+            },
+            'station-management': {
+                title: 'Station Management',
+                description: 'Station cards display all your configured stations. Each card shows server hostname, port, mount point, and masked password (click to reveal). Delete stations with a confirmation modal to prevent accidents.',
+                screenshots: ['station-card.png', 'delete-confirm.png']
+            },
+            'live-status': {
+                title: 'Live Status Detection',
+                description: 'The system polls your Icecast server every 5 seconds to detect live streams. When a station goes live, it displays an animated pulsing LIVE badge and the current listener count. Active stations get a green ring highlight.',
+                screenshots: ['live-badge.png', 'listener-count.png']
+            },
+            'audio-player': {
+                title: 'Built-in Audio Player',
+                description: 'Click the "Listen Now" button on any live station to start playback in your browser. The play/pause button toggles audio. When the stream goes offline, playback automatically stops.',
+                screenshots: ['listen-button.png', 'player-controls.png']
+            },
+            'dashboard': {
+                title: 'Dashboard Overview',
+                description: 'The dashboard shows quick stats: total stations, currently live stations, and server status. A quick start guide helps new users get their first stream up and running.',
+                screenshots: ['dashboard-stats.png', 'quick-start.png']
+            },
+            'encoder-settings': {
+                title: 'Encoder Settings',
+                description: 'Each station card displays encoder-ready connection details. One-click copy for server, port, mount point, and password. Compatible with BUTT, OBS, Mixxx, ReaCast, and other streaming software.',
+                screenshots: ['encoder-copy.png', 'butt-settings.png']
+            },
+            'secure-streaming': {
+                title: 'Secure HTTPS Streaming',
+                description: 'Streams are available via both secure HTTPS proxy (/stream/mount) and direct Icecast URLs (:8100/mount). The secure proxy works with all modern browsers and supports StationDock integration.',
+                screenshots: ['secure-url.png', 'legacy-url.png']
+            },
+            'icecast-status': {
+                title: 'Icecast Status Page',
+                description: 'Access the full Icecast status page securely via /icecast-status. A JSON API at /icecast-status.json provides programmatic access for integrations. Great for debugging and monitoring.',
+                screenshots: ['icecast-status.png', 'json-api.png']
+            },
+            'stationdock': {
+                title: 'StationDock Integration',
+                description: 'StreamDock integrates seamlessly with StationDock for comprehensive stream monitoring. Add your StreamDock streams to StationDock for real-time health checks, automated recording, and failover support.',
+                screenshots: ['stationdock-streams.png', 'integration-settings.png']
+            }
+        };
+
+        function openModal(featureId) {
+            const feature = featureDetails[featureId];
+            if (!feature) return;
+
+            document.getElementById('modal-title').textContent = feature.title;
+            document.getElementById('modal-description').textContent = feature.description;
+
+            const gallery = document.getElementById('modal-gallery');
+            gallery.innerHTML = feature.screenshots.map(img =>
+                `<div class="gallery-placeholder">📷 ${img}</div>`
+            ).join('');
+
+            document.getElementById('modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(event) {
+            if (event && event.target !== document.getElementById('modal')) return;
+            document.getElementById('modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+    </script>
+</body>
+
+</html>
