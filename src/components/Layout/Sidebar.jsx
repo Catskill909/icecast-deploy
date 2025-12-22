@@ -32,8 +32,12 @@ export default function Sidebar({ collapsed, onToggle }) {
       style={{ width: `${width}px` }}
       className="fixed left-0 top-0 h-screen bg-[#0d1229] border-r border-[#1e2337] flex flex-col z-50 transition-all duration-300 ease-in-out"
     >
-      <div className="h-16 flex items-center justify-center border-b border-[#1e2337] px-4">
-        <img src="/header.png" alt="StreamDock" className="h-10 object-contain" />
+      <div className={`h-16 flex items-center justify-center border-b border-[#1e2337] ${collapsed ? 'px-2' : 'px-4'}`}>
+        {collapsed ? (
+          <img src="/icon.png" alt="StreamDock" className="w-8 h-8 object-contain" />
+        ) : (
+          <img src="/header.png" alt="StreamDock" className="h-10 object-contain" />
+        )}
       </div>
 
       {/* Navigation */}
