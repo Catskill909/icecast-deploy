@@ -22,9 +22,23 @@ db.exec(`
     stream_url TEXT NOT NULL,
     status TEXT DEFAULT 'active',
     listeners INTEGER DEFAULT 0,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    logo_url TEXT,
+    website_url TEXT,
+    updated_at TEXT
   )
 `);
+
+// Migration: Add new columns if they don't exist (for existing databases)
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN logo_url TEXT`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN website_url TEXT`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN updated_at TEXT`);
+} catch (e) { /* Column already exists */ }
 
 const createStation = (station) => {
     const stmt = db.prepare(`
@@ -63,6 +77,15 @@ const deleteStation = (id) => {
     return db.prepare('DELETE FROM stations WHERE id = ?').run(id);
 };
 
+const updateStation = (id, updates) => {
+    const { name, description, genre, logoUrl, websiteUrl } = updates;
+    return db.prepare(`
+        UPDATE stations 
+        SET name = ?, description = ?, genre = ?, logo_url = ?, website_url = ?, updated_at = ?
+        WHERE id = ?
+    `).run(name, description, genre, logoUrl || null, websiteUrl || null, new Date().toISOString(), id);
+};
+
 const updateListeners = (mountPoint, listeners) => {
     return db.prepare('UPDATE stations SET listeners = ? WHERE mount_point = ?').run(listeners, mountPoint);
 };
@@ -73,5 +96,6 @@ export {
     getStationById,
     getStationByMount,
     deleteStation,
+    updateStation,
     updateListeners
 };

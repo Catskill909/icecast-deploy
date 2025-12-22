@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink, Pencil, Globe } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import EditStationModal from '../components/EditStationModal';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
-function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
+function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 }) {
     const [showPassword, setShowPassword] = useState(false);
     const [copiedField, setCopiedField] = useState(null);
     const [connectionInfo, setConnectionInfo] = useState(null);
@@ -57,9 +58,18 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
 
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${isLive ? 'bg-[#4ade80]/10' : 'bg-[#4b7baf]/10'}`}>
-                            <Radio className={`w-5 h-5 ${isLive ? 'text-[#4ade80]' : 'text-[#4b7baf]'}`} />
-                        </div>
+                        {station.logoUrl ? (
+                            <img
+                                src={station.logoUrl}
+                                alt={station.name}
+                                className="w-10 h-10 rounded-lg object-cover"
+                                onError={(e) => e.target.style.display = 'none'}
+                            />
+                        ) : (
+                            <div className={`p-2 rounded-lg ${isLive ? 'bg-[#4ade80]/10' : 'bg-[#4b7baf]/10'}`}>
+                                <Radio className={`w-5 h-5 ${isLive ? 'text-[#4ade80]' : 'text-[#4b7baf]'}`} />
+                            </div>
+                        )}
                         <div>
                             <h3 className="font-heading font-bold text-white">{station.name}</h3>
                             <p className="text-sm text-[#64748b]">{station.mountPoint}</p>
@@ -195,16 +205,39 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                     </div>
                 )}
 
+                {/* Website link if set */}
+                {station.websiteUrl && (
+                    <a
+                        href={station.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs text-[#4b7baf] hover:text-white transition-colors mt-3"
+                    >
+                        <Globe className="w-3 h-3" />
+                        <span className="truncate">{station.websiteUrl.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                )}
+
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#1e2337]">
                     <div className="text-sm text-[#64748b]">
                         {station.format} • {station.bitrate} kbps
                     </div>
-                    <button
-                        onClick={() => onDelete(station)}
-                        className="p-2 rounded-lg text-[#64748b] hover:text-[#f87171] hover:bg-[#f87171]/10 transition-colors"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => onEdit(station)}
+                            className="p-2 rounded-lg text-[#64748b] hover:text-[#4b7baf] hover:bg-[#4b7baf]/10 transition-colors"
+                            title="Edit station"
+                        >
+                            <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => onDelete(station)}
+                            className="p-2 rounded-lg text-[#64748b] hover:text-[#f87171] hover:bg-[#f87171]/10 transition-colors"
+                            title="Delete station"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </CardContent>
         </Card>
@@ -216,6 +249,7 @@ export default function Stations() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [deleteModal, setDeleteModal] = useState({ open: false, station: null });
+    const [editModal, setEditModal] = useState({ open: false, station: null });
     const [deleting, setDeleting] = useState(false);
     const [liveStatus, setLiveStatus] = useState({ mounts: [] });
 
@@ -268,6 +302,14 @@ export default function Stations() {
 
     const closeDeleteModal = () => {
         setDeleteModal({ open: false, station: null });
+    };
+
+    const openEditModal = (station) => {
+        setEditModal({ open: true, station });
+    };
+
+    const closeEditModal = () => {
+        setEditModal({ open: false, station: null });
     };
 
     const confirmDelete = async () => {
@@ -327,6 +369,7 @@ export default function Stations() {
                                 key={station.id}
                                 station={station}
                                 onDelete={openDeleteModal}
+                                onEdit={openEditModal}
                                 isLive={isLive}
                                 listeners={listeners}
                             />
@@ -365,6 +408,14 @@ export default function Stations() {
                     </button>
                 </div>
             </Modal>
+
+            {/* Edit Station Modal */}
+            <EditStationModal
+                isOpen={editModal.open}
+                onClose={closeEditModal}
+                station={editModal.station}
+                onSave={fetchStations}
+            />
         </div>
     );
 }

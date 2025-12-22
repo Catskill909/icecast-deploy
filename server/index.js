@@ -118,12 +118,15 @@ app.get('/api/stations', (req, res) => {
             id: s.id,
             name: s.name,
             description: s.description,
+            genre: s.genre,
             mountPoint: s.mount_point,
             streamUrl: s.stream_url,
             format: s.format,
             bitrate: s.bitrate,
             status: s.status,
             listeners: s.listeners,
+            logoUrl: s.logo_url,
+            websiteUrl: s.website_url,
             createdAt: s.created_at
         })));
     } catch (error) {
@@ -150,6 +153,8 @@ app.get('/api/stations/:id', (req, res) => {
             bitrate: station.bitrate,
             status: station.status,
             listeners: station.listeners,
+            logoUrl: station.logo_url,
+            websiteUrl: station.website_url,
             createdAt: station.created_at,
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
@@ -163,6 +168,36 @@ app.get('/api/stations/:id', (req, res) => {
     } catch (error) {
         console.error('Error fetching station:', error);
         res.status(500).json({ error: 'Failed to fetch station' });
+    }
+});
+
+// Update a station
+app.put('/api/stations/:id', (req, res) => {
+    try {
+        const station = db.getStationById(req.params.id);
+        if (!station) {
+            return res.status(404).json({ error: 'Station not found' });
+        }
+
+        const { name, description, genre, logoUrl, websiteUrl } = req.body;
+
+        // Validate required fields
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Station name is required' });
+        }
+
+        db.updateStation(req.params.id, {
+            name: name.trim(),
+            description: description || '',
+            genre: genre || 'Various',
+            logoUrl: logoUrl || null,
+            websiteUrl: websiteUrl || null
+        });
+
+        res.json({ success: true, message: 'Station updated' });
+    } catch (error) {
+        console.error('Error updating station:', error);
+        res.status(500).json({ error: 'Failed to update station' });
     }
 });
 
