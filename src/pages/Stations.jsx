@@ -155,9 +155,9 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                             <p className="text-xs font-bold text-[#8896ab] uppercase tracking-wider mb-2">Public Links</p>
 
                             <div className="flex items-center justify-between">
-                                <span className="text-[#64748b]">Secure Stream:</span>
+                                <span className="text-white font-medium">Secure Stream:</span>
                                 <div className="flex items-center gap-2">
-                                    <a href={connectionInfo.streamUrl} target="_blank" rel="noopener noreferrer" className="text-[#4b7baf] hover:underline font-mono truncate max-w-[140px]">
+                                    <a href={connectionInfo.streamUrl} target="_blank" rel="noopener noreferrer" className="text-[#4ade80] hover:underline font-mono truncate max-w-[140px]">
                                         /stream{connectionInfo.mountPoint}
                                     </a>
                                     <button onClick={() => handleCopy(connectionInfo.streamUrl, 'secure')} className="text-[#64748b] hover:text-white">
@@ -167,7 +167,7 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                             </div>
 
                             <div className="flex items-center justify-between">
-                                <span className="text-[#64748b]">Direct (HTTP):</span>
+                                <span className="text-[#64748b]">Legacy (Non-SSL):</span>
                                 <div className="flex items-center gap-2">
                                     <a href={`http://${connectionInfo.server}:${connectionInfo.port}${connectionInfo.mountPoint}`} target="_blank" rel="noopener noreferrer" className="text-[#64748b] hover:text-white font-mono truncate max-w-[140px]">
                                         :{connectionInfo.port}{connectionInfo.mountPoint}
