@@ -2,7 +2,7 @@ export function Card({ children, className = '', hover = false, glass = false })
   return (
     <div
       className={`
-        rounded-2xl border border-[#2d3555]
+        rounded-2xl border border-[#2d3555] relative
         ${glass ? 'glass' : 'bg-[#1e2337]'}
         ${hover ? 'hover:bg-[#252b45] hover:border-[#3d4565] transition-all duration-200 cursor-pointer' : ''}
         ${className}

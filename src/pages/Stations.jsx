@@ -204,13 +204,15 @@ export default function Stations() {
         return () => clearInterval(interval);
     }, []);
 
-    const isStationLive = (mountPoint) => {
-        return liveStatus.mounts?.some(m => m.mount === mountPoint);
-    };
-
-    const getListeners = (mountPoint) => {
-        const mount = liveStatus.mounts?.find(m => m.mount === mountPoint);
-        return mount?.listeners || 0;
+    const getStationStatus = (mount) => {
+        const cleanMount = mount.startsWith('/') ? mount.substring(1) : mount;
+        const source = liveStatus.mounts?.find(m =>
+            m.mount === mount || m.mount === cleanMount || m.mount === `/${cleanMount}`
+        );
+        return {
+            isLive: !!source,
+            listeners: source ? (source.listeners || 0) : 0
+        };
     };
 
     const openDeleteModal = (station) => {
@@ -271,15 +273,18 @@ export default function Stations() {
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {stations.map(station => (
-                        <StationCard
-                            key={station.id}
-                            station={station}
-                            onDelete={openDeleteModal}
-                            isLive={isStationLive(station.mountPoint)}
-                            listeners={getListeners(station.mountPoint)}
-                        />
-                    ))}
+                    {stations.map(station => {
+                        const { isLive, listeners } = getStationStatus(station.mountPoint);
+                        return (
+                            <StationCard
+                                key={station.id}
+                                station={station}
+                                onDelete={openDeleteModal}
+                                isLive={isLive}
+                                listeners={listeners}
+                            />
+                        );
+                    })}
                 </div>
             )}
 
