@@ -230,44 +230,6 @@ app.get('/api/debug-connection', async (req, res) => {
     res.json(results);
 });
 
-// ... (existing icecast-status endpoint) ...
-
-// Proxy Icecast streams through the same port (Corrected Logic)
-app.use('/stream', (req, res) => {
-    // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
-    const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}`;
-
-    const targetUrl = `${target}${req.url}`;
-    console.log(`[PROXY START] Forwarding ${req.originalUrl} to: ${targetUrl}`);
-
-    // Use http-proxy to stream data robustly
-    proxy.web(req, res, {
-        target: target,
-        headers: {
-            'Icy-MetaData': '1',
-            'User-Agent': 'StreamDock-Proxy/1.0',
-            'Connection': 'close'
-        }
-    });
-});
-
-proxy.on('proxyRes', (proxyRes, req, res) => {
-    console.log(`[PROXY RESPONSE] Status: ${proxyRes.statusCode} from Target`);
-
-    // MIMIC ICECAST EXACTLY:
-    proxyRes.headers['server'] = 'Icecast 2.4.4';
-
-    // 2. DISABLE CHUNKED ENCODING (Detailed fix)
-    delete proxyRes.headers['transfer-encoding'];
-    if (res.chunkedEncoding) {
-        res.chunkedEncoding = false;
-        res.useChunkedEncodingByDefault = false;
-    }
-
-    // 3. Ensure Connection Close
-    proxyRes.headers['connection'] = 'close';
-});
-
 // Get live status from Icecast server
 app.get('/api/icecast-status', async (req, res) => {
     try {
