@@ -33,15 +33,8 @@ export default function Sidebar({ collapsed, onToggle }) {
       className="fixed left-0 top-0 h-screen bg-[#0d1229] border-r border-[#1e2337] flex flex-col z-50 transition-all duration-300 ease-in-out"
     >
       {/* Logo */}
-      <div className="h-16 flex items-center px-4 border-b border-[#1e2337]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#4b7baf] to-[#4a9b9f] flex items-center justify-center flex-shrink-0">
-            <Radio className="w-5 h-5 text-white" />
-          </div>
-          {!collapsed && (
-            <span className="font-heading font-bold text-lg text-white whitespace-nowrap tracking-wide">STREAMDOCK</span>
-          )}
-        </div>
+      <div className="h-16 flex items-center justify-center border-b border-[#1e2337]">
+        <img src="/header.png" alt="StreamDock" className="h-4 object-contain" />
       </div>
 
       {/* Navigation */}
