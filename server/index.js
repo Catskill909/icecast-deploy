@@ -275,8 +275,13 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
     // 1. Force 'Server' header to look like Icecast
     proxyRes.headers['server'] = 'Icecast 2.4.4';
 
-    // 2. DISABLE CHUNKED ENCODING
+    // 2. DISABLE CHUNKED ENCODING (Detailed fix)
     delete proxyRes.headers['transfer-encoding'];
+    // Force Node.js to NOT add chunked encoding automatically
+    if (res.chunkedEncoding) {
+        res.chunkedEncoding = false;
+        res.useChunkedEncodingByDefault = false;
+    }
 
     // 3. Ensure Connection Close (for strict compatibility)
     proxyRes.headers['connection'] = 'close';
