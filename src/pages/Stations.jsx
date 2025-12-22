@@ -66,7 +66,7 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                         </div>
                     </div>
                     <div className="absolute top-4 right-4 flex items-center gap-2">
-                        {isStationLive(station.mount) ? (
+                        {isLive ? (
                             <div className="flex items-center gap-2">
                                 <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-bold uppercase tracking-wider rounded-full border border-green-500/20 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.2)]">
                                     <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
@@ -74,7 +74,7 @@ function StationCard({ station, onDelete, isLive = false, listeners = 0 }) {
                                 </span>
                                 <span className="flex items-center gap-1.5 px-3 py-1 bg-[#0f1633] text-white text-xs font-medium rounded-full border border-[#2a3044] shadow-sm">
                                     <Headphones className="w-3 h-3 text-[#64748b]" />
-                                    {getListeners(station.mount)} Listening
+                                    {listeners} Listening
                                 </span>
                             </div>
                         ) : (
