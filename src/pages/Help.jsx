@@ -61,25 +61,25 @@ function HelpCategory({ icon: Icon, title, description, links, onOpenArticle }) 
     return (
         <Card className="h-full hover:border-[#4b7baf]/30 transition-colors group">
             <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="p-3 rounded-lg bg-[#4b7baf]/10 group-hover:bg-[#4b7baf]/20 transition-colors">
-                        <Icon className="w-6 h-6 text-[#4b7baf]" />
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-lg bg-[#4b7baf]/10 group-hover:bg-[#4b7baf]/20 transition-colors">
+                        <Icon className="w-5 h-5 text-[#4b7baf]" />
                     </div>
+                    <h3 className="text-base font-bold text-white">{title}</h3>
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-                <p className="text-[#8896ab] text-sm mb-6 h-10">{description}</p>
-                <div className="space-y-2">
+                <p className="text-[#94a3b8] text-sm mb-5 h-10 line-clamp-2">{description}</p>
+                <div className="space-y-1">
                     {links.map((link, i) => (
                         <button
                             key={i}
                             onClick={() => onOpenArticle(link.id)}
-                            className="w-full flex items-center justify-between text-sm text-[#8896ab] hover:text-white group/link p-2 -mx-2 rounded hover:bg-[#1e2337] transition-all text-left"
+                            className="w-full flex items-center justify-between text-sm text-[#94a3b8] hover:text-white group/link px-2 py-1.5 -mx-2 rounded hover:bg-[#1e2337] transition-all text-left"
                         >
                             <span className="flex items-center gap-2">
-                                <FileText className="w-3.5 h-3.5 opacity-50" />
+                                <FileText className="w-3.5 h-3.5 opacity-50 group-hover/link:text-[#4b7baf] group-hover/link:opacity-100 transition-all" />
                                 {link.label}
                             </span>
-                            <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all" />
+                            <ChevronRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover/link:opacity-100 group-hover/link:translate-x-0 transition-all text-[#4b7baf]" />
                         </button>
                     ))}
                 </div>
@@ -136,17 +136,17 @@ export default function Help() {
     return (
         <div className="h-[calc(100vh-8rem)] flex flex-col animate-in fade-in duration-500">
             {/* Compact Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="heading-1 text-white">Help Center</h1>
                     <p className="text-[#8896ab] mt-1">Documentation & Support</p>
                 </div>
-                <div className="relative w-96">
+                <div className="relative w-80">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b]" />
                     <input
                         type="text"
                         placeholder="Search documentation..."
-                        className="w-full bg-[#0d1229] border border-[#1e2337] rounded-lg pl-10 pr-4 py-2.5 text-white placeholder-[#64748b] focus:outline-none focus:border-[#4b7baf] transition-colors text-sm"
+                        className="w-full bg-[#0d1229] border border-[#1e2337] rounded-lg pl-10 pr-4 py-2 text-white placeholder-[#64748b] focus:outline-none focus:border-[#4b7baf] transition-colors text-sm"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -154,7 +154,7 @@ export default function Help() {
             </div>
 
             {/* Quick Links Grid - Fills available space */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {categories.map((cat, i) => (
                     <HelpCategory
                         key={i}
@@ -162,19 +162,6 @@ export default function Help() {
                         onOpenArticle={handleOpenArticle}
                     />
                 ))}
-            </div>
-
-            {/* External Support Footer */}
-            <div className="mt-auto pt-6 border-t border-[#1e2337] flex items-center justify-between">
-                <div>
-                    <h3 className="text-white font-medium">Still need help?</h3>
-                    <p className="text-sm text-[#8896ab]">Check out our external resources.</p>
-                </div>
-                <div className="flex gap-3">
-                    <a href="#" className="text-sm text-[#4b7baf] hover:text-[#6b9fd4] font-medium flex items-center gap-1.5 px-4 py-2 rounded-lg hover:bg-[#4b7baf]/10 transition-colors">
-                        Full Documentation <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                </div>
             </div>
 
             {/* Article Modal */}
