@@ -187,7 +187,34 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_INTERNAL_PORT } });
 });
 
-// DEBUG: Test internal connection to Icecast
+// Secure Icecast status page proxy
+// Access status via https://icecast.supersoul.top/icecast-status
+app.get('/icecast-status', async (req, res) => {
+    try {
+        const response = await fetch(`http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status.xsl`);
+        const html = await response.text();
+        res.set('Content-Type', 'text/html');
+        res.send(html);
+    } catch (error) {
+        console.error('Error fetching Icecast status:', error);
+        res.status(502).send('Unable to fetch Icecast status');
+    }
+});
+
+// Secure Icecast JSON status proxy
+// Access JSON via https://icecast.supersoul.top/icecast-status.json
+app.get('/icecast-status.json', async (req, res) => {
+    try {
+        const response = await fetch(`http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status-json.xsl`);
+        const json = await response.json();
+        res.json(json);
+    } catch (error) {
+        console.error('Error fetching Icecast JSON status:', error);
+        res.status(502).json({ error: 'Unable to fetch Icecast status' });
+    }
+});
+
+
 app.get('/api/debug-connection', async (req, res) => {
     const streamMount = req.query.mount || '/new';
     const targetUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status.xsl`;
