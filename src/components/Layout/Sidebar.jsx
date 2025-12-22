@@ -8,7 +8,6 @@ import {
   FileText,
   Settings,
   HelpCircle,
-  HelpCircle,
   GripVertical
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
