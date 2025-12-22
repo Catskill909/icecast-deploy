@@ -283,7 +283,7 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
 });
 
 proxy.on('error', (err, req, res) => {
-    console.error('Proxy Error:', err);
+    console.error(`[PROXY ERROR] Target: ${req.url} | Error: ${err.message}`);
     if (!res.headersSent) {
         res.status(502).end();
     }
@@ -294,6 +294,8 @@ proxy.on('error', (err, req, res) => {
 app.use('/stream', (req, res) => {
     const streamPath = req.path || '/';
     const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${streamPath}`;
+
+    console.log(`[PROXY START] Forwarding request to: ${target}`);
 
     // Use http-proxy to stream data robustly
     proxy.web(req, res, {
