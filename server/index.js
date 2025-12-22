@@ -351,17 +351,13 @@ app.head('/stream/*', async (req, res) => {
     console.log(`[HEAD REQUEST] Testing stream: ${targetUrl}`);
 
     try {
-        // Make a GET request but abort immediately after headers
-        const controller = new AbortController();
+        // Use a simple fetch with timeout instead of AbortController
         const response = await fetch(targetUrl, {
-            signal: controller.signal,
+            method: 'GET',
             headers: { 'Icy-MetaData': '1' }
         });
 
-        // Got headers - abort the body stream
-        controller.abort();
-
-        // Forward Icecast headers to client
+        // Set status and headers
         res.status(response.status);
         res.set('Server', 'Icecast 2.4.4');
         res.set('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
@@ -375,13 +371,16 @@ app.head('/stream/*', async (req, res) => {
             }
         }
 
+        // Cancel the body stream immediately (don't consume audio data)
+        if (response.body) {
+            response.body.cancel().catch(() => { });
+        }
+
+        console.log(`[HEAD REQUEST] Success for ${streamPath}`);
         res.end();
     } catch (error) {
-        // AbortError is expected (we abort after headers)
-        if (error.name === 'AbortError') {
-            console.log(`[HEAD REQUEST] Successfully got headers for ${streamPath}`);
-        } else {
-            console.error(`[HEAD REQUEST] Error: ${error.message}`);
+        console.error(`[HEAD REQUEST] Error: ${error.message}`);
+        if (!res.headersSent) {
             res.status(502).end();
         }
     }
