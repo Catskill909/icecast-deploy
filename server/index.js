@@ -214,6 +214,17 @@ app.get('/icecast-status.json', async (req, res) => {
     }
 });
 
+// Proxy Icecast static files (CSS, images) for proper status page styling
+app.get('/style.css', async (req, res) => {
+    try {
+        const response = await fetch(`http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/style.css`);
+        const css = await response.text();
+        res.set('Content-Type', 'text/css');
+        res.send(css);
+    } catch (error) {
+        res.status(404).send('');
+    }
+});
 
 app.get('/api/debug-connection', async (req, res) => {
     const streamMount = req.query.mount || '/new';
