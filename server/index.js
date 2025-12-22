@@ -278,6 +278,13 @@ app.use('/stream', async (req, res) => {
         res.set('Content-Type', response.headers.get('content-type') || 'audio/mpeg');
         res.set('Cache-Control', 'no-cache');
 
+        // Forward Icecast/Shoutcast headers (icy-*)
+        response.headers.forEach((value, key) => {
+            if (key.toLowerCase().startsWith('icy-')) {
+                res.set(key, value);
+            }
+        });
+
         // Pipe the stream
         const reader = response.body.getReader();
         const pump = async () => {
