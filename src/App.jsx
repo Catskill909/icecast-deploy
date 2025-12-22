@@ -7,6 +7,7 @@ import Alerts from './pages/Alerts';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
 import CreateStation from './pages/CreateStation';
+import Help from './pages/Help';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
             <Route path="/alerts" element={<Alerts />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/help" element={<Help />} />
           </Routes>
         </Layout>
       </Router>

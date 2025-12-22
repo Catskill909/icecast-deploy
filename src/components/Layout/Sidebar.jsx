@@ -18,6 +18,7 @@ const navItems = [
   { path: '/alerts', icon: Bell, label: 'Alerts' },
   { path: '/logs', icon: FileText, label: 'Logs' },
   { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/help', icon: HelpCircle, label: 'Help' },
 ];
 
 const SIDEBAR_WIDTH = 224; // 14rem
@@ -66,18 +67,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         </ul>
       </nav>
 
-      {/* Help Link */}
-      {!collapsed && (
-        <div className="px-2 py-3 border-t border-[#1e2337]">
-          <a
-            href="#"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[#8896ab] hover:bg-[#151b30] hover:text-white transition-all duration-150"
-          >
-            <HelpCircle className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm">Help & Docs</span>
-          </a>
-        </div>
-      )}
+
 
       {/* Collapse Toggle - Center Grip */}
       <button
