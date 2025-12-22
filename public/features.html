@@ -8,6 +8,14 @@
     <meta name="description"
         content="StreamDock - Modern Icecast streaming server management. Create stations, manage encoders, and monitor live streams with a beautiful dark-mode interface.">
     <link rel="icon" href="/icon.png">
+    <!-- Google Fonts - Oswald for headers, Inter for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Oswald:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
             --bg-dark: #0a0f1c;
@@ -27,10 +35,20 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.6;
+        }
+
+        h1,
+        h2,
+        h3,
+        .header-font {
+            font-family: 'Oswald', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .header {
@@ -47,6 +65,7 @@
 
         .header h1 {
             font-size: 2.5rem;
+            font-weight: 700;
             margin-bottom: 0.5rem;
             background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
             -webkit-background-clip: text;
@@ -57,6 +76,8 @@
         .header p {
             color: var(--text-secondary);
             font-size: 1.2rem;
+            font-family: 'Inter', sans-serif;
+            text-transform: none;
         }
 
         .container {
@@ -77,7 +98,6 @@
             border-radius: 12px;
             padding: 1.5rem;
             transition: all 0.3s ease;
-            cursor: pointer;
         }
 
         .feature-card:hover {
@@ -88,20 +108,44 @@
 
         .feature-card h3 {
             color: var(--accent);
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             margin-bottom: 0.75rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
+        }
+
+        .feature-icon {
+            font-size: 1.25rem;
+            width: 1.5rem;
+            text-align: center;
+            color: var(--accent);
         }
 
         .feature-card p {
             color: var(--text-secondary);
             font-size: 0.95rem;
+            margin-bottom: 1rem;
         }
 
-        .feature-icon {
-            font-size: 1.5rem;
+        .gallery-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .gallery-btn:hover {
+            background: rgba(74, 222, 128, 0.2);
+            border-color: var(--accent);
         }
 
         .cta-section {
@@ -109,6 +153,11 @@
             padding: 3rem 2rem;
             background: var(--bg-card);
             border-top: 1px solid var(--border);
+        }
+
+        .cta-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .cta-button {
@@ -120,6 +169,9 @@
             text-decoration: none;
             font-weight: 600;
             font-size: 1.1rem;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
@@ -128,15 +180,18 @@
             box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
         }
 
-        .screenshot-placeholder {
-            display: none;
-            margin-top: 1rem;
-            padding: 2rem;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            text-align: center;
-            color: var(--text-secondary);
-            border: 2px dashed var(--border);
+        .integration-badge {
+            display: inline-block;
+            background: linear-gradient(90deg, #8b5cf6, #ec4899);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 0.5rem;
         }
 
         /* Modal Styles */
@@ -176,7 +231,7 @@
             background: none;
             border: none;
             color: var(--text-secondary);
-            font-size: 2rem;
+            font-size: 1.5rem;
             cursor: pointer;
             line-height: 1;
         }
@@ -189,6 +244,11 @@
             color: var(--accent);
             font-size: 1.5rem;
             margin-bottom: 1rem;
+        }
+
+        .modal-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
         }
 
         .modal-gallery {
@@ -205,20 +265,16 @@
             border: 2px dashed var(--border);
             border-radius: 8px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 0.5rem;
             color: var(--text-secondary);
         }
 
-        .integration-badge {
-            display: inline-block;
-            background: linear-gradient(90deg, #8b5cf6, #ec4899);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-left: 0.5rem;
+        .gallery-placeholder i {
+            font-size: 2rem;
+            opacity: 0.5;
         }
 
         footer {
@@ -231,6 +287,16 @@
         footer a {
             color: var(--accent);
             text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
@@ -245,84 +311,116 @@
     <main class="container">
         <div class="features-grid">
 
-            <div class="feature-card" onclick="openModal('station-wizard')">
-                <h3><span class="feature-icon">🎙️</span> Station Creation Wizard</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-wand-magic-sparkles feature-icon"></i> Station Creation Wizard</h3>
                 <p>Create new radio stations with a guided 3-step wizard. Auto-generated credentials, mount points, and
                     one-click copy for all connection details.</p>
+                <button class="gallery-btn" onclick="openModal('station-wizard')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('station-management')">
-                <h3><span class="feature-icon">📻</span> Station Management</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-tower-broadcast feature-icon"></i> Station Management</h3>
                 <p>View all your stations at a glance with station cards showing server, port, mount point, and
-                    password. Toggle password visibility and delete stations with confirmation.</p>
+                    password. Toggle password visibility and delete with confirmation.</p>
+                <button class="gallery-btn" onclick="openModal('station-management')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('live-status')">
-                <h3><span class="feature-icon">🔴</span> Live Status Detection</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-circle-dot feature-icon" style="color: #ef4444;"></i> Live Status Detection
+                </h3>
                 <p>Real-time polling checks Icecast every 5 seconds. Animated LIVE badge and listener count. Visual
                     highlights with green ring around active stations.</p>
+                <button class="gallery-btn" onclick="openModal('live-status')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('audio-player')">
-                <h3><span class="feature-icon">🎧</span> Built-in Audio Player</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-headphones feature-icon"></i> Built-in Audio Player</h3>
                 <p>One-click playback of live streams. Play/pause controls toggle stream audio in-browser. Auto-stops
                     when station goes offline.</p>
+                <button class="gallery-btn" onclick="openModal('audio-player')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('dashboard')">
-                <h3><span class="feature-icon">📊</span> Dashboard</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-chart-line feature-icon"></i> Dashboard</h3>
                 <p>Station overview with quick stats on active vs total stations. Server status indicator and quick
                     start guide for new users.</p>
+                <button class="gallery-btn" onclick="openModal('dashboard')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('encoder-settings')">
-                <h3><span class="feature-icon">🔧</span> Encoder Settings</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-sliders feature-icon"></i> Encoder Settings</h3>
                 <p>Copy-ready connection details for BUTT, OBS, Mixxx, and other streaming software. MP3 or AAC format
                     with Low/Standard/High quality presets.</p>
+                <button class="gallery-btn" onclick="openModal('encoder-settings')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('secure-streaming')">
-                <h3><span class="feature-icon">🔒</span> Secure HTTPS Streaming</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-lock feature-icon"></i> Secure HTTPS Streaming</h3>
                 <p>Stream securely via HTTPS proxy. Both secure and legacy (non-SSL) URLs provided. Compatible with
                     StationDock stream monitoring.</p>
+                <button class="gallery-btn" onclick="openModal('secure-streaming')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('icecast-status')">
-                <h3><span class="feature-icon">📈</span> Icecast Status Page</h3>
+            <div class="feature-card">
+                <h3><i class="fa-solid fa-server feature-icon"></i> Icecast Status Page</h3>
                 <p>Secure proxy to Icecast status page for debugging. JSON API for programmatic access. Full Icecast
                     admin interface available.</p>
+                <button class="gallery-btn" onclick="openModal('icecast-status')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
-            <div class="feature-card" onclick="openModal('stationdock')">
+            <div class="feature-card">
                 <h3>
-                    <span class="feature-icon">🔗</span> StationDock Integration
-                    <span class="integration-badge">NEW</span>
+                    <i class="fa-solid fa-link feature-icon"></i> StationDock Integration
+                    <span class="integration-badge">New</span>
                 </h3>
                 <p>Seamless integration with StationDock for stream monitoring and automated recording. Test streams
                     directly from the monitoring dashboard.</p>
+                <button class="gallery-btn" onclick="openModal('stationdock')">
+                    <i class="fa-solid fa-images"></i> View Screenshots
+                </button>
             </div>
 
         </div>
     </main>
 
     <section class="cta-section">
-        <h2 style="margin-bottom: 1rem; font-size: 1.5rem;">Ready to start streaming?</h2>
-        <a href="/servers" class="cta-button">Launch StreamDock →</a>
+        <h2>Ready to start streaming?</h2>
+        <a href="/servers" class="cta-button"><i class="fa-solid fa-rocket"></i> Launch StreamDock</a>
     </section>
 
     <footer>
-        <p>StreamDock © 2024 • <a href="https://github.com/Catskill909/icecast-deploy">GitHub</a> • Part of the <a
+        <p>StreamDock © 2024 • <a href="https://github.com/Catskill909/icecast-deploy"><i
+                    class="fa-brands fa-github"></i> GitHub</a> • Part of the <a
                 href="https://radio.supersoul.top">SuperSoul Radio Suite</a></p>
     </footer>
 
     <!-- Modal -->
     <div class="modal-overlay" id="modal" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
             <h2 class="modal-title" id="modal-title">Feature Title</h2>
-            <p id="modal-description">Feature description goes here.</p>
+            <p class="modal-description" id="modal-description">Feature description goes here.</p>
             <div class="modal-gallery" id="modal-gallery">
-                <div class="gallery-placeholder">Screenshot placeholder</div>
+                <div class="gallery-placeholder">
+                    <i class="fa-solid fa-image"></i>
+                    <span>Screenshot placeholder</span>
+                </div>
             </div>
         </div>
     </div>
@@ -385,7 +483,10 @@
 
             const gallery = document.getElementById('modal-gallery');
             gallery.innerHTML = feature.screenshots.map(img =>
-                `<div class="gallery-placeholder">📷 ${img}</div>`
+                `<div class="gallery-placeholder">
+                    <i class="fa-solid fa-image"></i>
+                    <span>${img}</span>
+                </div>`
             ).join('');
 
             document.getElementById('modal').classList.add('active');
