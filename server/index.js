@@ -187,6 +187,58 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_INTERNAL_PORT } });
 });
 
+// DEBUG: Test internal connection to Icecast
+app.get('/api/debug-connection', async (req, res) => {
+    const targetUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status.xsl`;
+    const targetIp = ICECAST_HOST === 'localhost' ? '127.0.0.1' : ICECAST_HOST;
+    const targetUrlIp = `http://${targetIp}:${ICECAST_INTERNAL_PORT}/status.xsl`;
+
+    const results = {
+        config: { ICECAST_HOST, ICECAST_INTERNAL_PORT },
+        tests: []
+    };
+
+    // Test 1: Configured Host
+    try {
+        const start = Date.now();
+        const response = await fetch(targetUrl);
+        results.tests.push({
+            url: targetUrl,
+            status: response.status,
+            latency: Date.now() - start,
+            success: true
+        });
+    } catch (e) {
+        results.tests.push({
+            url: targetUrl,
+            error: e.message,
+            code: e.code,
+            success: false
+        });
+    }
+
+    // Test 2: Explicit IP (127.0.0.1)
+    try {
+        const start = Date.now();
+        const response = await fetch(targetUrlIp);
+        results.tests.push({
+            url: targetUrlIp,
+            status: response.status,
+            latency: Date.now() - start,
+            success: true
+        });
+    } catch (e) {
+        results.tests.push({
+            url: targetUrlIp,
+            error: e.message,
+            code: e.code,
+            success: false
+        });
+    }
+
+    res.json(results);
+});
+
 // Get live status from Icecast server
 app.get('/api/icecast-status', async (req, res) => {
     try {
