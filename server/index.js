@@ -309,7 +309,7 @@ app.get('/api/icecast-status', async (req, res) => {
 
 // Create Proxy Server with standard robust handling
 const proxy = httpProxy.createProxyServer({
-    ignorePath: true,
+    ignorePath: false,  // CRITICAL: Must be false to forward /new, /live etc. to Icecast
     changeOrigin: true
 });
 
