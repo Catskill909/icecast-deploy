@@ -40,6 +40,23 @@ try {
     db.exec(`ALTER TABLE stations ADD COLUMN updated_at TEXT`);
 } catch (e) { /* Column already exists */ }
 
+// Migration: Update old stream URLs to new subdomain format
+// Old format: https://icecast.supersoul.top/stream/mount
+// New format: https://stream.supersoul.top/mount
+const STREAM_HOST = process.env.STREAM_HOST || 'stream.supersoul.top';
+try {
+    const updateResult = db.prepare(`
+        UPDATE stations 
+        SET stream_url = 'https://' || ? || mount_point
+        WHERE stream_url LIKE '%/stream/%'
+    `).run(STREAM_HOST);
+    if (updateResult.changes > 0) {
+        console.log(`[DB MIGRATION] Updated ${updateResult.changes} station(s) to new stream URL format`);
+    }
+} catch (e) {
+    console.error('[DB MIGRATION] Error updating stream URLs:', e.message);
+}
+
 const createStation = (station) => {
     const stmt = db.prepare(`
     INSERT INTO stations (id, name, description, genre, mount_point, format, bitrate, source_password, stream_url, status, listeners, created_at)
