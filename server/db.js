@@ -25,6 +25,7 @@ db.exec(`
     created_at TEXT NOT NULL,
     logo_url TEXT,
     website_url TEXT,
+    alert_emails TEXT,
     updated_at TEXT
   )
 `);
@@ -35,6 +36,9 @@ try {
 } catch (e) { /* Column already exists */ }
 try {
     db.exec(`ALTER TABLE stations ADD COLUMN website_url TEXT`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN alert_emails TEXT`);
 } catch (e) { /* Column already exists */ }
 try {
     db.exec(`ALTER TABLE stations ADD COLUMN updated_at TEXT`);
@@ -95,12 +99,21 @@ const deleteStation = (id) => {
 };
 
 const updateStation = (id, updates) => {
-    const { name, description, genre, logoUrl, websiteUrl } = updates;
+    const { name, description, genre, logoUrl, websiteUrl, alertEmails } = updates;
     return db.prepare(`
         UPDATE stations 
-        SET name = ?, description = ?, genre = ?, logo_url = ?, website_url = ?, updated_at = ?
+        SET name = ?, description = ?, genre = ?, logo_url = ?, website_url = ?, alert_emails = ?, updated_at = ?
         WHERE id = ?
-    `).run(name, description, genre, logoUrl || null, websiteUrl || null, new Date().toISOString(), id);
+    `).run(
+        name,
+        description,
+        genre,
+        logoUrl || null,
+        websiteUrl || null,
+        alertEmails ? JSON.stringify(alertEmails) : null,
+        new Date().toISOString(),
+        id
+    );
 };
 
 const updateListeners = (mountPoint, listeners) => {

@@ -42,6 +42,13 @@ let lastEmailTime = {}; // Prevent email spam (separate from in-app alerts)
  * @param {string} message - Email body content
  * @param {Object} station - Optional station object with name, mount, streamUrl
  */
+/**
+ * Send alert email to configured recipients (Global + Station specific)
+ * @param {string} type - 'stream_down' | 'stream_up' | 'milestone'
+ * @param {string} title - Email subject line
+ * @param {string} message - Email body content
+ * @param {Object} station - Optional station object with name, mount, streamUrl, alert_emails
+ */
 async function sendAlertEmail(type, title, message, station = null) {
     try {
         const settings = db.getSettings();
@@ -52,17 +59,57 @@ async function sendAlertEmail(type, title, message, station = null) {
             return;
         }
 
-        // Get alert recipients
-        const alertEmails = settings.alert_emails ? JSON.parse(settings.alert_emails) : [];
-        if (alertEmails.length === 0) {
-            console.log('[EMAIL] No alert recipients configured, skipping email');
+        // 1. Get Global Recipients
+        const globalEmails = settings.alert_emails ? JSON.parse(settings.alert_emails) : [];
+        console.log(`[EMAIL] Global recipients: ${globalEmails.length}`);
+
+        // 2. Get Station-Specific Recipients
+        let stationEmails = [];
+        if (station && station.alert_emails) {
+            try {
+                stationEmails = JSON.parse(station.alert_emails);
+                // Ensure array
+                if (!Array.isArray(stationEmails)) stationEmails = [];
+            } catch (e) {
+                console.warn('[EMAIL] Failed to parse station alert emails:', e.message);
+            }
+        }
+        console.log(`[EMAIL] Station recipients: ${stationEmails.length}`);
+
+        // 3. Determine Final Recipient List
+        // Rule: 
+        // - If Station Emails exist: Send to them.
+        // - IF "Monitor All Streams" is ON (alert_all_streams): ALSO send to Global Emails.
+        // - IF No Station Emails exist: Send to Global Emails (if "Monitor All Streams" is ON ?? No, usually default is strict).
+        // Let's stick to the user's "Override" concept or simple addition.
+        // Revised Rule based on typical "Monitor ALL":
+        // - Station Emails: ALWAYS receive alerts for their station.
+        // - Global Emails: Receive alerts IF "alert_all_streams" is TRUE.
+
+        let recipients = new Set(stationEmails);
+
+        if (settings.alert_all_streams) {
+            globalEmails.forEach(email => recipients.add(email));
+        } else if (stationEmails.length === 0) {
+            // Fallback: If no station specific emails, maybe we should use global?
+            // But if "Monitor All" is OFF, global shouldn't get "noisy" alerts.
+            // BUT, if the user hasn't set up station alerts yet, they probably expect global to work like before.
+            // Let's say: If NO station alerts configured, default to global.
+            // If station alerts configured, only add global if "Monitor All" is ON.
+            globalEmails.forEach(email => recipients.add(email));
+        }
+
+        const finalRecipients = Array.from(recipients);
+
+        if (finalRecipients.length === 0) {
+            console.log('[EMAIL] No recipients for this alert, skipping');
             return;
         }
 
         // Check if this type of alert should be sent
-        // For recovery (stream_up), check alertOnRecovery setting
+        // For recovery (stream_up), check alertOnRecovery setting (Global setting applies to everyone for consistency)
         if (type === 'stream_up' && !settings.alert_on_recovery) {
-            console.log('[EMAIL] Recovery notifications disabled, skipping');
+            console.log('[EMAIL] Recovery notifications disabled globally, skipping');
             return;
         }
 
@@ -136,14 +183,14 @@ async function sendAlertEmail(type, title, message, station = null) {
         // Send to all recipients
         await transporter.sendMail({
             from: `"${settings.smtp_from_name || 'StreamDock Alerts'}" <${settings.smtp_user}>`,
-            to: alertEmails.join(', '),
+            to: finalRecipients.join(', '),
             subject: `${style.emoji} ${title}`,
             html
         });
 
         // Update cooldown tracker
         lastEmailTime[emailKey] = Date.now();
-        console.log(`[EMAIL] Alert sent to ${alertEmails.length} recipient(s): ${title}`);
+        console.log(`[EMAIL] Alert sent to ${finalRecipients.length} recipient(s): ${title}`);
 
     } catch (error) {
         console.error('[EMAIL] Failed to send alert email:', error.message);
@@ -255,7 +302,8 @@ app.get('/api/stations', (req, res) => {
             listeners: s.listeners,
             logoUrl: s.logo_url,
             websiteUrl: s.website_url,
-            createdAt: s.created_at
+            createdAt: s.created_at,
+            alertEmails: s.alert_emails ? JSON.parse(s.alert_emails) : []
         })));
     } catch (error) {
         console.error('Error fetching stations:', error);
@@ -284,6 +332,7 @@ app.get('/api/stations/:id', (req, res) => {
             logoUrl: station.logo_url,
             websiteUrl: station.website_url,
             createdAt: station.created_at,
+            alertEmails: station.alert_emails ? JSON.parse(station.alert_emails) : [],
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
                 port: ICECAST_PUBLIC_PORT,
@@ -307,7 +356,7 @@ app.put('/api/stations/:id', (req, res) => {
             return res.status(404).json({ error: 'Station not found' });
         }
 
-        const { name, description, genre, logoUrl, websiteUrl } = req.body;
+        const { name, description, genre, logoUrl, websiteUrl, alertEmails } = req.body;
 
         // Validate required fields
         if (!name || !name.trim()) {
@@ -319,7 +368,8 @@ app.put('/api/stations/:id', (req, res) => {
             description: description || '',
             genre: genre || 'Various',
             logoUrl: logoUrl || null,
-            websiteUrl: websiteUrl || null
+            websiteUrl: websiteUrl || null,
+            alertEmails: Array.isArray(alertEmails) ? alertEmails : null
         });
 
         res.json({ success: true, message: 'Station updated' });
@@ -510,96 +560,134 @@ app.get('/api/icecast-status', async (req, res) => {
 });
 
 // Check for status changes and generate alerts
-function checkAndGenerateAlerts(currentMounts) {
+// Check for status changes and generate alerts
+function checkAndGenerateAlerts(activeMounts) {
     const now = Date.now();
     const ALERT_COOLDOWN = 60000; // 1 minute between same alerts
 
-    // Build current status map
-    const currentStatus = {};
-    currentMounts.forEach(m => {
-        currentStatus[m.mount] = { live: true, listeners: m.listeners };
+    // 1. Get ALL stations from DB to ensure we track everything
+    const allStations = db.getAllStations();
+
+    // 2. Build map of current active mounts
+    const activeMountMap = {};
+    activeMounts.forEach(m => {
+        activeMountMap[m.mount] = m;
     });
 
-    // Check for mounts that went LIVE (weren't live before)
-    for (const mount in currentStatus) {
-        if (!previousMountStatus[mount] || !previousMountStatus[mount].live) {
+    // 3. Update status for ALL stations (and unknown mounts)
+    // We combine DB stations + any stray active mounts not in DB
+    const allMountsToCheck = new Set([...allStations.map(s => s.mount_point), ...Object.keys(activeMountMap)]);
+
+    const currentStatus = {};
+
+    allMountsToCheck.forEach(mount => {
+        const isActive = !!activeMountMap[mount];
+        const station = allStations.find(s => s.mount_point === mount);
+
+        // Station details for alerts
+        const stationInfo = {
+            id: station?.id || null,
+            name: station?.name || mount,
+            mount: mount,
+            streamUrl: station?.stream_url || null,
+            alert_emails: station?.alert_emails || null
+        };
+
+        currentStatus[mount] = {
+            live: isActive,
+            listeners: isActive ? activeMountMap[mount].listeners : 0,
+            stationInfo
+        };
+
+        // Initialize previous status if missing (assume offline if unknown)
+        if (!previousMountStatus[mount]) {
+            // Check if it's actually live right now on first run
+            previousMountStatus[mount] = { live: isActive, listeners: 0 };
+
+            // If it is live on first run (server restart), don't trigger "Recovered" immediately 
+            // unless we want to... skipping to avoid spam on restart.
+            return;
+        }
+
+        const prev = previousMountStatus[mount];
+
+        // CHECK: Stream went LIVE (Recovery)
+        if (isActive && !prev.live) {
             const alertKey = `live_${mount}`;
             if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN) {
-                // Find station by mount
-                const station = db.getStationByMount(mount);
                 db.createAlert(
                     'success',
                     'Station Now Broadcasting!',
-                    `${station?.name || mount} is now live`,
-                    station?.id
+                    `${stationInfo.name} is now live`,
+                    stationInfo.id
                 );
                 lastAlertTime[alertKey] = now;
                 console.log(`[ALERT] Station ${mount} went LIVE`);
 
-                // Send email alert for stream recovery (if it was previously tracked as down)
-                if (previousMountStatus[mount] !== undefined) {
-                    sendAlertEmail(
-                        'stream_up',
-                        `Stream Recovered: ${station?.name || mount}`,
-                        `The stream "${station?.name || mount}" is now back online and broadcasting.`,
-                        { name: station?.name, mount, streamUrl: station?.stream_url }
-                    );
-                }
+                sendAlertEmail(
+                    'stream_up',
+                    `Stream Recovered: ${stationInfo.name}`,
+                    `The stream "${stationInfo.name}" is now back online and broadcasting.`,
+                    stationInfo
+                );
             }
         }
-    }
 
-    // Check for mounts that went OFFLINE (were live before)
-    for (const mount in previousMountStatus) {
-        if (previousMountStatus[mount].live && !currentStatus[mount]) {
+        // CHECK: Stream went OFFLINE
+        if (!isActive && prev.live) {
             const alertKey = `offline_${mount}`;
             if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN) {
-                const station = db.getStationByMount(mount);
                 db.createAlert(
                     'error',
                     'Broadcast Ended',
-                    `${station?.name || mount} has gone offline`,
-                    station?.id
+                    `${stationInfo.name} has gone offline`,
+                    stationInfo.id
                 );
                 lastAlertTime[alertKey] = now;
                 console.log(`[ALERT] Station ${mount} went OFFLINE`);
 
-                // Send email alert for stream down
                 sendAlertEmail(
                     'stream_down',
-                    `Stream Down: ${station?.name || mount}`,
-                    `The stream "${station?.name || mount}" has gone offline and is no longer broadcasting. Please check the source encoder.`,
-                    { name: station?.name, mount, streamUrl: station?.stream_url }
+                    `Stream Down: ${stationInfo.name}`,
+                    `The stream "${stationInfo.name}" has gone offline and is no longer broadcasting. Please check the source encoder.`,
+                    stationInfo
                 );
             }
         }
-    }
 
-    // Check for listener milestones (50, 100, 250, 500)
-    const milestones = [50, 100, 250, 500];
-    for (const mount in currentStatus) {
-        const current = currentStatus[mount].listeners;
-        const previous = previousMountStatus[mount]?.listeners || 0;
+        // CHECK: Listener Milestones
+        if (isActive) {
+            const milestones = [50, 100, 250, 500, 1000];
+            const currentListeners = currentStatus[mount].listeners;
+            const prevListeners = prev.listeners;
 
-        for (const milestone of milestones) {
-            if (current >= milestone && previous < milestone) {
-                const alertKey = `milestone_${mount}_${milestone}`;
-                if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN * 5) {
-                    const station = db.getStationByMount(mount);
-                    db.createAlert(
-                        'info',
-                        'Listener Milestone!',
-                        `${station?.name || mount} reached ${milestone} listeners!`,
-                        station?.id
-                    );
-                    lastAlertTime[alertKey] = now;
-                    console.log(`[ALERT] Station ${mount} reached ${milestone} listeners!`);
+            for (const milestone of milestones) {
+                if (currentListeners >= milestone && prevListeners < milestone) {
+                    const alertKey = `milestone_${mount}_${milestone}`;
+                    // Longer cooldown for milestones
+                    if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN * 10) {
+                        db.createAlert(
+                            'info',
+                            'Listener Milestone!',
+                            `${stationInfo.name} reached ${milestone} listeners!`,
+                            stationInfo.id
+                        );
+                        lastAlertTime[alertKey] = now;
+                        console.log(`[ALERT] Station ${mount} reached ${milestone} listeners!`);
+
+                        sendAlertEmail(
+                            'milestone',
+                            `Milestone Reached: ${stationInfo.name}`,
+                            `Congratulations! "${stationInfo.name}" has reached ${milestone} concurrent listeners!`,
+                            stationInfo
+                        );
+                    }
                 }
             }
         }
-    }
+    });
 
-    // Update previous status
+    // Update global previous status
     previousMountStatus = currentStatus;
 }
 
