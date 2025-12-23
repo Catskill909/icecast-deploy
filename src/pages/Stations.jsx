@@ -197,9 +197,12 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
 
                             <div className="flex items-center justify-between">
                                 <span className="text-[#64748b]">Admin Panel:</span>
-                                <a href={`http://${connectionInfo.server}:${connectionInfo.port}/admin/`} target="_blank" rel="noopener noreferrer" className="text-[#64748b] hover:text-white flex items-center gap-1">
-                                    Login <ExternalLink className="w-3 h-3" />
-                                </a>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[#64748b] font-mono text-xs">admin / streamdock_admin</span>
+                                    <a href={`http://${connectionInfo.server}:${connectionInfo.port}/admin/`} target="_blank" rel="noopener noreferrer" className="text-[#64748b] hover:text-white flex items-center gap-1">
+                                        Login <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
