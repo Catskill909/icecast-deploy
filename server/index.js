@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import http from 'http';
 import httpProxy from 'http-proxy';
+import nodemailer from 'nodemailer';
 import * as db from './db.js';
+import { encrypt, decrypt, isEncrypted } from './crypto.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +29,126 @@ const STREAM_HOST = process.env.STREAM_HOST || 'stream.supersoul.top';
 // Track previous mount status for alert generation
 let previousMountStatus = {}; // { "/mount": { live: true, listeners: 0 } }
 let lastAlertTime = {}; // Prevent alert spam
+let lastEmailTime = {}; // Prevent email spam (separate from in-app alerts)
+
+// ==========================================
+// EMAIL ALERT UTILITY
+// ==========================================
+
+/**
+ * Send alert email to all configured recipients
+ * @param {string} type - 'stream_down' | 'stream_up' | 'milestone'
+ * @param {string} title - Email subject line
+ * @param {string} message - Email body content
+ * @param {Object} station - Optional station object with name, mount, streamUrl
+ */
+async function sendAlertEmail(type, title, message, station = null) {
+    try {
+        const settings = db.getSettings();
+
+        // Check if email alerts are configured
+        if (!settings?.smtp_host || !settings?.smtp_user || !settings?.smtp_password) {
+            console.log('[EMAIL] SMTP not configured, skipping email alert');
+            return;
+        }
+
+        // Get alert recipients
+        const alertEmails = settings.alert_emails ? JSON.parse(settings.alert_emails) : [];
+        if (alertEmails.length === 0) {
+            console.log('[EMAIL] No alert recipients configured, skipping email');
+            return;
+        }
+
+        // Check if this type of alert should be sent
+        // For recovery (stream_up), check alertOnRecovery setting
+        if (type === 'stream_up' && !settings.alert_on_recovery) {
+            console.log('[EMAIL] Recovery notifications disabled, skipping');
+            return;
+        }
+
+        // Check cooldown
+        const cooldownMs = (settings.alert_cooldown_mins || 5) * 60 * 1000;
+        const emailKey = `${type}_${station?.mount || 'global'}`;
+        if (lastEmailTime[emailKey] && (Date.now() - lastEmailTime[emailKey]) < cooldownMs) {
+            console.log(`[EMAIL] Cooldown active for ${emailKey}, skipping`);
+            return;
+        }
+
+        // Decrypt password
+        let decryptedPassword;
+        try {
+            decryptedPassword = isEncrypted(settings.smtp_password)
+                ? decrypt(settings.smtp_password)
+                : settings.smtp_password;
+        } catch (err) {
+            console.error('[EMAIL] Failed to decrypt SMTP password:', err);
+            return;
+        }
+
+        if (!decryptedPassword) {
+            console.error('[EMAIL] SMTP password is empty after decryption');
+            return;
+        }
+
+        // Create transporter
+        const transporter = nodemailer.createTransport({
+            host: settings.smtp_host,
+            port: settings.smtp_port,
+            secure: settings.smtp_port === 465,
+            auth: {
+                user: settings.smtp_user,
+                pass: decryptedPassword
+            },
+            tls: settings.smtp_use_tls ? { rejectUnauthorized: false } : undefined
+        });
+
+        // Determine email styling based on type
+        const typeStyles = {
+            stream_down: { emoji: '🔴', color: '#f87171', label: 'STREAM DOWN' },
+            stream_up: { emoji: '🟢', color: '#4ade80', label: 'STREAM RECOVERED' },
+            milestone: { emoji: '🎉', color: '#4b7baf', label: 'MILESTONE' }
+        };
+        const style = typeStyles[type] || typeStyles.milestone;
+
+        // Build email HTML
+        const html = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: ${style.color}; color: white; padding: 20px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px;">${style.emoji} ${style.label}</h1>
+                </div>
+                <div style="background: #f8fafc; padding: 30px;">
+                    <h2 style="margin: 0 0 15px 0; color: #1e293b;">${title}</h2>
+                    <p style="color: #64748b; font-size: 16px; line-height: 1.5;">${message}</p>
+                    ${station ? `
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-top: 20px;">
+                            <p style="margin: 0 0 5px 0;"><strong>Station:</strong> ${station.name || 'Unknown'}</p>
+                            <p style="margin: 0 0 5px 0;"><strong>Mount:</strong> ${station.mount || 'N/A'}</p>
+                            ${station.streamUrl ? `<p style="margin: 0;"><strong>Stream URL:</strong> <a href="${station.streamUrl}">${station.streamUrl}</a></p>` : ''}
+                        </div>
+                    ` : ''}
+                </div>
+                <div style="background: #1e293b; color: #94a3b8; padding: 15px; text-align: center; font-size: 12px;">
+                    Sent by StreamDock &bull; ${new Date().toLocaleString()}
+                </div>
+            </div>
+        `;
+
+        // Send to all recipients
+        await transporter.sendMail({
+            from: `"${settings.smtp_from_name || 'StreamDock Alerts'}" <${settings.smtp_user}>`,
+            to: alertEmails.join(', '),
+            subject: `${style.emoji} ${title}`,
+            html
+        });
+
+        // Update cooldown tracker
+        lastEmailTime[emailKey] = Date.now();
+        console.log(`[EMAIL] Alert sent to ${alertEmails.length} recipient(s): ${title}`);
+
+    } catch (error) {
+        console.error('[EMAIL] Failed to send alert email:', error.message);
+    }
+}
 
 app.use(cors());
 app.use(express.json());
@@ -413,6 +535,16 @@ function checkAndGenerateAlerts(currentMounts) {
                 );
                 lastAlertTime[alertKey] = now;
                 console.log(`[ALERT] Station ${mount} went LIVE`);
+
+                // Send email alert for stream recovery (if it was previously tracked as down)
+                if (previousMountStatus[mount] !== undefined) {
+                    sendAlertEmail(
+                        'stream_up',
+                        `Stream Recovered: ${station?.name || mount}`,
+                        `The stream "${station?.name || mount}" is now back online and broadcasting.`,
+                        { name: station?.name, mount, streamUrl: station?.stream_url }
+                    );
+                }
             }
         }
     }
@@ -431,6 +563,14 @@ function checkAndGenerateAlerts(currentMounts) {
                 );
                 lastAlertTime[alertKey] = now;
                 console.log(`[ALERT] Station ${mount} went OFFLINE`);
+
+                // Send email alert for stream down
+                sendAlertEmail(
+                    'stream_down',
+                    `Stream Down: ${station?.name || mount}`,
+                    `The stream "${station?.name || mount}" has gone offline and is no longer broadcasting. Please check the source encoder.`,
+                    { name: station?.name, mount, streamUrl: station?.stream_url }
+                );
             }
         }
     }
@@ -550,6 +690,161 @@ app.post('/api/alerts/mark-all-read', (req, res) => {
     } catch (error) {
         console.error('Error marking all read:', error);
         res.status(500).json({ error: 'Failed to mark all read' });
+    }
+});
+
+// ==========================================
+// SETTINGS API (SMTP & Alerts)
+// ==========================================
+
+// Get SMTP settings (password masked)
+app.get('/api/settings/smtp', (req, res) => {
+    try {
+        const settings = db.getSettings();
+        res.json({
+            smtpHost: settings?.smtp_host || '',
+            smtpPort: settings?.smtp_port || 587,
+            smtpUser: settings?.smtp_user || '',
+            hasPassword: !!settings?.smtp_password,
+            smtpFromName: settings?.smtp_from_name || 'StreamDock Alerts',
+            smtpUseTls: settings?.smtp_use_tls === 1
+        });
+    } catch (error) {
+        console.error('Error fetching SMTP settings:', error);
+        res.status(500).json({ error: 'Failed to fetch SMTP settings' });
+    }
+});
+
+// Save SMTP settings
+app.post('/api/settings/smtp', (req, res) => {
+    try {
+        const { smtpHost, smtpPort, smtpUser, smtpPassword, smtpFromName, smtpUseTls } = req.body;
+
+        // Handle password: null = keep existing, '' = clear, string = encrypt & save
+        let passwordToStore = null;  // Default: keep existing
+        if (smtpPassword === '') {
+            passwordToStore = null;  // Clear password
+        } else if (smtpPassword) {
+            passwordToStore = encrypt(smtpPassword);  // Encrypt new password
+        }
+
+        db.updateSmtpSettings(
+            smtpHost?.trim() || null,
+            parseInt(smtpPort) || 587,
+            smtpUser?.trim() || null,
+            passwordToStore,
+            smtpFromName?.trim() || 'StreamDock Alerts',
+            smtpUseTls !== false
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error saving SMTP settings:', error);
+        res.status(500).json({ error: 'Failed to save SMTP settings' });
+    }
+});
+
+// Test SMTP connection by sending a test email
+app.post('/api/settings/smtp/test', async (req, res) => {
+    try {
+        const { testEmail } = req.body;
+
+        if (!testEmail || !testEmail.includes('@')) {
+            return res.status(400).json({ success: false, error: 'Please enter a valid email address.' });
+        }
+
+        const settings = db.getSettings();
+
+        if (!settings?.smtp_host || !settings?.smtp_user || !settings?.smtp_password) {
+            return res.json({
+                success: false,
+                error: 'SMTP settings are incomplete. Please configure host, username, and password first.'
+            });
+        }
+
+        // Decrypt password
+        let decryptedPassword;
+        try {
+            decryptedPassword = isEncrypted(settings.smtp_password)
+                ? decrypt(settings.smtp_password)
+                : settings.smtp_password;
+        } catch {
+            return res.json({ success: false, error: 'Failed to decrypt SMTP password. Please re-enter your password.' });
+        }
+
+        if (!decryptedPassword) {
+            return res.json({ success: false, error: 'SMTP password is empty or could not be decrypted.' });
+        }
+
+        // Create nodemailer transport
+        const transporter = nodemailer.createTransport({
+            host: settings.smtp_host,
+            port: settings.smtp_port,
+            secure: settings.smtp_port === 465,
+            auth: {
+                user: settings.smtp_user,
+                pass: decryptedPassword
+            },
+            tls: settings.smtp_use_tls ? {
+                rejectUnauthorized: false
+            } : undefined
+        });
+
+        // Send test email
+        await transporter.sendMail({
+            from: `"${settings.smtp_from_name}" <${settings.smtp_user}>`,
+            to: testEmail,
+            subject: '✅ Test Email from StreamDock',
+            html: `
+                <h2>Email Configuration Test</h2>
+                <p>Congratulations! Your SMTP settings are working correctly.</p>
+                <p><strong>SMTP Server:</strong> ${settings.smtp_host}:${settings.smtp_port}</p>
+                <p><strong>From:</strong> ${settings.smtp_from_name} &lt;${settings.smtp_user}&gt;</p>
+                <hr>
+                <p>This email was sent as a test from StreamDock's settings page.</p>
+            `
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error sending test email:', error);
+        res.json({ success: false, error: `Failed to send email: ${error.message}` });
+    }
+});
+
+// Get alert settings
+app.get('/api/settings/alerts', (req, res) => {
+    try {
+        const settings = db.getSettings();
+        res.json({
+            alertEmails: settings?.alert_emails ? JSON.parse(settings.alert_emails) : [],
+            alertAllStreams: settings?.alert_all_streams === 1,
+            alertCooldownMins: settings?.alert_cooldown_mins || 5,
+            alertOnRecovery: settings?.alert_on_recovery === 1,
+            hasSmtpConfigured: !!settings?.smtp_host
+        });
+    } catch (error) {
+        console.error('Error fetching alert settings:', error);
+        res.status(500).json({ error: 'Failed to fetch alert settings' });
+    }
+});
+
+// Save alert settings
+app.post('/api/settings/alerts', (req, res) => {
+    try {
+        const { alertEmails, alertAllStreams, alertCooldownMins, alertOnRecovery } = req.body;
+
+        db.updateAlertSettings(
+            alertEmails || [],
+            alertAllStreams === true,
+            parseInt(alertCooldownMins) || 5,
+            alertOnRecovery !== false
+        );
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error saving alert settings:', error);
+        res.status(500).json({ error: 'Failed to save alert settings' });
     }
 });
 

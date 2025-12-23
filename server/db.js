@@ -147,6 +147,71 @@ const markAllAlertsRead = () => {
     return db.prepare('UPDATE alerts SET read = 1 WHERE read = 0').run();
 };
 
+// ==========================================
+// SETTINGS TABLE (SMTP & Alert Configuration)
+// ==========================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS settings (
+    id TEXT PRIMARY KEY DEFAULT 'singleton',
+    smtp_host TEXT,
+    smtp_port INTEGER DEFAULT 587,
+    smtp_user TEXT,
+    smtp_password TEXT,
+    smtp_from_name TEXT DEFAULT 'StreamDock Alerts',
+    smtp_use_tls INTEGER DEFAULT 1,
+    alert_emails TEXT,
+    alert_all_streams INTEGER DEFAULT 0,
+    alert_cooldown_mins INTEGER DEFAULT 5,
+    alert_on_recovery INTEGER DEFAULT 1,
+    updated_at TEXT
+  )
+`);
+
+// Ensure singleton settings row exists
+const ensureSettings = db.prepare(`
+    INSERT OR IGNORE INTO settings (id) VALUES ('singleton')
+`);
+ensureSettings.run();
+
+const getSettings = () => {
+    return db.prepare('SELECT * FROM settings WHERE id = ?').get('singleton');
+};
+
+const updateSmtpSettings = (host, port, user, password, fromName, useTls) => {
+    // Build dynamic update - only update password if provided
+    if (password !== null) {
+        return db.prepare(`
+            UPDATE settings 
+            SET smtp_host = ?, smtp_port = ?, smtp_user = ?, smtp_password = ?, 
+                smtp_from_name = ?, smtp_use_tls = ?, updated_at = ?
+            WHERE id = 'singleton'
+        `).run(host, port, user, password, fromName, useTls ? 1 : 0, new Date().toISOString());
+    } else {
+        // Keep existing password
+        return db.prepare(`
+            UPDATE settings 
+            SET smtp_host = ?, smtp_port = ?, smtp_user = ?, 
+                smtp_from_name = ?, smtp_use_tls = ?, updated_at = ?
+            WHERE id = 'singleton'
+        `).run(host, port, user, fromName, useTls ? 1 : 0, new Date().toISOString());
+    }
+};
+
+const updateAlertSettings = (emails, allStreams, cooldownMins, onRecovery) => {
+    return db.prepare(`
+        UPDATE settings 
+        SET alert_emails = ?, alert_all_streams = ?, alert_cooldown_mins = ?, 
+            alert_on_recovery = ?, updated_at = ?
+        WHERE id = 'singleton'
+    `).run(
+        JSON.stringify(emails),
+        allStreams ? 1 : 0,
+        cooldownMins,
+        onRecovery ? 1 : 0,
+        new Date().toISOString()
+    );
+};
+
 export {
     createStation,
     getAllStations,
@@ -159,5 +224,8 @@ export {
     getAllAlerts,
     getUnreadAlertCount,
     markAlertRead,
-    markAllAlertsRead
+    markAllAlertsRead,
+    getSettings,
+    updateSmtpSettings,
+    updateAlertSettings
 };

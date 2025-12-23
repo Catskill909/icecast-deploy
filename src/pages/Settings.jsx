@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { User, Bell, Palette, Key, Save, Check } from 'lucide-react';
+import { User, Bell, Mail, Key, Save, Check } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input, { Select } from '../components/ui/Input';
-import Toggle from '../components/ui/Toggle';
+import SMTPConfigForm from '../components/SMTPConfigForm';
+import AlertEmailSettings from '../components/AlertEmailSettings';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -15,12 +16,6 @@ export default function Settings() {
     timezone: 'America/New_York',
   });
 
-  const [notifications, setNotifications] = useState({
-    emailAlerts: true,
-    serverDown: true,
-    sourceDisconnect: true,
-  });
-
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -28,7 +23,8 @@ export default function Settings() {
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'email', label: 'Email Config', icon: Mail },
+    { id: 'alerts', label: 'Stream Alerts', icon: Bell },
     { id: 'api', label: 'API Keys', icon: Key },
   ];
 
@@ -51,8 +47,8 @@ export default function Settings() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors ${activeTab === tab.id
-                        ? 'bg-[#4b7baf]/15 text-[#6b9fd4]'
-                        : 'text-[#8896ab] hover:bg-[#0d1229] hover:text-white'
+                      ? 'bg-[#4b7baf]/15 text-[#6b9fd4]'
+                      : 'text-[#8896ab] hover:bg-[#0d1229] hover:text-white'
                       }`}
                   >
                     <tab.icon className="w-4 h-4" />
@@ -103,34 +99,12 @@ export default function Settings() {
             </Card>
           )}
 
-          {activeTab === 'notifications' && (
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="heading-2 text-white mb-6">Notification Preferences</h2>
-                <div className="space-y-5">
-                  <Toggle
-                    label="Email Alerts"
-                    description="Receive notifications via email"
-                    enabled={notifications.emailAlerts}
-                    onChange={(v) => setNotifications({ ...notifications, emailAlerts: v })}
-                  />
-                  <div className="border-t border-[#1e2337]" />
-                  <Toggle
-                    label="Server Down Alerts"
-                    description="Alert when a server goes offline"
-                    enabled={notifications.serverDown}
-                    onChange={(v) => setNotifications({ ...notifications, serverDown: v })}
-                  />
-                  <div className="border-t border-[#1e2337]" />
-                  <Toggle
-                    label="Source Disconnect"
-                    description="Alert when a source encoder disconnects"
-                    enabled={notifications.sourceDisconnect}
-                    onChange={(v) => setNotifications({ ...notifications, sourceDisconnect: v })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+          {activeTab === 'email' && (
+            <SMTPConfigForm />
+          )}
+
+          {activeTab === 'alerts' && (
+            <AlertEmailSettings />
           )}
 
           {activeTab === 'api' && (
