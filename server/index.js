@@ -571,22 +571,47 @@ app.head('/stream/:mount', (req, res) => {
     res.end();
 });
 
-
 app.use('/stream', (req, res) => {
-    const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}`;
+    const streamUrl = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${req.url}`;
 
-    console.log(`[PROXY] Forwarding ${req.originalUrl} to: ${target}${req.url}`);
+    console.log(`[STREAM] Proxying ${req.originalUrl} -> ${streamUrl}`);
 
-    // Tell Railway's edge proxy NOT to buffer (standard nginx streaming fix)
+    // Prevent Coolify/nginx from buffering the stream
     res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('Cache-Control', 'no-cache, no-store');
 
-    proxy.web(req, res, {
-        target: target,
+    // Use native http.get + pipe (same pattern as working /icecast-status route)
+    const proxyReq = http.get(streamUrl, {
         headers: {
             'Icy-MetaData': '1',
-            'User-Agent': 'StreamDock-Proxy/1.0',
-            'Connection': 'close'
+            'User-Agent': 'StreamDock-Proxy/1.0'
         }
+    }, (proxyRes) => {
+        console.log(`[STREAM] Connected to Icecast, status: ${proxyRes.statusCode}`);
+
+        // Forward Icecast headers
+        res.writeHead(proxyRes.statusCode, {
+            'Content-Type': proxyRes.headers['content-type'] || 'audio/mpeg',
+            'icy-name': proxyRes.headers['icy-name'] || '',
+            'icy-genre': proxyRes.headers['icy-genre'] || '',
+            'icy-br': proxyRes.headers['icy-br'] || '',
+            'Connection': 'close'
+        });
+
+        // Pipe the audio stream directly to the response
+        proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+        console.error(`[STREAM ERROR] ${err.message}`);
+        if (!res.headersSent) {
+            res.status(502).send('Stream unavailable');
+        }
+    });
+
+    // Clean up when client disconnects
+    req.on('close', () => {
+        proxyReq.destroy();
     });
 });
 
