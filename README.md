@@ -35,6 +35,7 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 ### 📧 Email Notifications (NEW)
 - **Automatic Alerts**: Get notified instantly when a stream goes down or recovers
 - **SMTP Support**: Works with Gmail, SendGrid, Amazon SES, or any SMTP server
+  - *Note: Only the admin needs to configure SMTP; regular users just provide their email address.*
 - **Secure Storage**: SMTP passwords are encrypted using AES-256-CBC
 - **Spam Prevention**: Configurable cooldowns to prevent alert flooding
 - **Recipient Management**: Send alerts to multiple team members

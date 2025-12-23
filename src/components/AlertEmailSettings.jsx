@@ -31,6 +31,7 @@ export default function AlertEmailSettings() {
     const [loading, setLoading] = useState(true);
     const [emailToDelete, setEmailToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [successfullyAddedEmail, setSuccessfullyAddedEmail] = useState(null);
 
     // Load settings on mount
     useEffect(() => {
@@ -54,14 +55,30 @@ export default function AlertEmailSettings() {
         fetchSettings();
     }, []);
 
-    const handleAddEmail = () => {
+    const handleAddEmail = async () => {
         const email = newEmail.trim().toLowerCase();
         if (email && email.includes('@') && !settings.alertEmails.includes(email)) {
-            setSettings(s => ({
-                ...s,
-                alertEmails: [...s.alertEmails, email],
-            }));
-            setNewEmail('');
+            const updatedEmails = [...settings.alertEmails, email];
+            const updatedSettings = { ...settings, alertEmails: updatedEmails };
+
+            setSaving(true);
+            try {
+                const res = await fetch(`${API_URL}/api/settings/alerts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedSettings),
+                });
+
+                if (res.ok) {
+                    setSettings(updatedSettings);
+                    setNewEmail('');
+                    setSuccessfullyAddedEmail(email);
+                }
+            } catch (err) {
+                console.error('Failed to add email:', err);
+            } finally {
+                setSaving(false);
+            }
         }
     };
 
@@ -146,6 +163,20 @@ export default function AlertEmailSettings() {
                         <div>
                             <h2 className="heading-2 text-white">Stream Alert Preferences</h2>
                             <p className="text-sm text-[#64748b]">Configure email notifications for stream events</p>
+                        </div>
+                    </div>
+
+                    {/* SMTP Note */}
+                    <div className="mb-6 p-4 rounded-lg bg-[#3b82f6]/10 border border-[#3b82f6]/20 flex items-start gap-3">
+                        <div className="p-1 rounded-full bg-[#3b82f6]/20 text-[#3b82f6] mt-0.5">
+                            <Check className="w-4 h-4" />
+                        </div>
+                        <div className="text-sm">
+                            <p className="text-white font-medium mb-1">Streamlined Setup</p>
+                            <p className="text-[#8896ab]">
+                                Only the main administrator needs to configure the SMTP settings (in the Email Config tab).
+                                Other users just need their email added here or on their station card to receive alerts.
+                            </p>
                         </div>
                     </div>
 
@@ -288,6 +319,29 @@ export default function AlertEmailSettings() {
                             {deleting ? 'Removing...' : 'Remove'}
                         </button>
                     </div>
+                </div>
+            </Modal>
+            {/* Success Modal */}
+            <Modal
+                isOpen={!!successfullyAddedEmail}
+                onClose={() => setSuccessfullyAddedEmail(null)}
+                title="Recipient Added"
+                size="sm"
+            >
+                <div className="text-center py-4">
+                    <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-[#4ade80]/10 flex items-center justify-center">
+                        <Check className="w-7 h-7 text-[#4ade80]" />
+                    </div>
+                    <h3 className="font-heading font-bold text-white text-lg mb-2">Recipient Added!</h3>
+                    <p className="text-[#8896ab] mb-6">
+                        Successfully added <br />
+                        <span className="text-white font-medium">{successfullyAddedEmail}</span>
+                        <br /> to alert recipients.
+                    </p>
+
+                    <Button onClick={() => setSuccessfullyAddedEmail(null)} className="w-full">
+                        Okay
+                    </Button>
                 </div>
             </Modal>
         </>
