@@ -97,17 +97,17 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit Station" size="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit Station" size="2xl">
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Left Column: General & Branding */}
-                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <div className="space-y-5">
+                        <section>
+                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <Settings className="w-4 h-4" />
                                 General Information
                             </h3>
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 <Input
                                     label="Station Name"
                                     name="name"
@@ -125,70 +125,73 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                     placeholder="A brief description..."
                                 />
 
-                                <Input
-                                    label="Genre"
-                                    name="genre"
-                                    value={formData.genre}
-                                    onChange={handleChange}
-                                    placeholder="Music, Talk, News..."
-                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Input
+                                        label="Genre"
+                                        name="genre"
+                                        value={formData.genre}
+                                        onChange={handleChange}
+                                        placeholder="Music..."
+                                    />
+                                    <Input
+                                        label="Website URL"
+                                        name="websiteUrl"
+                                        value={formData.websiteUrl}
+                                        onChange={handleChange}
+                                        placeholder="https://..."
+                                        icon={Globe}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <div className="pt-6 border-t border-[#2d3555]">
-                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <div className="pt-5 border-t border-[#2d3555]">
+                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <Image className="w-4 h-4" />
                                 Branding
                             </h3>
-                            <div className="space-y-4">
-                                <Input
-                                    label="Logo URL"
-                                    name="logoUrl"
-                                    value={formData.logoUrl}
-                                    onChange={handleChange}
-                                    placeholder="https://example.com/logo.png"
-                                />
 
+                            <div className="flex gap-3 items-end">
+                                <div className="flex-1">
+                                    <Input
+                                        label="Logo URL"
+                                        name="logoUrl"
+                                        value={formData.logoUrl}
+                                        onChange={handleChange}
+                                        placeholder="https://example.com/logo.png"
+                                    />
+                                </div>
                                 {formData.logoUrl && (
-                                    <div className="flex justify-center p-4 bg-[#0d1229] rounded-lg border border-[#1e2337]">
+                                    <div className="w-[42px] h-[42px] mb-[1px] bg-[#0d1229] rounded-lg border border-[#1e2337] flex-shrink-0 overflow-hidden">
                                         <img
                                             src={formData.logoUrl}
-                                            alt="Logo preview"
-                                            className="w-24 h-24 rounded-lg object-cover"
+                                            alt="Preview"
+                                            className="w-full h-full object-cover"
                                             onError={(e) => e.target.style.display = 'none'}
                                         />
                                     </div>
                                 )}
-
-                                <Input
-                                    label="Website URL"
-                                    name="websiteUrl"
-                                    value={formData.websiteUrl}
-                                    onChange={handleChange}
-                                    placeholder="https://mystation.com"
-                                    icon={Globe}
-                                />
                             </div>
                         </div>
                     </div>
 
                     {/* Right Column: Alerts */}
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         <div className="md:pl-8 md:border-l md:border-[#2d3555] h-full">
-                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
                                 <Bell className="w-4 h-4" />
                                 Alert Settings
                             </h3>
 
-                            <div className="bg-[#1e2337]/50 rounded-lg p-4 text-sm text-[#94a3b8] mb-6 border border-[#2d3555]">
+                            <div className="bg-[#1e2337]/50 rounded-lg p-3 text-sm text-[#94a3b8] mb-4 border border-[#2d3555]">
                                 <p className="text-white font-medium mb-1">Station-Specific Recipients</p>
-                                <p className="leading-relaxed opacity-80">
+                                <p className="leading-relaxed opacity-80 text-xs">
                                     Configure users who should receive alerts specifically for <strong>{formData.name || 'this station'}</strong>.
                                     These override global settings unless "Monitor All" is active.
                                 </p>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 <label className="block text-sm font-medium text-[#94a3b8]">
                                     Add Recipient
                                 </label>
@@ -205,34 +208,36 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                     </Button>
                                 </div>
 
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-[#94a3b8] mb-3">
+                                <div className="mt-2">
+                                    <label className="block text-sm font-medium text-[#94a3b8] mb-2">
                                         Current Recipients
                                     </label>
-                                    {formData.alertEmails.length > 0 ? (
-                                        <div className="flex flex-col gap-2">
-                                            {formData.alertEmails.map(email => (
-                                                <div
-                                                    key={email}
-                                                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#2d3555]/30 border border-[#2d3555] group hover:border-[#4b7baf]/30 transition-colors"
-                                                >
-                                                    <span className="text-sm text-white">{email}</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveEmail(email)}
-                                                        className="text-[#64748b] hover:text-[#f87171] p-1 rounded-md hover:bg-[#f87171]/10 transition-all opacity-0 group-hover:opacity-100"
+                                    <div className="max-h-[200px] overflow-y-auto pr-1">
+                                        {formData.alertEmails.length > 0 ? (
+                                            <div className="flex flex-col gap-2">
+                                                {formData.alertEmails.map(email => (
+                                                    <div
+                                                        key={email}
+                                                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#2d3555]/30 border border-[#2d3555] group hover:border-[#4b7baf]/30 transition-colors"
                                                     >
-                                                        <X className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-8 rounded-lg border-2 border-dashed border-[#2d3555] bg-[#1e2337]/30">
-                                            <Bell className="w-8 h-8 text-[#2d3555] mx-auto mb-2" />
-                                            <p className="text-sm text-[#64748b]">No specific recipients added</p>
-                                        </div>
-                                    )}
+                                                        <span className="text-sm text-white truncate max-w-[200px]" title={email}>{email}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveEmail(email)}
+                                                            className="text-[#64748b] hover:text-[#f87171] p-1 rounded-md hover:bg-[#f87171]/10 transition-all opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center py-6 rounded-lg border-2 border-dashed border-[#2d3555] bg-[#1e2337]/30">
+                                                <Bell className="w-6 h-6 text-[#2d3555] mx-auto mb-2" />
+                                                <p className="text-xs text-[#64748b]">No specific recipients added</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -240,13 +245,13 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                 </div>
 
                 {error && (
-                    <div className="mt-6 p-3 rounded-lg bg-[#f87171]/10 border border-[#f87171]/20 flex items-center gap-3">
+                    <div className="mt-4 p-3 rounded-lg bg-[#f87171]/10 border border-[#f87171]/20 flex items-center gap-3">
                         <AlertTriangle className="w-5 h-5 text-[#f87171]" />
                         <p className="text-[#f87171] text-sm">{error}</p>
                     </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-6 mt-8 border-t border-[#2d3555]">
+                <div className="flex justify-end gap-3 pt-5 mt-6 border-t border-[#2d3555]">
                     <Button variant="secondary" onClick={onClose} type="button">
                         Cancel
                     </Button>
