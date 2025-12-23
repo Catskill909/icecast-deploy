@@ -1,0 +1,16 @@
+services:
+  streamdock:
+    build: .
+    ports:
+      - "3000:3000"
+      - "8100:8100"
+    volumes:
+      - streamdock_data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.streaming-buffer.buffering.maxResponseBodyBytes=0"
+      - "traefik.http.middlewares.streaming-buffer.buffering.maxRequestBodyBytes=0"
+      - "traefik.http.middlewares.streaming-buffer.buffering.retryExpression=IsNetworkError()"
+
+volumes:
+  streamdock_data:

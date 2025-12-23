@@ -21,6 +21,8 @@ const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8000;
 const ICECAST_PUBLIC_PORT = process.env.ICECAST_PUBLIC_PORT || process.env.ICECAST_PORT || 8000;
 const ICECAST_PUBLIC_HOST = process.env.ICECAST_PUBLIC_HOST || process.env.ICECAST_HOST || 'localhost';
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
+// Stream subdomain for HTTPS streaming (bypasses Traefik timeout)
+const STREAM_HOST = process.env.STREAM_HOST || 'stream.supersoul.top';
 
 // Track previous mount status for alert generation
 let previousMountStatus = {}; // { "/mount": { live: true, listeners: 0 } }
@@ -68,7 +70,7 @@ app.post('/api/stations', (req, res) => {
         // All stations use the same Icecast source password from config
         const sourcePassword = ICECAST_SOURCE_PASSWORD;
         // Stream URL goes through /stream/ proxy (same port as web UI)
-        const streamUrl = `https://${ICECAST_PUBLIC_HOST}/stream${mountPoint}`;
+        const streamUrl = `https://${STREAM_HOST}${mountPoint}`;
 
         const station = {
             id,

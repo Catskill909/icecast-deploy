@@ -167,8 +167,8 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                             <div className="flex items-center justify-between">
                                 <span className="text-white font-medium">Secure Stream:</span>
                                 <div className="flex items-center gap-2">
-                                    <a href={connectionInfo.streamUrl} target="_blank" rel="noopener noreferrer" className="text-[#4ade80] hover:underline font-mono truncate max-w-[140px]">
-                                        /stream{connectionInfo.mountPoint}
+                                    <a href={connectionInfo.streamUrl} target="_blank" rel="noopener noreferrer" className="text-[#4ade80] hover:underline font-mono truncate max-w-[180px]">
+                                        {connectionInfo.streamUrl.replace(/^https?:\/\//, '')}
                                     </a>
                                     <button onClick={() => handleCopy(connectionInfo.streamUrl, 'secure')} className="text-[#64748b] hover:text-white">
                                         {copiedField === 'secure' ? <Check className="w-3 h-3 text-[#4ade80]" /> : <Copy className="w-3 h-3" />}
