@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Plus, X, Loader2, AlertTriangle, Check, Trash2 } from 'lucide-react';
+import { Bell, Plus, X, Loader2, AlertTriangle, Check, Trash2, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from './ui/Card';
 import Button from './ui/Button';
 import Input, { Select } from './ui/Input';
@@ -206,10 +206,26 @@ export default function AlertEmailSettings() {
                         {/* Alert Options */}
                         <Toggle
                             label="Monitor All Streams"
-                            description="Send alerts for all streams, not just the primary"
+                            description="Receive alerts for ALL stations, even those with their own specific recipients configured."
                             enabled={settings.alertAllStreams}
                             onChange={(v) => setSettings({ ...settings, alertAllStreams: v })}
                         />
+
+                        <div className="bg-[#0f1633] border border-[#1e2337] rounded-lg p-4 mt-2">
+                            <div className="flex items-start gap-3">
+                                <div className="p-1 rounded-full bg-[#3b82f6]/20 text-[#3b82f6] mt-0.5">
+                                    <AlertCircle className="w-4 h-4" />
+                                </div>
+                                <div className="text-sm">
+                                    <p className="text-white font-medium mb-1">How Alert Routing Works</p>
+                                    <ul className="text-[#8896ab] space-y-1 list-disc pl-4">
+                                        <li><strong>Station-Specific:</strong> Emails configured on a station card <em>always</em> receive alerts for that station.</li>
+                                        <li><strong>Global Fallback:</strong> If a station has no specific emails, it uses this global list.</li>
+                                        <li><strong>Monitor All:</strong> If enabled above, this global list receives alerts for <em>every</em> station, in addition to any specific recipients.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="border-t border-[#1e2337]" />
 

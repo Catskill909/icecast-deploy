@@ -102,6 +102,8 @@ Brainstorming session for StreamDock features and StationDock integration.
 ### Notification Channels
 - [x] **In-app alerts** with bell icon ✅ DONE (Dec 2024)
 - [x] **Email** alerts ✅ DONE (Dec 2024) - Full implementation: SMTP config, test email, auto-send on stream events
+- [x] **Per-station recipients** ✅ DONE (Dec 2024) - Configure specific emails per station
+- [x] **Smart fallback routing** ✅ DONE (Dec 2024) - Global list acts as fallback
 - [ ] **SMS** via Twilio
 - [ ] **Webhook** for custom integrations
 - [ ] **Push notifications** (browser/mobile)

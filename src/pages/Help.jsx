@@ -110,6 +110,16 @@ const ARTICLES = {
                 <h4 className="text-white font-medium mt-4">Step 3: Add Recipients</h4>
                 <p>Go to the <strong>Stream Alerts</strong> tab in Settings and add the email addresses that should receive notifications.</p>
 
+                <h4 className="text-white font-medium mt-4">Step 4: Smart Alert Routing</h4>
+                <p>StreamDock uses a smart routing system to determine who gets emailed:</p>
+                <div className="bg-[#0f1633] border border-[#1e2337] rounded-lg p-3 mt-2 text-sm">
+                    <ul className="list-disc pl-5 space-y-1">
+                        <li><strong>Station-Specific:</strong> Set custom recipients in <em>Edit Station &rarr; Alerts</em>. These users ONLY receive alerts for that station.</li>
+                        <li><strong>Global Fallback:</strong> If a station has no custom recipients, it sends to the Global Email list (configured in Settings).</li>
+                        <li><strong>Monitor All Streams:</strong> Enable this in Settings to send alerts to the Global list for <em>every</em> station, even if it has its own custom recipients.</li>
+                    </ul>
+                </div>
+
                 <div className="bg-[#fbbf24]/10 p-4 rounded-lg border border-[#fbbf24]/20 mt-4">
                     <p className="text-[#fbbf24] text-sm font-medium">⚠️ Security Note: Your SMTP password is encrypted with AES-256 before being stored in the database.</p>
                 </div>

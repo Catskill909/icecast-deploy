@@ -38,6 +38,7 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Secure Storage**: SMTP passwords are encrypted using AES-256-CBC
 - **Spam Prevention**: Configurable cooldowns to prevent alert flooding
 - **Recipient Management**: Send alerts to multiple team members
+- **Smart Routing**: Configure specific recipients per-station, or use global fallback lists
 
 
 ### 🎧 Built-in Audio Player
