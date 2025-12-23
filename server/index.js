@@ -573,13 +573,13 @@ app.head('/stream/:mount', (req, res) => {
 
 
 app.use('/stream', (req, res) => {
-    // FIX: Do NOT append path to target. http-proxy automatically appends req.url (which is /mount).
-    // Previous bug: target ending in /mount + req.url /mount = /mount/mount -> 404
     const target = `http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}`;
 
-    console.log(`[PROXY START] Forwarding ${req.originalUrl} to: ${target}${req.url}`);
+    console.log(`[PROXY] Forwarding ${req.originalUrl} to: ${target}${req.url}`);
 
-    // Use http-proxy to stream data robustly
+    // Tell Railway's edge proxy NOT to buffer (standard nginx streaming fix)
+    res.setHeader('X-Accel-Buffering', 'no');
+
     proxy.web(req, res, {
         target: target,
         headers: {
