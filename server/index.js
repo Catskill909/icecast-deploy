@@ -69,7 +69,7 @@ app.post('/api/stations', (req, res) => {
         const id = uuidv4();
         // All stations use the same Icecast source password from config
         const sourcePassword = ICECAST_SOURCE_PASSWORD;
-        // Stream URL goes through /stream/ proxy (same port as web UI)
+        // Stream URL uses dedicated subdomain for HTTPS streaming
         const streamUrl = `https://${STREAM_HOST}${mountPoint}`;
 
         const station = {

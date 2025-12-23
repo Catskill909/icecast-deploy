@@ -42,8 +42,8 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Server Status**: Online/offline indicator
 - **Quick Start Guide**: Step-by-step onboarding for new users
 
-### 🔒 Secure Streaming (NEW)
-- **HTTPS Proxy**: Secure streams via `/stream/mount`
+### 🔒 Secure Streaming
+- **HTTPS Streams**: Secure streams via `stream.supersoul.top` subdomain
 - **StationDock Compatible**: HEAD request support for stream monitoring
 - **Legacy Support**: Direct Icecast URLs on port 8100 still available
 - **Secure Status Page**: Access Icecast status via HTTPS at `/icecast-status`
@@ -146,7 +146,8 @@ docker run -p 3000:3000 -p 8100:8100 streamdock
 |----------|---------|-------------|
 | `ICECAST_HOST` | `127.0.0.1` | Internal Icecast hostname |
 | `ICECAST_PORT` | `8100` | Internal Icecast port |
-| `ICECAST_PUBLIC_HOST` | `icecast.supersoul.top` | Public hostname |
+| `ICECAST_PUBLIC_HOST` | `icecast.supersoul.top` | Public hostname for encoder connections |
+| `STREAM_HOST` | `stream.supersoul.top` | HTTPS stream subdomain |
 | `PORT` | `3000` | API server port |
 | `DATABASE_PATH` | `/app/data/stations.db` | SQLite database path |
 
@@ -167,7 +168,7 @@ Use these settings in BUTT, Mixxx, OBS, or other streaming software:
 
 | Type | URL | Use Case |
 |------|-----|----------|
-| **Secure (HTTPS)** | `https://icecast.supersoul.top/stream/mount` | Web browsers, StationDock |
+| **Secure (HTTPS)** | `https://stream.supersoul.top/mount` | Web browsers, StationDock |
 | **Direct (HTTP)** | `http://icecast.supersoul.top:8100/mount` | Encoders, legacy players |
 | **Status Page** | `https://icecast.supersoul.top/icecast-status` | Debugging |
 
