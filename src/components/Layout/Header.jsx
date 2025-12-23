@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, User, ChevronDown } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -8,6 +8,10 @@ export default function Header() {
   const [showProfile, setShowProfile] = useState(false);
   const [alerts, setAlerts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Refs for click-outside detection
+  const notificationsRef = useRef(null);
+  const profileRef = useRef(null);
 
   // Fetch alerts and unread count
   const fetchAlerts = async () => {
@@ -32,6 +36,21 @@ export default function Header() {
     return () => clearInterval(interval);
   }, []);
 
+  // Click outside to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfile(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleMarkRead = async (id) => {
     try {
       await fetch(`${API_URL}/api/alerts/${id}/read`, { method: 'POST' });
@@ -54,7 +73,7 @@ export default function Header() {
     <header className="h-16 bg-[#0a0e27] border-b border-[#1e2337] flex items-center justify-end px-8 sticky top-0 z-40">
       <div className="flex items-center gap-3">
         {/* Notifications */}
-        <div className="relative">
+        <div className="relative" ref={notificationsRef}>
           <button
             onClick={() => {
               setShowNotifications(!showNotifications);
@@ -70,7 +89,7 @@ export default function Header() {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-[#1e2337] border border-[#2d3555] rounded-xl shadow-xl overflow-hidden">
+            <div className="dropdown-menu absolute right-0 top-full mt-2 w-80 bg-[#1e2337] border border-[#2d3555] rounded-xl shadow-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#2d3555]">
                 <h3 className="font-semibold text-white">Notifications</h3>
               </div>
@@ -142,7 +161,7 @@ export default function Header() {
         </div>
 
         {/* Profile */}
-        <div className="relative">
+        <div className="relative" ref={profileRef}>
           <button
             onClick={() => {
               setShowProfile(!showProfile);
@@ -159,7 +178,7 @@ export default function Header() {
 
           {/* Profile Dropdown */}
           {showProfile && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-[#1e2337] border border-[#2d3555] rounded-xl shadow-xl overflow-hidden">
+            <div className="dropdown-menu absolute right-0 top-full mt-2 w-48 bg-[#1e2337] border border-[#2d3555] rounded-xl shadow-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[#2d3555]">
                 <p className="font-medium text-white">Admin User</p>
                 <p className="text-xs text-[#64748b]">admin@example.com</p>

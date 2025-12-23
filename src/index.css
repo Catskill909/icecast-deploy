@@ -27,6 +27,25 @@
     box-sizing: border-box;
   }
 
+  /* Remove default focus outline globally, use custom focus-visible styles */
+  *:focus {
+    outline: none;
+  }
+
+  /* Only show focus ring for keyboard navigation (accessibility) */
+  *:focus-visible {
+    outline: 2px solid var(--color-accent-blue);
+    outline-offset: 2px;
+  }
+
+  /* Remove focus ring from buttons and interactive elements when clicked */
+  button:focus:not(:focus-visible),
+  a:focus:not(:focus-visible),
+  [role="button"]:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: var(--color-bg-primary);
@@ -131,4 +150,34 @@
   100% {
     background-position: 200% 0;
   }
+}
+
+/* Dropdown animations */
+@keyframes dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdown-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+}
+
+.dropdown-menu {
+  animation: dropdown-enter 0.15s ease-out;
+  transform-origin: top right;
 }
