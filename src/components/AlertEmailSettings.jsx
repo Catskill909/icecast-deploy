@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Plus, X, Loader2, AlertTriangle } from 'lucide-react';
+import { Bell, Plus, X, Loader2, AlertTriangle, Check } from 'lucide-react';
 import { Card, CardContent } from './ui/Card';
 import Button from './ui/Button';
 import Input, { Select } from './ui/Input';
@@ -26,6 +26,7 @@ export default function AlertEmailSettings() {
     const [hasSmtpConfigured, setHasSmtpConfigured] = useState(false);
     const [newEmail, setNewEmail] = useState('');
     const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
     const [loading, setLoading] = useState(true);
 
     // Load settings on mount
@@ -77,12 +78,17 @@ export default function AlertEmailSettings() {
 
     const handleSave = async () => {
         setSaving(true);
+        setSaved(false);
         try {
-            await fetch(`${API_URL}/api/settings/alerts`, {
+            const res = await fetch(`${API_URL}/api/settings/alerts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings),
             });
+            if (res.ok) {
+                setSaved(true);
+                setTimeout(() => setSaved(false), 3000);
+            }
         } catch (err) {
             console.error('Failed to save alert settings:', err);
         } finally {
@@ -199,8 +205,8 @@ export default function AlertEmailSettings() {
                     </p>
 
                     <div className="border-t border-[#1e2337] pt-5">
-                        <Button onClick={handleSave} disabled={saving}>
-                            {saving ? 'Saving...' : 'Save Alert Settings'}
+                        <Button onClick={handleSave} icon={saved ? Check : null} disabled={saving}>
+                            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Alert Settings'}
                         </Button>
                     </div>
                 </div>
