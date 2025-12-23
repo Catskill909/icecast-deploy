@@ -69,7 +69,7 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       <button
         onClick={onToggle}
-        className="absolute top-24 -right-3 w-6 h-12 bg-[#1e2337] border border-[#2d3555] rounded-r-md flex items-center justify-center text-[#64748b] hover:text-white hover:bg-[#2d3555] transition-all duration-150 group"
+        className="absolute top-4 -right-3 w-6 h-12 bg-[#1e2337] border border-[#2d3555] rounded-r-md flex items-center justify-center text-[#64748b] hover:text-white hover:bg-[#2d3555] transition-all duration-150 group"
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <GripVertical className="w-3 h-3" />

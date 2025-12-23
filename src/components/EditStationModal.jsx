@@ -7,6 +7,95 @@ import Button from './ui/Button';
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 export default function EditStationModal({ isOpen, onClose, station, onSave }) {
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        genre: '',
+        logoUrl: '',
+        websiteUrl: '',
+        alertEmails: []
+    });
+    const [newEmail, setNewEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    // Populate form when station changes
+    useEffect(() => {
+        if (station) {
+            setFormData({
+                name: station.name || '',
+                description: station.description || '',
+                genre: station.genre || 'Various',
+                logoUrl: station.logoUrl || '',
+                websiteUrl: station.websiteUrl || '',
+                alertEmails: station.alertEmails || []
+            });
+        }
+    }, [station]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+        setError('');
+    };
+
+    const handleAddEmail = () => {
+        const email = newEmail.trim().toLowerCase();
+        if (email && email.includes('@') && !formData.alertEmails.includes(email)) {
+            setFormData(prev => ({
+                ...prev,
+                alertEmails: [...prev.alertEmails, email]
+            }));
+            setNewEmail('');
+        }
+    };
+
+    const handleRemoveEmail = (email) => {
+        setFormData(prev => ({
+            ...prev,
+            alertEmails: prev.alertEmails.filter(e => e !== email)
+        }));
+    };
+
+    const handleEmailKeyPress = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            handleAddEmail();
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!formData.name.trim()) {
+            setError('Station name is required');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await fetch(`${API_URL}/api/stations/${station.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to update station');
+            }
+
+            onSave();
+            onClose();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Station" size="xl">
             <form onSubmit={handleSubmit}>
