@@ -32,6 +32,14 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Header Notifications**: Bell icon with unread count badge
 - **Mark as Read**: Dismiss alerts from the alerts page
 
+### 📧 Email Notifications (NEW)
+- **Automatic Alerts**: Get notified instantly when a stream goes down or recovers
+- **SMTP Support**: Works with Gmail, SendGrid, Amazon SES, or any SMTP server
+- **Secure Storage**: SMTP passwords are encrypted using AES-256-CBC
+- **Spam Prevention**: Configurable cooldowns to prevent alert flooding
+- **Recipient Management**: Send alerts to multiple team members
+
+
 ### 🎧 Built-in Audio Player
 - **Listen Button**: One-click playback of live streams
 - **Play/Pause Controls**: Toggle stream audio in-browser

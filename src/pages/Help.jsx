@@ -79,6 +79,42 @@ const ARTICLES = {
                 </div>
             </div>
         )
+    },
+    'email-alerts': {
+        title: 'Setting up Email Alerts',
+        content: (
+            <div className="space-y-4 text-[#8896ab]">
+                <p>Receive instant email notifications when your stream goes down or recovers. This requires configuring an SMTP server.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Using Gmail (Recommended)</h3>
+                <p>Gmail is the easiest way to send alerts. You must use an <strong>App Password</strong>, not your regular login password.</p>
+
+                <h4 className="text-white font-medium mt-4">Step 1: Get an App Password</h4>
+                <ol className="list-decimal pl-5 space-y-2">
+                    <li>Go to your <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer" className="text-[#4b7baf] hover:underline">Google Account Security</a> page.</li>
+                    <li>Enable <strong>2-Step Verification</strong> if it's not already on.</li>
+                    <li>Search for "App passwords" in the top search bar (or look under 2-Step Verification).</li>
+                    <li>Create a new app password named "StreamDock".</li>
+                    <li>Copy the 16-character code (e.g., <code>abcd efgh ijkl mnop</code>).</li>
+                </ol>
+
+                <h4 className="text-white font-medium mt-4">Step 2: Configure StreamDock</h4>
+                <p>Go to <strong>Settings &rarr; Email Config</strong> and enter:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Host:</strong> <code>smtp.gmail.com</code></li>
+                    <li><strong>Port:</strong> <code>587</code> (STARTTLS)</li>
+                    <li><strong>Username:</strong> Your full Gmail address</li>
+                    <li><strong>Password:</strong> The 16-character App Password (remove spaces)</li>
+                </ul>
+
+                <h4 className="text-white font-medium mt-4">Step 3: Add Recipients</h4>
+                <p>Go to the <strong>Stream Alerts</strong> tab in Settings and add the email addresses that should receive notifications.</p>
+
+                <div className="bg-[#fbbf24]/10 p-4 rounded-lg border border-[#fbbf24]/20 mt-4">
+                    <p className="text-[#fbbf24] text-sm font-medium">⚠️ Security Note: Your SMTP password is encrypted with AES-256 before being stored in the database.</p>
+                </div>
+            </div>
+        )
     }
 };
 
@@ -126,7 +162,8 @@ export default function Help() {
                 { id: 'quick-start', label: "Quick Start Guide" },
                 { id: 'mount-points', label: "Understanding Mount Points" },
                 { id: 'encoders', label: "Connecting your Encoder" },
-                { id: 'alerts', label: "Understanding Alerts" }
+                { id: 'alerts', label: "Understanding Alerts" },
+                { id: 'email-alerts', label: "Setting up Email Alerts" }
             ]
         },
         {

@@ -224,7 +224,7 @@ Based on immediate needs for public radio stations:
 6. **Real-time alerts (stream live/offline)** ✅ DONE (Dec 2024)
 7. **Listener milestone alerts** ✅ DONE (Dec 2024)
 8. **DJ account management**
-9. **Alert emails when stream drops**
+9. **Alert emails when stream drops** ✅ DONE (Dec 2024)
 10. **Listener count history**
 
 
@@ -240,7 +240,7 @@ Based on immediate needs for public radio stations:
 ### Phase 2: Alerts & Monitoring
 - In-app alerts ✅ DONE (Dec 2024)
 - Listener milestones ✅ DONE (Dec 2024)
-- Email notifications (coming)
+- Email notifications ✅ DONE (Dec 2024)
 - Real Icecast log parsing (coming)
 - Uptime tracking
 
