@@ -1,7 +1,7 @@
 # Relay & Fallback Feature - ✅ COMPLETE
 
 **Date:** December 24, 2024  
-**Status:** ✅ WORKING - Reverted to f910955
+**Status:** ✅ WORKING
 
 ---
 
@@ -11,30 +11,31 @@
 
 ---
 
-## ⚠️ DO NOT TOUCH: Stations.jsx Badge Colors
+## FALLBACK Badge Color Logic
 
-**DO NOT MODIFY THE FALLBACK BADGE COLOR LOGIC.**
-
-The working version has FALLBACK as orange always. Attempts to make it green broke fallback functionality entirely.
-
-```
-Commit f910955 = WORKING
-Commits after = BROKEN badge logic that killed fallback
+**CORRECT LOGIC (commit 090cb3f):**
+```javascript
+station.relayStatus === 'active'
+    ? GREEN   // Fallback IS streaming
+    : ORANGE  // Fallback on standby
 ```
 
-If you need conditional color, the backend must track source type first.
+| State | Color |
+|-------|-------|
+| Mixxx ON, fallback standby | ORANGE |
+| Mixxx OFF, fallback active | GREEN |
 
 ---
 
-## All Bugs Encountered & Fixed
+## All Bugs Fixed
 
-| Bug | Root Cause | Fix | Commit |
-|-----|-----------|-----|--------|
-| Relay not connecting | Port default was 8000 | Changed to 8100 | 230f1e4 |
-| Status never "running" | Loglevel 'warning' hid messages | Changed to 'info' | 230f1e4 |
-| HTTP PUT didn't stream | Icecast rejected PUT method | Use `icecast://` | a4c3aaf |
-| Codec mismatch errors | `-c:a copy` failed on some streams | Use `-c:a libmp3lame` | 230f1e4 |
-| Badge color broke fallback | Conditional color logic | REVERTED to f910955 | 5331fee |
+| Bug | Fix | Commit |
+|-----|-----|--------|
+| Port 8000 | → 8100 | 230f1e4 |
+| Loglevel warning | → info | 230f1e4 |
+| HTTP PUT failed | → icecast:// | a4c3aaf |
+| Codec copy failed | → libmp3lame | 230f1e4 |
+| Badge colors reversed | → relayStatus check | 090cb3f |
 
 ---
 
@@ -55,25 +56,16 @@ ffmpeg -hide_banner -loglevel info \
 
 | File | Purpose |
 |------|---------|
-| `server/relayManager.js` | FFmpeg spawn - PORT MUST BE 8100 |
-| `server/icecastConfig.js` | Dynamic Icecast config |
-| `server/index.js` | Fallback trigger logic |
-| `src/pages/Stations.jsx` | **DO NOT CHANGE BADGE LOGIC** |
-| `src/pages/Diagnostics.jsx` | Debug page |
+| `server/relayManager.js` | PORT MUST BE 8100 |
+| `server/index.js` | Fallback trigger lines 1032-1035 |
+| `src/pages/Stations.jsx` | Badge color logic lines 132-144 |
 
 ---
 
 ## What Works ✅
 
 - [x] Primary relay mode
-- [x] Fallback activation on encoder drop
-- [x] Stream URL plays audio
-- [x] Email alerts for fallback activation
-- [x] Diagnostics page in sidebar
-
----
-
-## Known Limitations
-
-- FALLBACK badge is always orange (by design - to preserve stability)
-- Changing badge color broke core fallback functionality
+- [x] Fallback activation
+- [x] Stream playback
+- [x] Email alerts
+- [x] Badge colors (GREEN=active, ORANGE=standby)
