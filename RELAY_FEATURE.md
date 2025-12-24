@@ -5,67 +5,40 @@
 
 ---
 
-## ⚠️ CRITICAL: Port 8100 ⚠️
+## ⚠️ CRITICAL SETTINGS ⚠️
 
-**ICECAST RUNS ON PORT 8100. NOT 8000.**
+1. **Port 8100** - Icecast runs on 8100, NOT 8000
+2. **Fallback mount** - Relay streams to `/{mount}-fallback`, NOT the main mount
 
 ---
 
-## FALLBACK Badge Color Logic
+## How Fallback Works
 
-**CORRECT LOGIC (commit 090cb3f):**
+1. Encoder (Mixxx) streams to main mount `/new`
+2. Fallback relay streams to `/new-fallback`
+3. Icecast config has `fallback-mount=/new-fallback` and `fallback-override=1`
+4. When encoder disconnects, listeners hear fallback
+5. When encoder reconnects, it takes over automatically
+
+---
+
+## Key Bug Fixed (Dec 24)
+
+**BUG:** Relay was streaming to main mount, blocking encoder
+**FIX:** Relay now streams to `-fallback` mount (commit 38d81eb)
+
 ```javascript
-station.relayStatus === 'active'
-    ? GREEN   // Fallback IS streaming
-    : ORANGE  // Fallback on standby
-```
-
-| State | Color |
-|-------|-------|
-| Mixxx ON, fallback standby | ORANGE |
-| Mixxx OFF, fallback active | GREEN |
-
----
-
-## All Bugs Fixed
-
-| Bug | Fix | Commit |
-|-----|-----|--------|
-| Port 8000 | → 8100 | 230f1e4 |
-| Loglevel warning | → info | 230f1e4 |
-| HTTP PUT failed | → icecast:// | a4c3aaf |
-| Codec copy failed | → libmp3lame | 230f1e4 |
-| Badge colors reversed | → relayStatus check | 090cb3f |
-
----
-
-## Working FFmpeg Command
-
-```bash
-ffmpeg -hide_banner -loglevel info \
-  -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-  -i [EXTERNAL_URL] \
-  -c:a libmp3lame -b:a 128k \
-  -f mp3 -content_type audio/mpeg \
-  icecast://source:[PASSWORD]@127.0.0.1:8100/[MOUNT]
+// server/relayManager.js line 50
+const targetMount = station.relay_mode === 'fallback' 
+    ? `${mountPoint}-fallback`  // Stream to fallback mount
+    : mountPoint;               // Primary mode uses main mount
 ```
 
 ---
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `server/relayManager.js` | PORT MUST BE 8100 |
-| `server/index.js` | Fallback trigger lines 1032-1035 |
-| `src/pages/Stations.jsx` | Badge color logic lines 132-144 |
-
----
-
-## What Works ✅
-
-- [x] Primary relay mode
-- [x] Fallback activation
-- [x] Stream playback
-- [x] Email alerts
-- [x] Badge colors (GREEN=active, ORANGE=standby)
+| File | Critical Line |
+|------|---------------|
+| `server/relayManager.js` | Line 50: `-fallback` suffix |
+| `server/icecastConfig.js` | Line 38-39: `fallback-mount` and `fallback-override=1` |
