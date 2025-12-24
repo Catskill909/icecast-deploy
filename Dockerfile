@@ -57,9 +57,5 @@ ENV DATABASE_PATH=/app/data/stations.db
 EXPOSE 3000
 EXPOSE 8100
 
-# Copy startup script that generates config before starting services
-COPY startup.sh /app/startup.sh
-RUN chmod +x /app/startup.sh
-
-# Start via startup script (generates config, then runs supervisor)
-CMD ["/app/startup.sh"]
+# Start supervisor (runs both icecast and node)
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
