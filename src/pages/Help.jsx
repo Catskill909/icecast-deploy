@@ -125,6 +125,51 @@ const ARTICLES = {
                 </div>
             </div>
         )
+    },
+    'relay-restreaming': {
+        title: 'Stream Relay & Restreaming',
+        content: (
+            <div className="space-y-4 text-[#8896ab]">
+                <p>StreamDock can pull audio from external stream URLs and rebroadcast it through your stations. This is useful for syndicating content or creating automatic failovers.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Setting Up a Relay</h3>
+                <ol className="list-decimal pl-5 space-y-2">
+                    <li>Click <strong>Edit</strong> on any station card</li>
+                    <li>Scroll to the <strong>External Source</strong> section</li>
+                    <li>Enter the external stream URL (e.g., <code>https://stream.example.com/mount</code>)</li>
+                    <li>Click <strong>Test URL</strong> to validate the stream</li>
+                    <li>Toggle <strong>Enable Relay</strong> on</li>
+                    <li>Choose your relay mode</li>
+                </ol>
+
+                <h3 className="text-white font-bold text-lg mt-6">Relay Modes</h3>
+                <div className="bg-[#0f1633] border border-[#1e2337] rounded-lg p-4 mt-2 space-y-4">
+                    <div>
+                        <h4 className="text-white font-medium">🎯 Primary Mode</h4>
+                        <p className="text-sm">The external stream IS the station. No encoder needed. The relay starts automatically when the server boots.</p>
+                        <p className="text-sm mt-1"><em>Use for: 24/7 syndicated content, network feeds, backup stations</em></p>
+                    </div>
+                    <div className="pt-3 border-t border-[#1e2337]">
+                        <h4 className="text-white font-medium">🔄 Fallback Mode</h4>
+                        <p className="text-sm">Your encoder is the primary source. If the encoder disconnects, StreamDock automatically switches to the relay URL. When the encoder returns, it switches back.</p>
+                        <p className="text-sm mt-1"><em>Use for: Automated failover, dead air prevention, backup programming</em></p>
+                    </div>
+                </div>
+
+                <h3 className="text-white font-bold text-lg mt-6">Supported Formats</h3>
+                <p>StreamDock can relay most common streaming formats:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>MP3</strong> (audio/mpeg) - Most common</li>
+                    <li><strong>AAC</strong> (audio/aac, audio/aacp)</li>
+                    <li><strong>Ogg Vorbis</strong> (audio/ogg)</li>
+                    <li><strong>Opus</strong> (audio/opus)</li>
+                </ul>
+
+                <div className="bg-[#4b7baf]/10 p-4 rounded-lg border border-[#4b7baf]/20 mt-4">
+                    <p className="text-[#4b7baf] text-sm font-medium">💡 Tip: Always use the "Test URL" button to verify your external stream before enabling relay. This checks connectivity and detects the audio format.</p>
+                </div>
+            </div>
+        )
     }
 };
 
@@ -173,7 +218,8 @@ export default function Help() {
                 { id: 'mount-points', label: "Understanding Mount Points" },
                 { id: 'encoders', label: "Connecting your Encoder" },
                 { id: 'alerts', label: "Understanding Alerts" },
-                { id: 'email-alerts', label: "Setting up Email Alerts" }
+                { id: 'email-alerts', label: "Setting up Email Alerts" },
+                { id: 'relay-restreaming', label: "Stream Relay & Restreaming" }
             ]
         },
         {

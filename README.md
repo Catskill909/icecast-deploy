@@ -25,17 +25,16 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Listener Count**: Shows current listeners per station
 - **Visual Highlights**: Green ring around active stations
 
-### 🔔 Real-Time Alerts (NEW)
+### 🔔 Real-Time Alerts
 - **Station Now Broadcasting**: Notified when stream goes live
 - **Broadcast Ended**: Alert when stream goes offline  
 - **Listener Milestones**: Celebrate 50, 100, 250, 500+ listeners
 - **Header Notifications**: Bell icon with unread count badge
 - **Mark as Read**: Dismiss alerts from the alerts page
 
-### 📧 Email Notifications (NEW)
+### 📧 Email Notifications
 - **Automatic Alerts**: Get notified instantly when a stream goes down or recovers
 - **SMTP Support**: Works with Gmail, SendGrid, Amazon SES, or any SMTP server
-  - *Note: Only the admin needs to configure SMTP; regular users just provide their email address.*
 - **Secure Storage**: SMTP passwords are encrypted using AES-256-CBC
 - **Spam Prevention**: Configurable cooldowns to prevent alert flooding
 - **Recipient Management**: Send alerts to multiple team members
@@ -58,16 +57,24 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Legacy Support**: Direct Icecast URLs on port 8100 still available
 - **Secure Status Page**: Access Icecast status via HTTPS at `/icecast-status`
 
-### 🔗 StationDock Integration (NEW)
+### 🔗 StationDock Integration
 - **Stream Monitoring**: Works with StationDock's real-time stream health checks
 - **Automated Recording**: Streams can be recorded by StationDock
 - **Shared Architecture**: Part of the SuperSoul Radio Suite
 
-### 🔐 Admin Authentication (NEW)
+### 🔐 Admin Authentication
 - **Password Protection**: Single-password login to secure the admin dashboard
 - **Secure Sessions**: HTTP-only cookies with 30-day expiration
 - **Easy Setup**: Configure via `ADMIN_PASSWORD` environment variable
 - **Logout Support**: Sign out from the Admin dropdown menu
+
+### 🔁 Stream Relay & Restreaming (NEW)
+- **External Sources**: Pull audio from any external stream URL
+- **Primary Mode**: Use relay as the sole source (no encoder needed)
+- **Fallback Mode**: Auto-switch to relay when encoder disconnects
+- **URL Validation**: Test external URLs before enabling relay
+- **Format Support**: MP3, AAC, Ogg Vorbis, Opus, and more
+- **Auto-Start**: Primary mode relays start automatically on server boot
 
 ## 🛠 Tech Stack
 
@@ -155,6 +162,10 @@ docker run -p 3000:3000 -p 8100:8100 streamdock
 | GET | `/icecast-status.json` | Icecast status as JSON |
 | GET | `/stream/:mount` | Proxy stream via HTTPS |
 | HEAD | `/stream/:mount` | Stream health check |
+| POST | `/api/relay/test-url` | Validate relay URL |
+| POST | `/api/relay/:stationId/start` | Start relay for station |
+| POST | `/api/relay/:stationId/stop` | Stop relay for station |
+| GET | `/api/relay/:stationId/status` | Get relay status |
 
 ## ⚙️ Environment Variables
 

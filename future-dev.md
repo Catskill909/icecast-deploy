@@ -229,7 +229,7 @@ When failover is active:
 - [ ] Implement fallback activation logic
 - [ ] Implement encoder-return detection
 - [ ] Add relay-specific alerts
-- [ ] Documentation & Help page updates
+- [x] Documentation & Help page updates ✅ (Dec 2024)
 
 ---
 
