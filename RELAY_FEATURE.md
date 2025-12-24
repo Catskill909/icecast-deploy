@@ -229,9 +229,10 @@ CMD ["/app/startup.sh"]
 
 ## Known Issues/Limitations
 
-1. **Badge colors:** May still be reversed (cosmetic issue)
-2. **No graceful handoff:** When Mixxx takes over, there's a brief gap
-3. **Alert emails:** Should trigger on fallback activation (verify)
+1. **Mutual exclusivity:** Fallback working = Mixxx can't connect. Fallback broken = Mixxx CAN connect. They use same mount.
+2. **Badge colors:** May still be reversed (cosmetic issue)
+3. **No graceful handoff:** When Mixxx takes over, there's a brief gap
+4. **The startup.sh fix that would solve this ALSO breaks fallback** - needs more investigation
 
 ---
 
@@ -254,3 +255,4 @@ This restores fallback to main mount (works, but Mixxx can't reconnect).
 3. **Icecast reloadconfig is limited** - doesn't add new mounts
 4. **Standard patterns exist** - should have researched first
 5. **Document as you go** - not at the end
+6. **Fallback and encoder reconnect are mutually exclusive with current approach** - need different architecture
