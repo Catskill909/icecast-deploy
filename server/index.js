@@ -450,6 +450,10 @@ app.put('/api/stations/:id', async (req, res) => {
                 // Relay enabled in primary mode - start it
                 console.log(`[Relay] Station ${req.params.id}: Relay enabled (primary), starting...`);
                 relayManager.startRelay(req.params.id);
+            } else if (isNowRelayEnabled && relayMode === 'fallback' && station.relay_mode === 'primary') {
+                // Changed from primary to fallback mode - stop relay (fallback only activates on encoder drop)
+                console.log(`[Relay] Station ${req.params.id}: Mode changed to fallback, stopping relay...`);
+                await relayManager.stopRelay(req.params.id);
             } else if (!isNowRelayEnabled || !relayUrl) {
                 // No relay URL or disabled - ensure stopped
                 await relayManager.stopRelay(req.params.id);
