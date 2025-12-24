@@ -41,9 +41,9 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0f1219] flex items-center justify-center p-4">
-            <div className="w-full max-w-sm">
-                <Card className="border-[#2d3555] bg-[#1e2337]/50 backdrop-blur-sm shadow-xl">
+        <div className="fixed inset-0 z-50 bg-[#0a0e17] flex items-center justify-center overflow-hidden">
+            <div className="w-full max-w-sm px-4">
+                <Card className="border-[#1e2337] bg-[#0d1219] shadow-2xl">
                     <CardContent className="p-8">
                         <div className="flex flex-col items-center mb-8">
                             <img

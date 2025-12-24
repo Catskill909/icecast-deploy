@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import Layout from './components/Layout/Layout';
 import { ToastProvider } from './components/ui/Toast';
 import Dashboard from './pages/Dashboard';
@@ -11,50 +11,36 @@ import Help from './pages/Help';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 
+// Layout wrapper that includes ProtectedRoute
+function ProtectedLayout() {
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <Outlet />
+      </Layout>
+    </ProtectedRoute>
+  );
+}
+
 function App() {
   return (
     <ToastProvider>
       <Router>
-        <Layout>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/create" element={
-              <ProtectedRoute>
-                <CreateStation />
-              </ProtectedRoute>
-            } />
-            <Route path="/servers" element={
-              <ProtectedRoute>
-                <Stations />
-              </ProtectedRoute>
-            } />
-            <Route path="/alerts" element={
-              <ProtectedRoute>
-                <Alerts />
-              </ProtectedRoute>
-            } />
-            <Route path="/logs" element={
-              <ProtectedRoute>
-                <Logs />
-              </ProtectedRoute>
-            } />
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            } />
-            <Route path="/help" element={
-              <ProtectedRoute>
-                <Help />
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Login page - standalone, no layout */}
+          <Route path="/login" element={<Login />} />
+
+          {/* All protected routes wrapped in Layout */}
+          <Route element={<ProtectedLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/create" element={<CreateStation />} />
+            <Route path="/servers" element={<Stations />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/logs" element={<Logs />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/help" element={<Help />} />
+          </Route>
+        </Routes>
       </Router>
     </ToastProvider>
   );
