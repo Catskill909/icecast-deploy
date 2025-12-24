@@ -63,13 +63,14 @@ export function startRelay(stationId) {
 
         const ffmpegArgs = [
             '-hide_banner',
-            '-loglevel', 'warning',
-            '-re',                       // Read at native frame rate (MUST be before -i for live streams!)
+            '-loglevel', 'info',         // Changed to info for better debugging
+            // NOTE: Do NOT use -re with network streams - it causes stalling!
             '-reconnect', '1',           // Auto-reconnect if source disconnects
             '-reconnect_streamed', '1',
             '-reconnect_delay_max', '5', // Max 5 seconds between reconnect attempts
-            '-i', relayUrl,              // Input URL
-            '-c:a', 'copy',              // Copy audio (no transcoding)
+            '-i', relayUrl,              // Input URL (network stream)
+            '-c:a', 'libmp3lame',        // Encode to MP3 (more reliable than copy)
+            '-b:a', '128k',              // 128kbps bitrate
             '-f', 'mp3',                 // Output format
             '-content_type', 'audio/mpeg',
             icecastUrl                   // Output to Icecast
