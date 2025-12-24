@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink, Pencil, Loader2 } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Headphones, ExternalLink, Pencil, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -88,79 +88,77 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
 
     return (
         <Card className={isLive ? 'ring-2 ring-[#4ade80]/50' : ''}>
-            <CardContent className="p-5">
+            <CardContent className="p-4">
                 <audio ref={audioRef} />
 
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        {station.logoUrl ? (
-                            <img
-                                src={station.logoUrl}
-                                alt={station.name}
-                                className="w-10 h-10 rounded-lg object-cover"
-                                onError={(e) => e.target.style.display = 'none'}
-                            />
-                        ) : (
-                            <div className={`p-2 rounded-lg ${isLive ? 'bg-[#4ade80]/10' : 'bg-[#4b7baf]/10'}`}>
-                                <Radio className={`w-5 h-5 ${isLive ? 'text-[#4ade80]' : 'text-[#4b7baf]'}`} />
-                            </div>
-                        )}
-                        <div>
-                            <h3 className="font-heading font-bold text-white">{station.name}</h3>
-                            <p className="text-sm text-[#64748b]">{station.mountPoint}</p>
+                <div className="flex items-center gap-3 mb-3">
+                    {station.logoUrl ? (
+                        <img
+                            src={station.logoUrl}
+                            alt={station.name}
+                            className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                            onError={(e) => e.target.style.display = 'none'}
+                        />
+                    ) : (
+                        <div className={`p-2 rounded-lg flex-shrink-0 ${isLive ? 'bg-[#4ade80]/10' : 'bg-[#4b7baf]/10'}`}>
+                            <Radio className={`w-5 h-5 ${isLive ? 'text-[#4ade80]' : 'text-[#4b7baf]'}`} />
                         </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                        <h3 className="font-heading font-bold text-white truncate">{station.name}</h3>
+                        <p className="text-sm text-[#64748b]">{station.mountPoint}</p>
                     </div>
-                    <div className="absolute top-4 right-4 flex items-center gap-2">
+                </div>
+
+                {/* Status Row: Badges + Listen Button */}
+                <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-[#1e2337]">
+                    <div className="flex items-center gap-2">
                         {isLive ? (
-                            <div className="flex items-center gap-2">
-                                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/20 text-green-400 text-xs font-bold uppercase tracking-wider rounded-full border border-green-500/20 animate-pulse shadow-[0_0_10px_rgba(74,222,128,0.2)]">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                                    ON AIR
+                            <>
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] font-bold uppercase tracking-wider rounded-full border border-green-500/20">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                    LIVE
                                 </span>
-                                <span className="flex items-center gap-1.5 px-3 py-1 bg-[#0f1633] text-white text-xs font-medium rounded-full border border-[#2a3044] shadow-sm">
-                                    <Headphones className="w-3 h-3 text-[#64748b]" />
-                                    {listeners} Listening
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-[#0f1633] text-[#94a3b8] text-[10px] font-medium rounded-full border border-[#2a3044]">
+                                    <Headphones className="w-2.5 h-2.5" />
+                                    {listeners}
                                 </span>
-                            </div>
+                            </>
                         ) : (
-                            <span className="px-2.5 py-1 bg-[#1e2337] text-[#64748b] text-[10px] font-bold uppercase tracking-wider rounded-full border border-[#2a3044]">
+                            <span className="px-2 py-0.5 bg-[#1e2337] text-[#64748b] text-[10px] font-bold uppercase tracking-wider rounded-full border border-[#2a3044]">
                                 OFFLINE
                             </span>
                         )}
                     </div>
-                </div>
 
-                {/* Listen Button - only show when live */}
-                {isLive && connectionInfo && (
-                    <button
-                        onClick={togglePlay}
-                        disabled={isBuffering}
-                        className={`w-full mb-4 py-2.5 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${isBuffering
-                            ? 'bg-[#4b7baf]/20 text-[#4b7baf] cursor-wait'
-                            : isPlaying
-                                ? 'bg-[#4b7baf] text-white'
-                                : 'bg-[#4b7baf]/10 text-[#4b7baf] hover:bg-[#4b7baf]/20'
-                            }`}
-                    >
-                        {isBuffering ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Connecting to stream...</span>
-                            </>
-                        ) : isPlaying ? (
-                            <>
-                                <Pause className="w-4 h-4" />
-                                <span>Stop Listening</span>
-                                <Volume2 className="w-4 h-4 animate-pulse" />
-                            </>
-                        ) : (
-                            <>
-                                <Play className="w-4 h-4" />
-                                <span>Listen Now</span>
-                            </>
-                        )}
-                    </button>
-                )}
+                    {/* Compact Listen Button */}
+                    {isLive && connectionInfo && (
+                        <button
+                            onClick={togglePlay}
+                            disabled={isBuffering}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${isBuffering
+                                ? 'bg-[#4b7baf]/20 text-[#4b7baf] cursor-wait'
+                                : isPlaying
+                                    ? 'bg-[#4b7baf] text-white'
+                                    : 'bg-[#4b7baf]/10 text-[#4b7baf] hover:bg-[#4b7baf]/20'
+                                }`}
+                        >
+                            {isBuffering ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : isPlaying ? (
+                                <>
+                                    <Pause className="w-3 h-3" />
+                                    <span>Stop</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="w-3 h-3" />
+                                    <span>Listen</span>
+                                </>
+                            )}
+                        </button>
+                    )}
+                </div>
 
                 {connectionInfo && (
                     <div className="space-y-4 bg-[#0d1229] rounded-lg p-3 text-sm">
