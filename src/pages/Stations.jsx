@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Headphones, ExternalLink, Pencil, Loader2 } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Headphones, ExternalLink, Pencil, Loader2, Globe } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -251,8 +251,19 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
 
 
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#1e2337]">
-                    <div className="text-sm text-[#64748b]">
-                        {station.format} • {station.bitrate} kbps
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm text-[#64748b]">{station.format} • {station.bitrate} kbps</span>
+                        {station.websiteUrl && (
+                            <a
+                                href={station.websiteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs text-[#4b7baf] hover:text-white transition-colors"
+                            >
+                                <Globe className="w-3 h-3" />
+                                Website
+                            </a>
+                        )}
                     </div>
                     <div className="flex items-center gap-1">
                         <button

@@ -416,7 +416,7 @@ app.get('/api/stations/:id', (req, res) => {
 });
 
 // Update a station
-app.put('/api/stations/:id', (req, res) => {
+app.put('/api/stations/:id', async (req, res) => {
     try {
         const station = db.getStationById(req.params.id);
         if (!station) {
@@ -430,6 +430,13 @@ app.put('/api/stations/:id', (req, res) => {
             return res.status(400).json({ error: 'Station name is required' });
         }
 
+        // Check if relay setting changed
+        const wasRelayEnabled = station.relay_enabled === 1;
+        const isNowRelayEnabled = relayEnabled === true;
+        const relaySettingsChanged = wasRelayEnabled !== isNowRelayEnabled ||
+            station.relay_url !== relayUrl ||
+            station.relay_mode !== relayMode;
+
         db.updateStation(req.params.id, {
             name: name.trim(),
             description: description || '',
@@ -441,6 +448,23 @@ app.put('/api/stations/:id', (req, res) => {
             relayEnabled: relayEnabled || false,
             relayMode: relayMode || 'fallback'
         });
+
+        // Handle relay start/stop based on settings change
+        if (relaySettingsChanged) {
+            if (!isNowRelayEnabled && wasRelayEnabled) {
+                // Relay was disabled - stop it
+                console.log(`[Relay] Station ${req.params.id}: Relay disabled, stopping...`);
+                await relayManager.stopRelay(req.params.id);
+            } else if (isNowRelayEnabled && relayUrl && relayMode === 'primary') {
+                // Relay enabled in primary mode - start it
+                console.log(`[Relay] Station ${req.params.id}: Relay enabled (primary), starting...`);
+                const updatedStation = db.getStationById(req.params.id);
+                await relayManager.startRelay(updatedStation);
+            } else if (!isNowRelayEnabled || !relayUrl) {
+                // No relay URL or disabled - ensure stopped
+                await relayManager.stopRelay(req.params.id);
+            }
+        }
 
         res.json({ success: true, message: 'Station updated' });
     } catch (error) {
