@@ -53,12 +53,8 @@ export function startRelay(stationId) {
 
     try {
         // Build ffmpeg command
-        // Stream to -fallback mount so main mount stays free for encoder (Mixxx)
-        // Icecast's fallback-override=1 routes listeners to -fallback when main is offline
-        const targetMount = `${mountPoint}-fallback`;
-        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${targetMount}`;
-
-        console.log(`[RELAY] Target mount: ${targetMount} (main mount ${mountPoint} stays free for encoder)`);
+        // Using icecast:// protocol for source streaming
+        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
 
         const ffmpegArgs = [
             '-hide_banner',
