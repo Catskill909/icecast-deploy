@@ -64,6 +64,7 @@ export function startRelay(stationId) {
         const ffmpegArgs = [
             '-hide_banner',
             '-loglevel', 'warning',
+            '-re',                       // Read at native frame rate (MUST be before -i for live streams!)
             '-reconnect', '1',           // Auto-reconnect if source disconnects
             '-reconnect_streamed', '1',
             '-reconnect_delay_max', '5', // Max 5 seconds between reconnect attempts
@@ -103,14 +104,19 @@ export function startRelay(stationId) {
         // Handle stderr (ffmpeg outputs progress here)
         process.stderr.on('data', (data) => {
             const output = data.toString().trim();
-            // Only log non-progress lines (progress is noisy)
-            if (!output.includes('size=') && !output.includes('time=')) {
-                console.log(`[RELAY ${stationId}] ${output}`);
+            // Log ALL non-progress output for debugging
+            if (!output.includes('size=') && !output.includes('time=') && !output.includes('bitrate=')) {
+                console.log(`[RELAY ${stationId}] STDERR: ${output}`);
             }
-            // When we see "Opening..." it means connection is being attempted
+            // When we see "Opening..." or stream info, connection is working
             if (output.includes('Opening') || output.includes('Stream #')) {
+                console.log(`[RELAY ${stationId}] Connection established, status: running`);
                 relayInfo.status = 'running';
                 updateRelayStatusInDb(stationId, 'active');
+            }
+            // Log errors explicitly
+            if (output.toLowerCase().includes('error') || output.includes('failed')) {
+                console.error(`[RELAY ${stationId}] ERROR: ${output}`);
             }
         });
 

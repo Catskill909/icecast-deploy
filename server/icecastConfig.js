@@ -16,7 +16,8 @@ const __dirname = path.dirname(__filename);
 // Icecast config from environment
 const ICECAST_PORT = process.env.ICECAST_PORT || 8100;
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
-const ICECAST_ADMIN_PASSWORD = process.env.ICECAST_ADMIN_PASSWORD || 'streamdock_admin';
+// ADMIN_PASSWORD is set in Coolify, not ICECAST_ADMIN_PASSWORD
+const ICECAST_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.ICECAST_ADMIN_PASSWORD || 'streamdock_admin';
 
 /**
  * Generate mount XML for a station
