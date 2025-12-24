@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink, Pencil, Globe, Loader2 } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink, Pencil, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -136,10 +136,10 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                         onClick={togglePlay}
                         disabled={isBuffering}
                         className={`w-full mb-4 py-2.5 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${isBuffering
-                                ? 'bg-[#4b7baf]/20 text-[#4b7baf] cursor-wait'
-                                : isPlaying
-                                    ? 'bg-[#4b7baf] text-white'
-                                    : 'bg-[#4b7baf]/10 text-[#4b7baf] hover:bg-[#4b7baf]/20'
+                            ? 'bg-[#4b7baf]/20 text-[#4b7baf] cursor-wait'
+                            : isPlaying
+                                ? 'bg-[#4b7baf] text-white'
+                                : 'bg-[#4b7baf]/10 text-[#4b7baf] hover:bg-[#4b7baf]/20'
                             }`}
                     >
                         {isBuffering ? (
@@ -251,18 +251,6 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                     </div>
                 )}
 
-                {/* Website link if set */}
-                {station.websiteUrl && (
-                    <a
-                        href={station.websiteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs text-[#4b7baf] hover:text-white transition-colors mt-3"
-                    >
-                        <Globe className="w-3 h-3" />
-                        <span className="truncate">{station.websiteUrl.replace(/^https?:\/\//, '')}</span>
-                    </a>
-                )}
 
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#1e2337]">
                     <div className="text-sm text-[#64748b]">
@@ -407,7 +395,7 @@ export default function Stations() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {stations.map(station => {
                         const { isLive, listeners } = getStationStatus(station.mountPoint);
                         return (
