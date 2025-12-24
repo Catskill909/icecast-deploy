@@ -13,7 +13,7 @@ const activeRelays = new Map();
 
 // Icecast config from environment
 const ICECAST_HOST = process.env.ICECAST_HOST || 'localhost';
-const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8000;
+const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8100; // Must match Icecast port!
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
 
 /**

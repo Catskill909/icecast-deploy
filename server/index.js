@@ -298,7 +298,10 @@ app.get('/api/diagnostics', async (req, res) => {
         let icecastConfig = '';
         try {
             const fs = await import('fs');
-            const configPath = path.join(__dirname, '../icecast.xml');
+            // In production, config is at /etc/icecast.xml
+            const configPath = process.env.NODE_ENV === 'production'
+                ? '/etc/icecast.xml'
+                : path.join(__dirname, '../icecast.xml');
             const fullConfig = fs.readFileSync(configPath, 'utf8');
             // Extract mount sections
             const mountMatches = fullConfig.match(/<mount>[\s\S]*?<\/mount>/g);
