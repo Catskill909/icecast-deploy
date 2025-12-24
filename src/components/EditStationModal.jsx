@@ -106,15 +106,15 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Station" size="2xl">
             <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Left Column: General & Branding */}
-                    <div className="space-y-5">
+                    <div className="space-y-4">
                         <section>
-                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <Settings className="w-4 h-4" />
+                            <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <Settings className="w-3.5 h-3.5" />
                                 General Information
                             </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <Input
                                     label="Station Name"
                                     name="name"
@@ -132,7 +132,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                     placeholder="A brief description..."
                                 />
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-2">
                                     <Input
                                         label="Genre"
                                         name="genre"
@@ -152,48 +152,56 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                             </div>
                         </section>
 
-                        <div className="pt-5 border-t border-[#2d3555]">
-                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <Image className="w-4 h-4" />
+                        <div className="pt-3 border-t border-[#2d3555]">
+                            <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <Image className="w-3.5 h-3.5" />
                                 Branding
                             </h3>
 
-                            <div className="space-y-3">
-                                <Input
-                                    label="Logo URL"
-                                    name="logoUrl"
-                                    value={formData.logoUrl}
-                                    onChange={handleChange}
-                                    placeholder="https://example.com/logo.png"
-                                />
-                                {formData.logoUrl && (
-                                    <div className="w-20 h-20 bg-[#0d1229] rounded-lg border border-[#1e2337] overflow-hidden">
-                                        <img
-                                            src={formData.logoUrl}
-                                            alt="Preview"
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => e.target.style.display = 'none'}
-                                        />
+                            <div className="flex gap-3">
+                                {/* Logo Preview - Large */}
+                                <div className="flex-shrink-0">
+                                    <div className="w-24 h-24 bg-[#0d1229] rounded-lg border border-[#1e2337] overflow-hidden flex items-center justify-center">
+                                        {formData.logoUrl ? (
+                                            <img
+                                                src={formData.logoUrl}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                        ) : (
+                                            <Image className="w-8 h-8 text-[#2d3555]" />
+                                        )}
                                     </div>
-                                )}
+                                </div>
+                                {/* Logo URL Input */}
+                                <div className="flex-1 min-w-0">
+                                    <Input
+                                        label="Logo URL"
+                                        name="logoUrl"
+                                        value={formData.logoUrl}
+                                        onChange={handleChange}
+                                        placeholder="https://example.com/logo.png"
+                                    />
+                                    <p className="text-[10px] text-[#64748b] mt-1">Square images work best (PNG or JPG)</p>
+                                </div>
                             </div>
                         </div>
 
-                        {/* External Source / Relay Section */}
-                        <div className="pt-5 border-t border-[#2d3555]">
-                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <Rss className="w-4 h-4 text-[#4b7baf]" />
+                        <div className="pt-3 border-t border-[#2d3555]">
+                            <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
+                                <Rss className="w-3.5 h-3.5 text-[#4b7baf]" />
                                 <span className="text-[#4b7baf]">External Source</span>
                             </h3>
 
-                            <div className="bg-gradient-to-r from-[#4b7baf]/10 to-transparent rounded-lg p-3 mb-4 border-l-2 border-[#4b7baf]">
-                                <p className="text-xs text-[#d1d5db] leading-relaxed">
-                                    <strong className="text-white">Relay Mode:</strong> Pull audio from an external stream URL.
-                                    Use as the primary source or as an automatic fallback when your encoder disconnects.
-                                </p>
-                            </div>
+                            <p className="text-[10px] text-[#94a3b8] mb-2">
+                                Pull audio from an external stream URL as primary source or auto-fallback.
+                            </p>
 
-                            <div className="space-y-4 bg-[#1a1f35] rounded-lg p-4 border border-[#2d3555]">
+                            <div className="space-y-3 bg-[#1a1f35] rounded-lg p-3 border border-[#2d3555]">
                                 <div className="flex gap-2">
                                     <div className="flex-1">
                                         <Input
@@ -228,8 +236,8 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                                 }
                                             }}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${!formData.relayUrl || relayTest.testing
-                                                    ? 'bg-[#2d3555] text-[#64748b] cursor-not-allowed'
-                                                    : 'bg-[#4b7baf] text-white hover:bg-[#3b6a9e]'
+                                                ? 'bg-[#2d3555] text-[#64748b] cursor-not-allowed'
+                                                : 'bg-[#4b7baf] text-white hover:bg-[#3b6a9e]'
                                                 }`}
                                         >
                                             {relayTest.testing ? (
@@ -244,8 +252,8 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                 {/* Test Result Display */}
                                 {relayTest.result && (
                                     <div className={`flex items-center gap-3 p-3 rounded-lg ${relayTest.result.valid
-                                            ? 'bg-[#22c55e]/10 border border-[#22c55e]/30'
-                                            : 'bg-[#f87171]/10 border border-[#f87171]/30'
+                                        ? 'bg-[#22c55e]/10 border border-[#22c55e]/30'
+                                        : 'bg-[#f87171]/10 border border-[#f87171]/30'
                                         }`}>
                                         {relayTest.result.valid ? (
                                             <>
@@ -338,68 +346,65 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                     </div>
 
                     {/* Right Column: Alerts */}
-                    <div className="space-y-4">
-                        <div className="md:pl-8 md:border-l md:border-[#2d3555] h-full">
-                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <Bell className="w-4 h-4" />
-                                Alert Settings
-                            </h3>
+                    <div className="md:pl-6 md:border-l md:border-[#2d3555]">
+                        <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
+                            <Bell className="w-3.5 h-3.5" />
+                            Alert Settings
+                        </h3>
 
-                            <div className="bg-[#1e2337]/50 rounded-lg p-3 text-sm text-[#94a3b8] mb-4 border border-[#2d3555]">
-                                <p className="text-white font-medium mb-1">Station-Specific Recipients</p>
-                                <p className="leading-relaxed opacity-80 text-xs">
-                                    Configure users who should receive alerts specifically for <strong>{formData.name || 'this station'}</strong>.
-                                    These override global settings unless "Monitor All" is active.
-                                </p>
+                        <div className="bg-[#1e2337]/50 rounded-lg p-2 text-[#94a3b8] mb-3 border border-[#2d3555]">
+                            <p className="text-white text-xs font-medium mb-0.5">Station-Specific Recipients</p>
+                            <p className="text-[10px] leading-relaxed opacity-80">
+                                Alerts for <strong>{formData.name || 'this station'}</strong> go to these emails.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#94a3b8]">
+                                Add Recipient
+                            </label>
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="email@example.com"
+                                    value={newEmail}
+                                    onChange={(e) => setNewEmail(e.target.value)}
+                                    onKeyDown={handleEmailKeyPress}
+                                    className="flex-1"
+                                />
+                                <Button variant="secondary" icon={Plus} onClick={handleAddEmail} type="button">
+                                    Add
+                                </Button>
                             </div>
 
-                            <div className="space-y-3">
-                                <label className="block text-sm font-medium text-[#94a3b8]">
-                                    Add Recipient
+                            <div className="mt-2">
+                                <label className="block text-sm font-medium text-[#94a3b8] mb-2">
+                                    Current Recipients
                                 </label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="email@example.com"
-                                        value={newEmail}
-                                        onChange={(e) => setNewEmail(e.target.value)}
-                                        onKeyDown={handleEmailKeyPress}
-                                        className="flex-1"
-                                    />
-                                    <Button variant="secondary" icon={Plus} onClick={handleAddEmail} type="button">
-                                        Add
-                                    </Button>
-                                </div>
-
-                                <div className="mt-2">
-                                    <label className="block text-sm font-medium text-[#94a3b8] mb-2">
-                                        Current Recipients
-                                    </label>
-                                    <div className="max-h-[200px] overflow-y-auto pr-1">
-                                        {formData.alertEmails.length > 0 ? (
-                                            <div className="flex flex-col gap-2">
-                                                {formData.alertEmails.map(email => (
-                                                    <div
-                                                        key={email}
-                                                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#2d3555]/30 border border-[#2d3555] group hover:border-[#4b7baf]/30 transition-colors"
+                                <div className="max-h-[200px] overflow-y-auto pr-1">
+                                    {formData.alertEmails.length > 0 ? (
+                                        <div className="flex flex-col gap-2">
+                                            {formData.alertEmails.map(email => (
+                                                <div
+                                                    key={email}
+                                                    className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#2d3555]/30 border border-[#2d3555] group hover:border-[#4b7baf]/30 transition-colors"
+                                                >
+                                                    <span className="text-sm text-white truncate max-w-[200px]" title={email}>{email}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveEmail(email)}
+                                                        className="text-[#64748b] hover:text-[#f87171] p-1 rounded-md hover:bg-[#f87171]/10 transition-all opacity-0 group-hover:opacity-100"
                                                     >
-                                                        <span className="text-sm text-white truncate max-w-[200px]" title={email}>{email}</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveEmail(email)}
-                                                            className="text-[#64748b] hover:text-[#f87171] p-1 rounded-md hover:bg-[#f87171]/10 transition-all opacity-0 group-hover:opacity-100"
-                                                        >
-                                                            <X className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="text-center py-6 rounded-lg border-2 border-dashed border-[#2d3555] bg-[#1e2337]/30">
-                                                <Bell className="w-6 h-6 text-[#2d3555] mx-auto mb-2" />
-                                                <p className="text-xs text-[#64748b]">No specific recipients added</p>
-                                            </div>
-                                        )}
-                                    </div>
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-6 rounded-lg border-2 border-dashed border-[#2d3555] bg-[#1e2337]/30">
+                                            <Bell className="w-6 h-6 text-[#2d3555] mx-auto mb-2" />
+                                            <p className="text-xs text-[#64748b]">No specific recipients added</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -422,6 +427,6 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                     </Button>
                 </div>
             </form>
-        </Modal>
+        </Modal >
     );
 }
