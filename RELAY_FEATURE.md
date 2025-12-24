@@ -295,3 +295,31 @@ This restores fallback to main mount (works, but Mixxx can't reconnect).
 | Mixxx reconnect during fallback | ❌ LIMITATION |
 
 **This is an architectural limitation.** Accept it or add manual "Stop Fallback" button.
+
+---
+
+## Failed Attempt #2: December 24, 2024 ~5:02 PM
+
+**Tried:** Dockerfile CMD use startup.sh to generate config before Icecast starts
+
+**Result:** ❌ BROKE SERVER COMPLETELY
+
+**Commits:** 10f1747 → REVERTED → 302862d
+
+**Root cause:** startup.sh failed to execute properly
+
+---
+
+## Final Status: December 24, 2024 5:08 PM
+
+**WORKING:**
+- Live streaming ✅
+- Fallback activates when encoder drops ✅
+- Audio plays from fallback ✅
+
+**KNOWN LIMITATION:**
+- Mixxx cannot reconnect while fallback is active ❌
+
+**Workaround:** Stop fallback manually before reconnecting Mixxx
+
+**10+ hours spent today. 2 major fix attempts both failed. This is the working state.**
