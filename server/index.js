@@ -9,6 +9,7 @@ import nodemailer from 'nodemailer';
 import cookieParser from 'cookie-parser';
 import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
+import * as relayManager from './relayManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -626,6 +627,47 @@ app.post('/api/relay/test-url', async (req, res) => {
             error: errorMessage
         });
     }
+});
+
+// ==========================================
+// RELAY CONTROL API
+// ==========================================
+
+// Start relay for a station
+app.post('/api/relay/:stationId/start', (req, res) => {
+    const { stationId } = req.params;
+    console.log(`[API] Starting relay for station: ${stationId}`);
+    const result = relayManager.startRelay(stationId);
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(400).json(result);
+    }
+});
+
+// Stop relay for a station
+app.post('/api/relay/:stationId/stop', (req, res) => {
+    const { stationId } = req.params;
+    console.log(`[API] Stopping relay for station: ${stationId}`);
+    const result = relayManager.stopRelay(stationId);
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(400).json(result);
+    }
+});
+
+// Get relay status for a station
+app.get('/api/relay/:stationId/status', (req, res) => {
+    const { stationId } = req.params;
+    const status = relayManager.getRelayStatus(stationId);
+    res.json(status);
+});
+
+// Get all active relays
+app.get('/api/relays/active', (req, res) => {
+    const relays = relayManager.getAllActiveRelays();
+    res.json(relays);
 });
 
 // Health check (Moved up to public routes)
@@ -1257,4 +1299,22 @@ if (process.env.NODE_ENV === 'production') {
 app.listen(PORT, () => {
     console.log(`StreamDock API running on port ${PORT}`);
     console.log(`Icecast server: ${ICECAST_HOST}:${ICECAST_INTERNAL_PORT} (Public: ${ICECAST_PUBLIC_PORT})`);
+
+    // Auto-start primary mode relays
+    setTimeout(() => {
+        relayManager.startPrimaryRelays();
+    }, 5000); // Wait 5 seconds for Icecast to be ready
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('[SHUTDOWN] Received SIGTERM, stopping relays...');
+    relayManager.stopAllRelays();
+    process.exit(0);
+});
+
+process.on('SIGINT', () => {
+    console.log('[SHUTDOWN] Received SIGINT, stopping relays...');
+    relayManager.stopAllRelays();
+    process.exit(0);
 });

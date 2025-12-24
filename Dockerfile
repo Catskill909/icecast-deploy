@@ -15,8 +15,8 @@ RUN npm run build
 # Production stage with Icecast + Node.js
 FROM node:20-alpine AS production
 
-# Install Icecast, supervisor, curl, and build tools for better-sqlite3
-RUN apk add --no-cache icecast supervisor curl python3 make g++
+# Install Icecast, supervisor, curl, ffmpeg, and build tools for better-sqlite3
+RUN apk add --no-cache icecast supervisor curl ffmpeg python3 make g++
 
 WORKDIR /app
 

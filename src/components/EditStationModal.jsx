@@ -182,11 +182,11 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                         {/* External Source / Relay Section */}
                         <div className="pt-5 border-t border-[#2d3555]">
                             <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <Rss className="w-4 h-4 text-[#f59e0b]" />
-                                <span className="text-[#f59e0b]">External Source</span>
+                                <Rss className="w-4 h-4 text-[#4b7baf]" />
+                                <span className="text-[#4b7baf]">External Source</span>
                             </h3>
 
-                            <div className="bg-gradient-to-r from-[#f59e0b]/10 to-transparent rounded-lg p-3 mb-4 border-l-2 border-[#f59e0b]">
+                            <div className="bg-gradient-to-r from-[#4b7baf]/10 to-transparent rounded-lg p-3 mb-4 border-l-2 border-[#4b7baf]">
                                 <p className="text-xs text-[#d1d5db] leading-relaxed">
                                     <strong className="text-white">Relay Mode:</strong> Pull audio from an external stream URL.
                                     Use as the primary source or as an automatic fallback when your encoder disconnects.
@@ -229,7 +229,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                             }}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${!formData.relayUrl || relayTest.testing
                                                     ? 'bg-[#2d3555] text-[#64748b] cursor-not-allowed'
-                                                    : 'bg-[#f59e0b] text-white hover:bg-[#d97706]'
+                                                    : 'bg-[#4b7baf] text-white hover:bg-[#3b6a9e]'
                                                 }`}
                                         >
                                             {relayTest.testing ? (
@@ -279,12 +279,12 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                                 onChange={(e) => setFormData(prev => ({ ...prev, relayEnabled: e.target.checked }))}
                                                 className="sr-only peer"
                                             />
-                                            <div className="w-11 h-6 bg-[#2d3555] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#f59e0b]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#f59e0b]"></div>
+                                            <div className="w-11 h-6 bg-[#2d3555] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#4b7baf]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4b7baf]"></div>
                                         </label>
                                         <span className="text-sm font-medium text-white">Enable Relay</span>
                                     </div>
                                     {formData.relayEnabled && (
-                                        <span className="text-xs px-2 py-1 rounded-full bg-[#f59e0b]/20 text-[#f59e0b] font-medium">
+                                        <span className="text-xs px-2 py-1 rounded-full bg-[#4b7baf]/20 text-[#4b7baf] font-medium">
                                             Active
                                         </span>
                                     )}
@@ -297,7 +297,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                         </label>
                                         <div className="grid grid-cols-2 gap-3">
                                             <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.relayMode === 'primary'
-                                                ? 'border-[#f59e0b] bg-[#f59e0b]/10'
+                                                ? 'border-[#4b7baf] bg-[#4b7baf]/10'
                                                 : 'border-[#2d3555] hover:border-[#4b7baf]/50'
                                                 }`}>
                                                 <input
@@ -306,7 +306,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                                     value="primary"
                                                     checked={formData.relayMode === 'primary'}
                                                     onChange={handleChange}
-                                                    className="w-4 h-4 text-[#f59e0b] bg-[#2d3555] border-[#f59e0b] focus:ring-[#f59e0b]"
+                                                    className="w-4 h-4 text-[#4b7baf] bg-[#2d3555] border-[#4b7baf] focus:ring-[#4b7baf]"
                                                 />
                                                 <div>
                                                     <span className="text-sm font-medium text-white">Primary</span>
@@ -314,7 +314,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                                 </div>
                                             </label>
                                             <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.relayMode === 'fallback'
-                                                ? 'border-[#f59e0b] bg-[#f59e0b]/10'
+                                                ? 'border-[#4b7baf] bg-[#4b7baf]/10'
                                                 : 'border-[#2d3555] hover:border-[#4b7baf]/50'
                                                 }`}>
                                                 <input
@@ -323,7 +323,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                                     value="fallback"
                                                     checked={formData.relayMode === 'fallback'}
                                                     onChange={handleChange}
-                                                    className="w-4 h-4 text-[#f59e0b] bg-[#2d3555] border-[#f59e0b] focus:ring-[#f59e0b]"
+                                                    className="w-4 h-4 text-[#4b7baf] bg-[#2d3555] border-[#4b7baf] focus:ring-[#4b7baf]"
                                                 />
                                                 <div>
                                                     <span className="text-sm font-medium text-white">Fallback</span>

@@ -247,7 +247,16 @@ const updateAlertSettings = (emails, allStreams, cooldownMins, onRecovery) => {
     );
 };
 
+const updateRelayStatus = (id, status) => {
+    return db.prepare('UPDATE stations SET relay_status = ?, updated_at = ? WHERE id = ?').run(
+        status,
+        new Date().toISOString(),
+        id
+    );
+};
+
 export {
+    db,
     createStation,
     getAllStations,
     getStationById,
@@ -255,6 +264,7 @@ export {
     deleteStation,
     updateStation,
     updateListeners,
+    updateRelayStatus,
     createAlert,
     getAllAlerts,
     getUnreadAlertCount,

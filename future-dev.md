@@ -224,7 +224,7 @@ When failover is active:
 - [x] Add relay fields to database schema ✅ (Dec 2024)
 - [x] Add relay fields to Edit Station modal ✅ (Dec 2024)
 - [x] Add "Test URL" validation endpoint ✅ (Dec 2024)
-- [ ] Create Relay Manager service
+- [x] Create Relay Manager service ✅ (Dec 2024)
 - [ ] Update station cards to show relay status
 - [ ] Implement fallback activation logic
 - [ ] Implement encoder-return detection
