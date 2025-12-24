@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import CreateStation from './pages/CreateStation';
 import Help from './pages/Help';
 import Login from './pages/Login';
+import Diagnostics from './pages/Diagnostics';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Layout wrapper that includes ProtectedRoute
@@ -39,6 +40,7 @@ function App() {
             <Route path="/logs" element={<Logs />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/diagnostics" element={<Diagnostics />} />
           </Route>
         </Routes>
       </Router>

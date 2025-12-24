@@ -33,6 +33,20 @@ const STREAM_HOST = process.env.STREAM_HOST || 'stream.supersoul.top';
 // Track previous mount status for alert generation
 let previousMountStatus = {}; // { "/mount": { live: true, listeners: 0 } }
 let lastAlertTime = {}; // Prevent alert spam
+
+// Debug log buffer for diagnostics page
+const DEBUG_LOG_BUFFER = [];
+const MAX_LOG_ENTRIES = 100;
+
+function debugLog(message) {
+    const timestamp = new Date().toISOString();
+    const entry = `[${timestamp}] ${message}`;
+    DEBUG_LOG_BUFFER.unshift(entry); // Add to front
+    if (DEBUG_LOG_BUFFER.length > MAX_LOG_ENTRIES) {
+        DEBUG_LOG_BUFFER.pop(); // Remove oldest
+    }
+    console.log(message); // Also log to console
+}
 let lastEmailTime = {}; // Prevent email spam (separate from in-app alerts)
 
 // ==========================================
@@ -241,6 +255,72 @@ app.get('/api/auth/me', (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_INTERNAL_PORT } });
+});
+
+// Diagnostics endpoint (for debugging)
+app.get('/api/diagnostics', async (req, res) => {
+    try {
+        // Get all stations with their relay config
+        const stations = db.getAllStations();
+
+        // Try to get Icecast status
+        let icecastStatus = { connected: false, activeMounts: 0, totalListeners: 0 };
+        try {
+            const icecastRes = await fetch(`http://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}/status-json.xsl`);
+            if (icecastRes.ok) {
+                const data = await icecastRes.json();
+                const sources = data.icestats?.source || [];
+                const sourceArray = Array.isArray(sources) ? sources : [sources];
+                icecastStatus = {
+                    connected: true,
+                    activeMounts: sourceArray.length,
+                    totalListeners: sourceArray.reduce((sum, s) => sum + (s.listeners || 0), 0),
+                    mounts: sourceArray.map(s => ({
+                        mount: s.listenurl?.replace(/.*:\d+/, '') || s.server_name,
+                        listeners: s.listeners
+                    }))
+                };
+            }
+        } catch (e) {
+            icecastStatus.error = e.message;
+        }
+
+        // Get active relays
+        const activeRelays = relayManager.getAllActiveRelays();
+
+        // Mark which stations are live based on Icecast status
+        const stationsWithStatus = stations.map(s => ({
+            ...s,
+            isLive: icecastStatus.mounts?.some(m => m.mount === s.mount_point) || false
+        }));
+
+        // Generate icecast config preview (mount sections only)
+        let icecastConfig = '';
+        try {
+            const fs = await import('fs');
+            const configPath = path.join(__dirname, '../icecast.xml');
+            const fullConfig = fs.readFileSync(configPath, 'utf8');
+            // Extract mount sections
+            const mountMatches = fullConfig.match(/<mount>[\s\S]*?<\/mount>/g);
+            icecastConfig = mountMatches ? mountMatches.join('\n\n') : 'No mount sections found';
+        } catch (e) {
+            icecastConfig = `Error reading config: ${e.message}`;
+        }
+
+        res.json({
+            server: {
+                uptime: process.uptime() ? `${Math.floor(process.uptime() / 60)} minutes` : 'N/A',
+                nodeVersion: process.version
+            },
+            icecast: icecastStatus,
+            stations: stationsWithStatus,
+            activeRelays,
+            recentLogs: DEBUG_LOG_BUFFER.slice(0, 50),
+            icecastConfig
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ==========================================
@@ -942,10 +1022,13 @@ function checkAndGenerateAlerts(activeMounts) {
             if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN) {
                 lastAlertTime[alertKey] = now;
 
+                // DEBUG: Log station relay config (visible in /diagnostics)
+                debugLog(`[DEBUG] Station ${mount} went offline. relay_enabled=${station?.relay_enabled}, relay_mode=${station?.relay_mode}, relay_url=${station?.relay_url ? 'SET' : 'EMPTY'}`);
+
                 // Check if station has fallback relay configured
                 if (station?.relay_enabled && station?.relay_mode === 'fallback' && station?.relay_url) {
                     // START FALLBACK RELAY
-                    console.log(`[FALLBACK] Encoder dropped for ${stationInfo.name}, starting fallback relay...`);
+                    debugLog(`[FALLBACK] Encoder dropped for ${stationInfo.name}, starting fallback relay...`);
                     relayManager.startRelay(station.id);
 
                     db.createAlert(
