@@ -75,6 +75,7 @@ export function startRelay(stationId) {
         ];
 
         console.log(`[RELAY] Command: ffmpeg ${ffmpegArgs.join(' ')}`);
+        console.log(`[RELAY] Streaming to fallback mount: ${fallbackMount}`);
 
         const process = spawn('ffmpeg', ffmpegArgs, {
             stdio: ['ignore', 'pipe', 'pipe']
@@ -87,7 +88,7 @@ export function startRelay(stationId) {
             startTime: Date.now(),
             url: relayUrl,
             stationId,
-            mountPoint
+            mountPoint: fallbackMount // Store the actual fallback mount being used
         };
         activeRelays.set(stationId, relayInfo);
 

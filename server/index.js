@@ -1438,8 +1438,12 @@ app.listen(PORT, () => {
     console.log(`StreamDock API running on port ${PORT}`);
     console.log(`Icecast server: ${ICECAST_HOST}:${ICECAST_INTERNAL_PORT} (Public: ${ICECAST_PUBLIC_PORT})`);
 
-    // Auto-start primary mode relays
-    setTimeout(() => {
+    // Regenerate Icecast config on startup to ensure fallback mounts are configured
+    setTimeout(async () => {
+        console.log('[STARTUP] Regenerating Icecast config...');
+        await icecastConfig.regenerateIcecastConfig();
+
+        // Then start any primary mode relays
         relayManager.startPrimaryRelays();
     }, 5000); // Wait 5 seconds for Icecast to be ready
 });

@@ -34,8 +34,9 @@ COPY server ./server
 RUN mkdir -p /app/data /var/log/icecast /var/log/supervisor
 VOLUME ["/app/data"]
 
-# Copy Icecast config
+# Copy Icecast config (initial version, will be regenerated dynamically)
 COPY icecast.xml /etc/icecast.xml
+RUN chmod 666 /etc/icecast.xml
 
 # Fix Icecast permissions
 RUN chown -R node:node /var/log/icecast

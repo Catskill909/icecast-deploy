@@ -127,14 +127,20 @@ ${mountsXml}
 
 /**
  * Write icecast.xml to disk and trigger reload
+ * Writes to /etc/icecast.xml which is where Icecast reads from in Docker
  */
 export async function regenerateIcecastConfig() {
     try {
         const config = generateIcecastConfig();
-        const configPath = path.join(__dirname, '../icecast.xml');
+
+        // In Docker, Icecast reads from /etc/icecast.xml
+        // In dev, use project root
+        const configPath = process.env.NODE_ENV === 'production'
+            ? '/etc/icecast.xml'
+            : path.join(__dirname, '../icecast.xml');
 
         fs.writeFileSync(configPath, config, 'utf8');
-        console.log('[ICECAST] Configuration regenerated');
+        console.log(`[ICECAST] Configuration written to ${configPath}`);
 
         // Trigger Icecast reload
         await reloadIcecast();
