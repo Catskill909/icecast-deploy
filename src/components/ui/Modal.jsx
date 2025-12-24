@@ -41,7 +41,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-[#2d3555]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#2d3555]">
           <h2 className="font-heading font-bold text-xl text-white tracking-wide uppercase">{title}</h2>
           <button
             onClick={onClose}
@@ -52,7 +52,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
         </div>
 
         {/* Content */}
-        <div className="p-8 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div className="p-6 max-h-[calc(100vh-140px)] overflow-y-auto">
           {children}
         </div>
       </div>
