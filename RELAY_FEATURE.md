@@ -271,3 +271,111 @@ This restores fallback to main mount (works, but Mixxx can't reconnect).
 4. **Standard patterns exist** - should have researched first
 5. **Document as you go** - not at the end
 6. **Fallback and encoder reconnect are mutually exclusive with current approach** - need different architecture
+
+---
+
+## Deep Audit: December 24, 2024 (Evening Session)
+
+**Finding:** The obvious fix (stream to `-fallback` mount) would **BREAK** existing functionality.
+
+### Why The `-fallback` Fix Won't Work
+
+The polling code only checks the main mount:
+
+```javascript
+// index.js line 970
+const isActive = !!activeMountMap[mount];  // mount = "/new"
+```
+
+If relay streams to `/new-fallback`:
+| Step | What Happens | Problem |
+|------|--------------|---------|
+| 1 | Mixxx disconnects | `/new` goes offline |
+| 2 | Relay starts on `/new-fallback` | Audio works ✅ |
+| 3 | Polling checks `/new` | **Shows OFFLINE** ❌ |
+| 4 | System thinks station down | False alarm, spam alerts |
+| 5 | May trigger fallback again | Infinite loop risk |
+
+### Why Startup.sh Fix Also Wouldn't Help
+
+Even if `startup.sh` ran and `-fallback` mounts existed, the **polling logic** would still break.
+
+### The Real Architecture Trade-Off
+
+| Approach | Fallback Works | Status Detection | Mixxx Reconnect |
+|----------|---------------|------------------|-----------------|
+| **Current** (relay → main mount) | ✅ | ✅ | ❌ |
+| **-fallback mount** | ✅ | ❌ BROKEN | ✅ |
+
+**This is a fundamental design trade-off, not a simple bug.**
+
+### Options
+
+1. **Accept limitation** (current) - stop fallback manually before Mixxx reconnects
+2. **Fix polling logic** - check BOTH mount AND relay status (complex)
+3. **Add UI button** - easy "Stop Fallback" before reconnecting
+
+---
+
+## BREAKTHROUGH: The Real Solution (Evening Session Continued)
+
+**User insight:** "Why can't software do what you're asking me to do manually?"
+
+After research, found that Icecast's `fallback-override=1` **DOES allow encoder to take over** - but only if:
+1. Relay streams to `-fallback` mount (leaving main mount FREE)
+2. Encoder connects to main mount → **automatically takes priority**
+
+The ONLY reason this broke before was **polling logic** - which WE control!
+
+### Two-Part Fix
+
+**Part 1: relayManager.js** - Stream to `-fallback` mount
+```javascript
+// Line 57 - change target mount
+const targetMount = `${mountPoint}-fallback`;
+const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${targetMount}`;
+```
+
+**Part 2: index.js polling** - Check BOTH mount AND relay status
+```javascript
+// Line 970 - fix status detection
+const isActive = !!activeMountMap[mount];
+const relayStatus = relayManager.getRelayStatus(station?.id);
+const isRelayActive = relayStatus?.active && relayStatus?.status === 'running';
+const effectivelyLive = isActive || isRelayActive;
+```
+
+### Why This Works
+
+| Step | What Happens |
+|------|--------------|
+| 1 | Mixxx disconnects → `/new` offline |
+| 2 | Relay starts → streams to `/new-fallback` |
+| 3 | Listeners on `/new` → hear fallback audio (Icecast routes it) |
+| 4 | Polling checks → relay active = station "live" ✅ |
+| 5 | Mixxx reconnects to `/new` → **connects successfully!** |
+| 6 | `fallback-override=1` → listeners hear Mixxx |
+| 7 | Polling detects `/new` active → can auto-stop relay |
+
+### Files To Change
+
+- `server/relayManager.js:57` - change target to `-fallback`
+- `server/index.js:970` - add relay status check
+
+---
+
+## Implementation: December 24, 2024 ~4:53 PM
+
+**BOTH FIXES APPLIED:**
+
+| File | Change |
+|------|--------|
+| `server/relayManager.js` | Relay now streams to `${mountPoint}-fallback` |
+| `server/index.js` | Polling now checks `effectivelyLive = isActive \|\| isRelayActive` |
+
+**Commit pending.** Test after deploy:
+- [ ] Fallback still activates when Mixxx disconnects
+- [ ] Audio plays from fallback stream
+- [ ] Mixxx CAN reconnect while fallback is running
+- [ ] Mixxx takes over audio from fallback
+- [ ] No spam alerts during fallback

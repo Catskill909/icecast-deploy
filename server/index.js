@@ -970,6 +970,12 @@ function checkAndGenerateAlerts(activeMounts) {
         const isActive = !!activeMountMap[mount];
         const station = allStations.find(s => s.mount_point === mount);
 
+        // Also check if relay is running for this station (streams to -fallback mount)
+        // This prevents false "offline" detection when relay is active
+        const relayStatus = station?.id ? relayManager.getRelayStatus(station.id) : null;
+        const isRelayActive = relayStatus?.status === 'running';
+        const effectivelyLive = isActive || isRelayActive;
+
         // Station details for alerts
         const stationInfo = {
             id: station?.id || null,
@@ -980,9 +986,10 @@ function checkAndGenerateAlerts(activeMounts) {
         };
 
         currentStatus[mount] = {
-            live: isActive,
+            live: effectivelyLive,
             listeners: isActive ? activeMountMap[mount].listeners : 0,
-            stationInfo
+            stationInfo,
+            relayActive: isRelayActive  // Track relay status for UI
         };
 
         // Initialize previous status if missing (assume offline if unknown)
