@@ -8,6 +8,8 @@ import Logs from './pages/Logs';
 import Settings from './pages/Settings';
 import CreateStation from './pages/CreateStation';
 import Help from './pages/Help';
+import Login from './pages/Login';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -15,13 +17,42 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/create" element={<CreateStation />} />
-            <Route path="/servers" element={<Stations />} />
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/logs" element={<Logs />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/help" element={<Help />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/create" element={
+              <ProtectedRoute>
+                <CreateStation />
+              </ProtectedRoute>
+            } />
+            <Route path="/servers" element={
+              <ProtectedRoute>
+                <Stations />
+              </ProtectedRoute>
+            } />
+            <Route path="/alerts" element={
+              <ProtectedRoute>
+                <Alerts />
+              </ProtectedRoute>
+            } />
+            <Route path="/logs" element={
+              <ProtectedRoute>
+                <Logs />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            <Route path="/help" element={
+              <ProtectedRoute>
+                <Help />
+              </ProtectedRoute>
+            } />
           </Routes>
         </Layout>
       </Router>

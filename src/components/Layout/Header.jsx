@@ -190,7 +190,16 @@ export default function Header() {
                 <button className="w-full px-4 py-2 text-left text-sm text-[#94a3b8] hover:bg-[#252b45] hover:text-white transition-colors">
                   API Keys
                 </button>
-                <button className="w-full px-4 py-2 text-left text-sm text-[#f87171] hover:bg-[#252b45] transition-colors">
+                <button
+                  onClick={async () => {
+                    await fetch(`${API_URL}/api/auth/logout`, {
+                      method: 'POST',
+                      credentials: 'include'
+                    });
+                    window.location.href = '/login';
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-[#f87171] hover:bg-[#252b45] transition-colors"
+                >
                   Sign Out
                 </button>
               </div>

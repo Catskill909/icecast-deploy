@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import http from 'http';
 import httpProxy from 'http-proxy';
 import nodemailer from 'nodemailer';
+import cookieParser from 'cookie-parser';
 import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
 
@@ -23,6 +24,7 @@ const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8000;
 const ICECAST_PUBLIC_PORT = process.env.ICECAST_PUBLIC_PORT || process.env.ICECAST_PORT || 8000;
 const ICECAST_PUBLIC_HOST = process.env.ICECAST_PUBLIC_HOST || process.env.ICECAST_HOST || 'localhost';
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 // Stream subdomain for HTTPS streaming (bypasses Traefik timeout)
 const STREAM_HOST = process.env.STREAM_HOST || 'stream.supersoul.top';
 
@@ -197,8 +199,64 @@ async function sendAlertEmail(type, title, message, station = null) {
     }
 }
 
-app.use(cors());
+app.use(cors({
+    origin: true, // Reflect request origin to allow localhost:5173
+    credentials: true // Allow cookies
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+// ==========================================
+// PUBLIC ROUTES (No Auth Required)
+// ==========================================
+
+// Auth Routes
+app.post('/api/auth/login', (req, res) => {
+    const { password } = req.body;
+    if (password === ADMIN_PASSWORD) {
+        res.cookie('auth_session', 'true', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Invalid password' });
+    }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+    res.clearCookie('auth_session');
+    res.json({ success: true });
+});
+
+app.get('/api/auth/me', (req, res) => {
+    res.json({ authenticated: req.cookies.auth_session === 'true' });
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_INTERNAL_PORT } });
+});
+
+// ==========================================
+// PROTECTED ROUTES (Auth Required)
+// ==========================================
+
+// Auth Middleware (Strict)
+const requireAuth = (req, res, next) => {
+    if (req.cookies.auth_session === 'true') {
+        return next();
+    }
+    // Check if it's a debug connection (allow)
+    if (req.path.startsWith('/api/debug-connection')) return next();
+
+    res.status(401).json({ error: 'Unauthorized' });
+};
+
+// Apply auth middleware to all remaining API routes
+app.use('/api', requireAuth);
 
 // Serve static React build in production
 if (process.env.NODE_ENV === 'production') {
@@ -395,10 +453,7 @@ app.delete('/api/stations/:id', (req, res) => {
     }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', icecast: { host: ICECAST_HOST, port: ICECAST_INTERNAL_PORT } });
-});
+// Health check (Moved up to public routes)
 
 // Secure Icecast status page proxy
 // Access status via https://icecast.supersoul.top/icecast-status

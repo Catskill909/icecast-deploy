@@ -63,6 +63,12 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Automated Recording**: Streams can be recorded by StationDock
 - **Shared Architecture**: Part of the SuperSoul Radio Suite
 
+### 🔐 Admin Authentication (NEW)
+- **Password Protection**: Single-password login to secure the admin dashboard
+- **Secure Sessions**: HTTP-only cookies with 30-day expiration
+- **Easy Setup**: Configure via `ADMIN_PASSWORD` environment variable
+- **Logout Support**: Sign out from the Admin dropdown menu
+
 ## 🛠 Tech Stack
 
 | Frontend | Backend | Deployment |
@@ -160,6 +166,7 @@ docker run -p 3000:3000 -p 8100:8100 streamdock
 | `STREAM_HOST` | `stream.supersoul.top` | HTTPS stream subdomain |
 | `PORT` | `3000` | API server port |
 | `DATABASE_PATH` | `/app/data/stations.db` | SQLite database path |
+| `ADMIN_PASSWORD` | `admin` | Password for admin dashboard login |
 
 ## 📻 Connecting Your Encoder
 
