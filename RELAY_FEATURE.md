@@ -1,59 +1,40 @@
-# Relay & Fallback Feature - Status Report
+# Relay & Fallback Feature - Status
 
 **Date:** December 24, 2024  
-**Status:** 🔧 FIX DEPLOYED - Testing Required
+**Current Commit:** Restored from 58958aa  
 
 ---
 
-## The Fix (Standard Icecast Fallback)
+## Current State
 
-**Problem:** Icecast only creates new mounts on startup, not on `reloadconfig`.
+**relayManager.js** restored from commit 58958aa - the WORKING version where fallback activated correctly.
 
-**Solution implemented:**
-1. `icecastConfig.js` now pre-creates `-fallback` mount for EVERY station at startup
-2. `relayManager.js` streams to `-fallback` mount for fallback mode
-3. Main mount has `fallback-override=1` so encoder takes priority
+Key setting: Relay streams to MAIN mount (not -fallback mount)
 
 ---
 
-## How It Works
+## Known Issue
 
-```
-On Container Startup:
-  └── Icecast gets config with ALL mounts:
-        /new              (main, with fallback-override=1)
-        /new-fallback     (hidden, for relay)
+When fallback is streaming, Mixxx cannot connect because relay occupies the mount.
 
-When Fallback Enabled:
-  └── FFmpeg → /new-fallback (mount already exists!)
-
-When Mixxx Connects:
-  └── Mixxx → /new
-  └── fallback-override=1 gives encoder priority
-  └── Listeners hear Mixxx, not fallback
-```
+**This is accepted for now.** User must disable fallback before reconnecting Mixxx.
 
 ---
 
-## Files Changed
+## Working Settings
 
-### server/icecastConfig.js
-- `generateMountXml()` now ALWAYS creates `-fallback` mount
-- No conditional on `hasRelay` anymore
-
-### server/relayManager.js  
-- Line ~51: `targetMount = fallback ? mount-fallback : mount`
-- Fallback mode streams to `-fallback` mount
+| Setting | Value |
+|---------|-------|
+| Port | 8100 |
+| Protocol | icecast:// |
+| Codec | libmp3lame -b:a 128k |
+| Target | Main mount (e.g., /new) |
 
 ---
 
 ## Test Checklist
 
-After deploy (container restart):
-
-- [ ] Mixxx connects to station
+- [ ] Mixxx connects
 - [ ] Enable fallback, save
-- [ ] Disconnect Mixxx → fallback should activate
-- [ ] Stream plays audio (from fallback)
-- [ ] Reconnect Mixxx → should take over (CRITICAL TEST)
-- [ ] Disconnect Mixxx again → fallback resumes
+- [ ] Disconnect Mixxx → fallback activates
+- [ ] Stream plays audio
