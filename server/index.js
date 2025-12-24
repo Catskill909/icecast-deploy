@@ -458,8 +458,7 @@ app.put('/api/stations/:id', async (req, res) => {
             } else if (isNowRelayEnabled && relayUrl && relayMode === 'primary') {
                 // Relay enabled in primary mode - start it
                 console.log(`[Relay] Station ${req.params.id}: Relay enabled (primary), starting...`);
-                const updatedStation = db.getStationById(req.params.id);
-                await relayManager.startRelay(updatedStation);
+                relayManager.startRelay(req.params.id);
             } else if (!isNowRelayEnabled || !relayUrl) {
                 // No relay URL or disabled - ensure stopped
                 await relayManager.stopRelay(req.params.id);
