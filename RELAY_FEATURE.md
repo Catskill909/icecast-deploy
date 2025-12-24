@@ -2,7 +2,20 @@
 
 **Date:** December 24, 2024  
 **Time Spent:** ~10 hours  
-**Final Commit:** 59b0fd1
+**Final Commit:** d9156ad (reverted to working fallback)
+
+---
+
+## Current Working State
+
+| Feature | Status |
+|---------|--------|
+| Fallback activates when encoder drops | ✅ WORKS |
+| Stream plays audio | ✅ WORKS |
+| Mixxx can reconnect when fallback active | ❌ NOT WORKING (known limitation) |
+| Badge colors | ⚠️ May be reversed (cosmetic) |
+
+**Architecture limitation:** Fallback and encoder reconnect are MUTUALLY EXCLUSIVE with current approach. They both use the same mount point.
 
 ---
 
@@ -12,6 +25,8 @@ Implemented standard Icecast fallback relay feature. Faced multiple issues due t
 1. Port misconfiguration (8000 vs 8100)
 2. FFmpeg protocol issues
 3. Startup timing (Icecast starts before config generated)
+
+**UNSOLVED:** Encoder reconnect when fallback is running. The startup.sh fix that would solve this also broke fallback - needs more investigation.
 
 ---
 
