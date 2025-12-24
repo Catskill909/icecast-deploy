@@ -126,15 +126,18 @@ ${mountsXml}
 }
 
 /**
- * Write icecast.xml to disk
+ * Write icecast.xml to disk and trigger reload
  */
-export function regenerateIcecastConfig() {
+export async function regenerateIcecastConfig() {
     try {
         const config = generateIcecastConfig();
         const configPath = path.join(__dirname, '../icecast.xml');
 
         fs.writeFileSync(configPath, config, 'utf8');
         console.log('[ICECAST] Configuration regenerated');
+
+        // Trigger Icecast reload
+        await reloadIcecast();
 
         return { success: true };
     } catch (error) {
@@ -144,14 +147,34 @@ export function regenerateIcecastConfig() {
 }
 
 /**
- * Signal Icecast to reload configuration
- * Note: In Docker, this may require container restart
+ * Signal Icecast to reload configuration via admin API
  */
-export function reloadIcecast() {
-    // Icecast can reload config via admin API or SIGHUP
-    // For Docker deployment, we log a message - container restart handles this
-    console.log('[ICECAST] Config updated - restart may be required for changes to take effect');
-    return { success: true };
+export async function reloadIcecast() {
+    const ICECAST_HOST = process.env.ICECAST_HOST || 'localhost';
+    const adminUrl = `http://${ICECAST_HOST}:${ICECAST_PORT}/admin/reloadconfig`;
+
+    try {
+        const auth = Buffer.from(`admin:${ICECAST_ADMIN_PASSWORD}`).toString('base64');
+
+        const response = await fetch(adminUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Basic ${auth}`
+            }
+        });
+
+        if (response.ok) {
+            console.log('[ICECAST] Configuration reloaded successfully');
+            return { success: true };
+        } else {
+            console.warn(`[ICECAST] Reload returned status ${response.status} - may need container restart`);
+            return { success: false, status: response.status };
+        }
+    } catch (error) {
+        // Icecast might not be running yet during startup
+        console.warn('[ICECAST] Could not contact Icecast for reload:', error.message);
+        return { success: false, error: error.message };
+    }
 }
 
 export default {
