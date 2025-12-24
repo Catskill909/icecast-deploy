@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink, Pencil, Globe } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Volume2, Headphones, ExternalLink, Pencil, Globe, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -13,6 +13,7 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
     const [copiedField, setCopiedField] = useState(null);
     const [connectionInfo, setConnectionInfo] = useState(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isBuffering, setIsBuffering] = useState(false);
     const audioRef = useRef(null);
 
     const handleCopy = (value, field) => {
@@ -31,23 +32,57 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
     const togglePlay = () => {
         if (!audioRef.current || !connectionInfo) return;
 
-        if (isPlaying) {
+        if (isPlaying || isBuffering) {
             audioRef.current.pause();
             audioRef.current.src = '';
             setIsPlaying(false);
+            setIsBuffering(false);
         } else {
+            setIsBuffering(true);
             audioRef.current.src = connectionInfo.streamUrl;
-            audioRef.current.play().catch(err => console.error('Playback error:', err));
-            setIsPlaying(true);
+            audioRef.current.play().catch(err => {
+                console.error('Playback error:', err);
+                setIsBuffering(false);
+            });
         }
     };
 
+    // Handle audio events
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const handlePlaying = () => {
+            setIsBuffering(false);
+            setIsPlaying(true);
+        };
+
+        const handlePause = () => {
+            setIsPlaying(false);
+        };
+
+        const handleWaiting = () => {
+            setIsBuffering(true);
+        };
+
+        audio.addEventListener('playing', handlePlaying);
+        audio.addEventListener('pause', handlePause);
+        audio.addEventListener('waiting', handleWaiting);
+
+        return () => {
+            audio.removeEventListener('playing', handlePlaying);
+            audio.removeEventListener('pause', handlePause);
+            audio.removeEventListener('waiting', handleWaiting);
+        };
+    }, []);
+
     // Stop playing if station goes offline
     useEffect(() => {
-        if (!isLive && isPlaying && audioRef.current) {
+        if (!isLive && (isPlaying || isBuffering) && audioRef.current) {
             audioRef.current.pause();
             audioRef.current.src = '';
             setIsPlaying(false);
+            setIsBuffering(false);
         }
     }, [isLive]);
 
@@ -99,12 +134,20 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                 {isLive && connectionInfo && (
                     <button
                         onClick={togglePlay}
-                        className={`w-full mb-4 py-2.5 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${isPlaying
-                            ? 'bg-[#4b7baf] text-white'
-                            : 'bg-[#4b7baf]/10 text-[#4b7baf] hover:bg-[#4b7baf]/20'
+                        disabled={isBuffering}
+                        className={`w-full mb-4 py-2.5 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors ${isBuffering
+                                ? 'bg-[#4b7baf]/20 text-[#4b7baf] cursor-wait'
+                                : isPlaying
+                                    ? 'bg-[#4b7baf] text-white'
+                                    : 'bg-[#4b7baf]/10 text-[#4b7baf] hover:bg-[#4b7baf]/20'
                             }`}
                     >
-                        {isPlaying ? (
+                        {isBuffering ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Connecting to stream...</span>
+                            </>
+                        ) : isPlaying ? (
                             <>
                                 <Pause className="w-4 h-4" />
                                 <span>Stop Listening</span>
