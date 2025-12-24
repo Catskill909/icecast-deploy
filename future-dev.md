@@ -215,20 +215,91 @@ When failover is active:
 - **liquidsoap**: More complex but handles reconnection gracefully
 
 ### Alerts Integration
-- [x] Existing "Stream Down" alert fires when encoder drops
+- [x] Existing "Stream Down" alert fires when encoder drops ✅
 - [ ] New "Fallback Activated" alert when relay takes over
 - [ ] New "Encoder Restored" alert when switching back
 - [ ] Email notifications for all relay events (uses existing SMTP config)
+
+### Fallback State Machine (Stage 4 - TODO)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ ENCODER STREAMING (Normal)                                          │
+│                                                                     │
+│   Icecast mount has active source                                  │
+│   relayMode = "fallback" (standby)                                 │
+│   UI shows: "LIVE" + "Relay: Standby"                              │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ Icecast detects source disconnect
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ ENCODER DOWN - CHECK FALLBACK                                       │
+│                                                                     │
+│   if (station.relayEnabled && station.relayMode === 'fallback') {  │
+│       → Start relay (ffmpeg → Icecast mount)                       │
+│       → Alert: "Fallback Activated"                                │
+│       → Email: "Encoder dropped, fallback stream active"           │
+│   } else {                                                          │
+│       → Alert: "Stream Down" (existing)                            │
+│       → Email: "Stream went offline"                               │
+│   }                                                                 │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ (if fallback started)
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ FALLBACK STREAMING                                                  │
+│                                                                     │
+│   relayManager is streaming from relay_url to mount                │
+│   UI shows: "LIVE" + "Source: ⚠️ Fallback"                          │
+│   Poll Icecast every 5s to detect encoder return                  │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ Encoder reconnects (new Icecast source)
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│ ENCODER RESTORED                                                    │
+│                                                                     │
+│   → Stop relay (kill ffmpeg)                                       │
+│   → Alert: "Encoder Restored"                                      │
+│   → Email: "Primary encoder reconnected, fallback stopped"         │
+│   → Return to normal state                                         │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Detection Logic (runs every 5 seconds)
+```javascript
+// In status polling loop:
+for (const station of stations) {
+    const wasLive = previousStatus[station.id]?.isLive;
+    const isNowLive = currentIcecastStatus[station.mountPoint]?.hasSource;
+    
+    if (wasLive && !isNowLive) {
+        // ENCODER DROPPED
+        if (station.relayEnabled && station.relayMode === 'fallback') {
+            relayManager.startRelay(station.id);
+            createAlert('fallback_activated', station.id);
+        } else {
+            createAlert('stream_down', station.id);
+        }
+    }
+    
+    if (!wasLive && isNowLive && relayManager.isActive(station.id)) {
+        // ENCODER RESTORED (while fallback was running)
+        relayManager.stopRelay(station.id);
+        createAlert('encoder_restored', station.id);
+    }
+}
 
 ### Checklist
 - [x] Add relay fields to database schema ✅ (Dec 2024)
 - [x] Add relay fields to Edit Station modal ✅ (Dec 2024)
 - [x] Add "Test URL" validation endpoint ✅ (Dec 2024)
 - [x] Create Relay Manager service ✅ (Dec 2024)
-- [ ] Update station cards to show relay status
-- [ ] Implement fallback activation logic
-- [ ] Implement encoder-return detection
-- [ ] Add relay-specific alerts
+- [x] Auto-start relay when enabled as primary ✅ (Dec 2024)
+- [x] Auto-stop relay when disabled ✅ (Dec 2024)
+- [ ] Update station cards to show relay status indicator
+- [ ] Implement fallback activation logic (auto-switch when encoder drops)
+- [ ] Implement encoder-return detection (switch back from fallback)
+- [ ] Add relay-specific alerts (Fallback Activated, Encoder Restored)
 - [x] Documentation & Help page updates ✅ (Dec 2024)
 
 ---
