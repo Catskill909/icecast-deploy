@@ -216,9 +216,9 @@ When failover is active:
 
 ### Alerts Integration
 - [x] Existing "Stream Down" alert fires when encoder drops ✅
-- [ ] New "Fallback Activated" alert when relay takes over
+- [x] New "Fallback Activated" alert when relay takes over ✅ DONE (Dec 2024)
 - [ ] New "Encoder Restored" alert when switching back
-- [ ] Email notifications for all relay events (uses existing SMTP config)
+- [x] Email notifications for all relay events ✅ DONE (Dec 2024)
 
 ### Fallback State Machine (Stage 4 - TODO)
 
@@ -296,10 +296,10 @@ for (const station of stations) {
 - [x] Create Relay Manager service ✅ (Dec 2024)
 - [x] Auto-start relay when enabled as primary ✅ (Dec 2024)
 - [x] Auto-stop relay when disabled ✅ (Dec 2024)
-- [ ] Update station cards to show relay status indicator
-- [ ] Implement fallback activation logic (auto-switch when encoder drops)
+- [x] Update station cards to show relay status indicator ✅ DONE (Dec 2024) - Green badge when active
+- [x] Implement fallback activation logic (auto-switch when encoder drops) ✅ DONE (Dec 2024)
 - [ ] Implement encoder-return detection (switch back from fallback)
-- [ ] Add relay-specific alerts (Fallback Activated, Encoder Restored)
+- [x] Add relay-specific alerts (Fallback Activated, Encoder Restored) ✅ DONE (Dec 2024)
 - [x] Documentation & Help page updates ✅ (Dec 2024)
 
 ---
