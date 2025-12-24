@@ -464,6 +464,170 @@ app.delete('/api/stations/:id', (req, res) => {
     }
 });
 
+// ==========================================
+// RELAY URL VALIDATION
+// ==========================================
+
+/**
+ * Test a relay URL to verify it's a valid audio stream
+ * Checks: URL reachability, content type, audio format, bitrate
+ */
+app.post('/api/relay/test-url', async (req, res) => {
+    const { url } = req.body;
+
+    if (!url) {
+        return res.status(400).json({ valid: false, error: 'URL is required' });
+    }
+
+    // Basic URL validation
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(url);
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            return res.status(400).json({ valid: false, error: 'URL must use HTTP or HTTPS' });
+        }
+    } catch (e) {
+        return res.status(400).json({ valid: false, error: 'Invalid URL format' });
+    }
+
+    console.log(`[RELAY TEST] Testing URL: ${url}`);
+
+    try {
+        // Use AbortController for timeout
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+        // Fetch with ICY metadata header (Shoutcast compatibility)
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Icy-MetaData': '1',
+                'User-Agent': 'StreamDock/1.0 (Relay Tester)'
+            },
+            signal: controller.signal
+        });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+            return res.json({
+                valid: false,
+                error: `Server returned ${response.status}: ${response.statusText}`
+            });
+        }
+
+        // Get headers for analysis
+        const contentType = response.headers.get('content-type') || '';
+        const icyName = response.headers.get('icy-name') || '';
+        const icyGenre = response.headers.get('icy-genre') || '';
+        const icyBr = response.headers.get('icy-br') || '';
+        const icyDescription = response.headers.get('icy-description') || '';
+
+        // Determine audio format from content-type
+        let format = 'Unknown';
+        let formatDetails = '';
+
+        if (contentType.includes('audio/mpeg') || contentType.includes('audio/mp3')) {
+            format = 'MP3';
+        } else if (contentType.includes('audio/aac') || contentType.includes('audio/aacp')) {
+            format = 'AAC';
+        } else if (contentType.includes('audio/ogg')) {
+            format = 'Ogg Vorbis';
+        } else if (contentType.includes('audio/opus')) {
+            format = 'Opus';
+        } else if (contentType.includes('audio/flac')) {
+            format = 'FLAC';
+        } else if (contentType.includes('audio/')) {
+            format = contentType.replace('audio/', '').toUpperCase();
+        } else if (contentType.includes('application/ogg')) {
+            format = 'Ogg';
+        }
+
+        // Build format details string
+        if (icyBr) {
+            formatDetails = `${format} ${icyBr}kbps`;
+        } else {
+            formatDetails = format;
+        }
+
+        // Read a small chunk to verify it's actually audio data
+        const reader = response.body?.getReader();
+        let isAudioData = false;
+
+        if (reader) {
+            try {
+                const { value } = await reader.read();
+                if (value && value.length > 0) {
+                    isAudioData = true;
+                    // Check for common audio signatures
+                    // MP3: starts with 0xFF 0xFB or ID3 tag
+                    // AAC: starts with 0xFF 0xF1 or 0xFF 0xF9
+                    // Ogg: starts with "OggS"
+                    const firstBytes = Array.from(value.slice(0, 4));
+                    if (firstBytes[0] === 0xFF && (firstBytes[1] === 0xFB || firstBytes[1] === 0xFA)) {
+                        format = 'MP3';
+                    } else if (firstBytes[0] === 0xFF && (firstBytes[1] === 0xF1 || firstBytes[1] === 0xF9)) {
+                        format = 'AAC';
+                    } else if (String.fromCharCode(...firstBytes) === 'OggS') {
+                        format = 'Ogg';
+                    } else if (String.fromCharCode(...firstBytes.slice(0, 3)) === 'ID3') {
+                        format = 'MP3'; // MP3 with ID3 tag
+                    }
+                }
+                reader.cancel(); // Stop reading more data
+            } catch (readError) {
+                console.log('[RELAY TEST] Could not read stream sample:', readError.message);
+            }
+        }
+
+        // Check if we got valid audio
+        const isValidAudio = format !== 'Unknown' || contentType.includes('audio') || isAudioData;
+
+        if (!isValidAudio) {
+            return res.json({
+                valid: false,
+                error: 'URL does not appear to be an audio stream',
+                contentType
+            });
+        }
+
+        // Success!
+        console.log(`[RELAY TEST] Valid stream: ${formatDetails} - ${icyName || url}`);
+
+        res.json({
+            valid: true,
+            format,
+            formatDetails: icyBr ? `${format} ${icyBr}kbps` : format,
+            bitrate: icyBr ? parseInt(icyBr) : null,
+            metadata: {
+                name: icyName || null,
+                genre: icyGenre || null,
+                description: icyDescription || null
+            },
+            contentType
+        });
+
+    } catch (error) {
+        console.error('[RELAY TEST] Error testing URL:', error.message);
+
+        let errorMessage = 'Could not connect to stream';
+        if (error.name === 'AbortError') {
+            errorMessage = 'Connection timed out (10s)';
+        } else if (error.code === 'ENOTFOUND') {
+            errorMessage = 'Host not found';
+        } else if (error.code === 'ECONNREFUSED') {
+            errorMessage = 'Connection refused';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
+        res.json({
+            valid: false,
+            error: errorMessage
+        });
+    }
+});
+
 // Health check (Moved up to public routes)
 
 // Secure Icecast status page proxy

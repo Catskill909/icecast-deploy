@@ -221,9 +221,9 @@ When failover is active:
 - [ ] Email notifications for all relay events (uses existing SMTP config)
 
 ### Checklist
-- [ ] Add relay fields to database schema
-- [ ] Add relay fields to Edit Station modal
-- [ ] Add "Test URL" validation endpoint
+- [x] Add relay fields to database schema ✅ (Dec 2024)
+- [x] Add relay fields to Edit Station modal ✅ (Dec 2024)
+- [x] Add "Test URL" validation endpoint ✅ (Dec 2024)
 - [ ] Create Relay Manager service
 - [ ] Update station cards to show relay status
 - [ ] Implement fallback activation logic

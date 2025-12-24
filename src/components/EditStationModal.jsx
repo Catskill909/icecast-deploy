@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image, Globe, Save, Settings, Bell, Plus, X, AlertTriangle, Rss, Radio } from 'lucide-react';
+import { Image, Globe, Save, Settings, Bell, Plus, X, AlertTriangle, Rss, Radio, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import Modal from './ui/Modal';
 import Input from './ui/Input';
 import Button from './ui/Button';
@@ -21,6 +21,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
     const [newEmail, setNewEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [relayTest, setRelayTest] = useState({ testing: false, result: null });
 
     // Populate form when station changes
     useEffect(() => {
@@ -157,18 +158,16 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                 Branding
                             </h3>
 
-                            <div className="flex gap-3 items-end">
-                                <div className="flex-1">
-                                    <Input
-                                        label="Logo URL"
-                                        name="logoUrl"
-                                        value={formData.logoUrl}
-                                        onChange={handleChange}
-                                        placeholder="https://example.com/logo.png"
-                                    />
-                                </div>
+                            <div className="space-y-3">
+                                <Input
+                                    label="Logo URL"
+                                    name="logoUrl"
+                                    value={formData.logoUrl}
+                                    onChange={handleChange}
+                                    placeholder="https://example.com/logo.png"
+                                />
                                 {formData.logoUrl && (
-                                    <div className="w-[42px] h-[42px] mb-[1px] bg-[#0d1229] rounded-lg border border-[#1e2337] flex-shrink-0 overflow-hidden">
+                                    <div className="w-20 h-20 bg-[#0d1229] rounded-lg border border-[#1e2337] overflow-hidden">
                                         <img
                                             src={formData.logoUrl}
                                             alt="Preview"
@@ -183,73 +182,155 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                         {/* External Source / Relay Section */}
                         <div className="pt-5 border-t border-[#2d3555]">
                             <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <Rss className="w-4 h-4" />
-                                External Source
+                                <Rss className="w-4 h-4 text-[#f59e0b]" />
+                                <span className="text-[#f59e0b]">External Source</span>
                             </h3>
 
-                            <div className="bg-[#1e2337]/50 rounded-lg p-3 text-sm text-[#94a3b8] mb-4 border border-[#2d3555]">
-                                <p className="leading-relaxed opacity-80 text-xs">
-                                    Relay an external stream URL. Use as primary source or fallback when encoder disconnects.
+                            <div className="bg-gradient-to-r from-[#f59e0b]/10 to-transparent rounded-lg p-3 mb-4 border-l-2 border-[#f59e0b]">
+                                <p className="text-xs text-[#d1d5db] leading-relaxed">
+                                    <strong className="text-white">Relay Mode:</strong> Pull audio from an external stream URL.
+                                    Use as the primary source or as an automatic fallback when your encoder disconnects.
                                 </p>
                             </div>
 
-                            <div className="space-y-4">
-                                <Input
-                                    label="Relay URL"
-                                    name="relayUrl"
-                                    value={formData.relayUrl}
-                                    onChange={handleChange}
-                                    placeholder="https://stream.example.com/mount"
-                                    icon={Radio}
-                                />
-
-                                <div className="flex items-center gap-3">
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.relayEnabled}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, relayEnabled: e.target.checked }))}
-                                            className="sr-only peer"
+                            <div className="space-y-4 bg-[#1a1f35] rounded-lg p-4 border border-[#2d3555]">
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <Input
+                                            label="Relay URL"
+                                            name="relayUrl"
+                                            value={formData.relayUrl}
+                                            onChange={(e) => {
+                                                handleChange(e);
+                                                setRelayTest({ testing: false, result: null }); // Reset test on URL change
+                                            }}
+                                            placeholder="https://stream.example.com/mount"
+                                            icon={Radio}
                                         />
-                                        <div className="w-11 h-6 bg-[#2d3555] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#4b7baf]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#22c55e]"></div>
-                                    </label>
-                                    <span className="text-sm text-white">Enable Relay</span>
+                                    </div>
+                                    <div className="flex items-end pb-[1px]">
+                                        <button
+                                            type="button"
+                                            disabled={!formData.relayUrl || relayTest.testing}
+                                            onClick={async () => {
+                                                setRelayTest({ testing: true, result: null });
+                                                try {
+                                                    const res = await fetch(`${API_URL}/api/relay/test-url`, {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        credentials: 'include',
+                                                        body: JSON.stringify({ url: formData.relayUrl })
+                                                    });
+                                                    const data = await res.json();
+                                                    setRelayTest({ testing: false, result: data });
+                                                } catch (err) {
+                                                    setRelayTest({ testing: false, result: { valid: false, error: err.message } });
+                                                }
+                                            }}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${!formData.relayUrl || relayTest.testing
+                                                    ? 'bg-[#2d3555] text-[#64748b] cursor-not-allowed'
+                                                    : 'bg-[#f59e0b] text-white hover:bg-[#d97706]'
+                                                }`}
+                                        >
+                                            {relayTest.testing ? (
+                                                <><Loader2 className="w-4 h-4 animate-spin" /> Testing...</>
+                                            ) : (
+                                                'Test URL'
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Test Result Display */}
+                                {relayTest.result && (
+                                    <div className={`flex items-center gap-3 p-3 rounded-lg ${relayTest.result.valid
+                                            ? 'bg-[#22c55e]/10 border border-[#22c55e]/30'
+                                            : 'bg-[#f87171]/10 border border-[#f87171]/30'
+                                        }`}>
+                                        {relayTest.result.valid ? (
+                                            <>
+                                                <CheckCircle2 className="w-5 h-5 text-[#22c55e] flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-[#22c55e]">Valid Stream</p>
+                                                    <p className="text-xs text-[#94a3b8]">
+                                                        {relayTest.result.formatDetails}
+                                                        {relayTest.result.metadata?.name && ` • ${relayTest.result.metadata.name}`}
+                                                    </p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <XCircle className="w-5 h-5 text-[#f87171] flex-shrink-0" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-[#f87171]">Invalid Stream</p>
+                                                    <p className="text-xs text-[#94a3b8]">{relayTest.result.error}</p>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="flex items-center justify-between pt-2 border-t border-[#2d3555]">
+                                    <div className="flex items-center gap-3">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.relayEnabled}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, relayEnabled: e.target.checked }))}
+                                                className="sr-only peer"
+                                            />
+                                            <div className="w-11 h-6 bg-[#2d3555] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#f59e0b]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#f59e0b]"></div>
+                                        </label>
+                                        <span className="text-sm font-medium text-white">Enable Relay</span>
+                                    </div>
+                                    {formData.relayEnabled && (
+                                        <span className="text-xs px-2 py-1 rounded-full bg-[#f59e0b]/20 text-[#f59e0b] font-medium">
+                                            Active
+                                        </span>
+                                    )}
                                 </div>
 
                                 {formData.relayEnabled && formData.relayUrl && (
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-[#94a3b8]">
+                                    <div className="pt-3 border-t border-[#2d3555]">
+                                        <label className="block text-sm font-medium text-white mb-3">
                                             Relay Mode
                                         </label>
-                                        <div className="flex gap-4">
-                                            <label className="flex items-center gap-2 cursor-pointer">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.relayMode === 'primary'
+                                                ? 'border-[#f59e0b] bg-[#f59e0b]/10'
+                                                : 'border-[#2d3555] hover:border-[#4b7baf]/50'
+                                                }`}>
                                                 <input
                                                     type="radio"
                                                     name="relayMode"
                                                     value="primary"
                                                     checked={formData.relayMode === 'primary'}
                                                     onChange={handleChange}
-                                                    className="w-4 h-4 text-[#4b7baf] bg-[#2d3555] border-[#4b7baf] focus:ring-[#4b7baf]"
+                                                    className="w-4 h-4 text-[#f59e0b] bg-[#2d3555] border-[#f59e0b] focus:ring-[#f59e0b]"
                                                 />
-                                                <span className="text-sm text-white">Primary Source</span>
+                                                <div>
+                                                    <span className="text-sm font-medium text-white">Primary</span>
+                                                    <p className="text-xs text-[#64748b]">No encoder needed</p>
+                                                </div>
                                             </label>
-                                            <label className="flex items-center gap-2 cursor-pointer">
+                                            <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.relayMode === 'fallback'
+                                                ? 'border-[#f59e0b] bg-[#f59e0b]/10'
+                                                : 'border-[#2d3555] hover:border-[#4b7baf]/50'
+                                                }`}>
                                                 <input
                                                     type="radio"
                                                     name="relayMode"
                                                     value="fallback"
                                                     checked={formData.relayMode === 'fallback'}
                                                     onChange={handleChange}
-                                                    className="w-4 h-4 text-[#4b7baf] bg-[#2d3555] border-[#4b7baf] focus:ring-[#4b7baf]"
+                                                    className="w-4 h-4 text-[#f59e0b] bg-[#2d3555] border-[#f59e0b] focus:ring-[#f59e0b]"
                                                 />
-                                                <span className="text-sm text-white">Fallback</span>
+                                                <div>
+                                                    <span className="text-sm font-medium text-white">Fallback</span>
+                                                    <p className="text-xs text-[#64748b]">Auto-switch if encoder drops</p>
+                                                </div>
                                             </label>
                                         </div>
-                                        <p className="text-xs text-[#64748b] mt-1">
-                                            {formData.relayMode === 'primary'
-                                                ? 'Station will relay this URL. No encoder needed.'
-                                                : 'Encoder is primary. Auto-switch to relay if encoder drops.'}
-                                        </p>
                                     </div>
                                 )}
                             </div>
