@@ -5,6 +5,16 @@
 
 ---
 
+## ⚠️ CRITICAL: Port 8100 ⚠️
+
+**ICECAST RUNS ON PORT 8100. NOT 8000.**
+
+This has caused problems multiple times. If you ever see `8000` in the codebase for Icecast:
+- `server/relayManager.js` line 16: MUST be 8100
+- `server/icecastConfig.js` line 17: MUST be 8100
+
+---
+
 ## The Problem
 
 **WHAT SHOULD HAPPEN:**
