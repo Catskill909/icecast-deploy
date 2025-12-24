@@ -21,34 +21,27 @@ const ICECAST_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.ICECAST
 
 /**
  * Generate mount XML for a station
+ * IMPORTANT: Always creates fallback mount for every station so it exists at startup.
+ * This allows relay to connect without requiring container restart.
  */
 function generateMountXml(station) {
     const mount = station.mount_point;
-    const hasRelay = station.relay_enabled && station.relay_url;
 
     let xml = '';
 
     // Main mount (encoder streams here)
+    // Always configure fallback-mount so it's ready when relay is enabled
     xml += `    <mount>
-        <mount-name>${mount}</mount-name>`;
-
-    if (hasRelay) {
-        // Add fallback configuration
-        xml += `
+        <mount-name>${mount}</mount-name>
         <fallback-mount>${mount}-fallback</fallback-mount>
-        <fallback-override>1</fallback-override>`;
-    }
-
-    xml += `
+        <fallback-override>1</fallback-override>
     </mount>\n`;
 
-    // Fallback mount (relay streams here) - only if relay configured
-    if (hasRelay) {
-        xml += `    <mount>
+    // Fallback mount (relay streams here) - ALWAYS created so it exists at startup
+    xml += `    <mount>
         <mount-name>${mount}-fallback</mount-name>
         <hidden>1</hidden>
     </mount>\n`;
-    }
 
     return xml;
 }

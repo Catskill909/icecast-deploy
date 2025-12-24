@@ -1,65 +1,59 @@
 # Relay & Fallback Feature - Status Report
 
 **Date:** December 24, 2024  
-**Current Commit:** 58958aa
+**Status:** 🔧 FIX DEPLOYED - Testing Required
 
 ---
 
-## Current State
+## The Fix (Standard Icecast Fallback)
 
-| Feature | Status |
-|---------|--------|
-| Mixxx connects | ✅ WORKS |
-| Fallback activates when Mixxx off | ✅ WORKS |
-| Stream plays audio | ✅ WORKS |
-| Mixxx reconnects when fallback running | ❌ BROKEN |
-| Badge colors | ⚠️ Reversed (cosmetic) |
+**Problem:** Icecast only creates new mounts on startup, not on `reloadconfig`.
 
----
-
-## THE CRITICAL BUG
-
-**When fallback relay is streaming, Mixxx cannot connect.**
-
-Error: "Can't connect to streaming server"
-
-**Why:** FFmpeg relay occupies the mount point `/new`. Icecast only allows ONE source per mount. Mixxx cannot connect because FFmpeg already has the connection.
+**Solution implemented:**
+1. `icecastConfig.js` now pre-creates `-fallback` mount for EVERY station at startup
+2. `relayManager.js` streams to `-fallback` mount for fallback mode
+3. Main mount has `fallback-override=1` so encoder takes priority
 
 ---
 
-## Possible Solutions (TO BE DISCUSSED)
+## How It Works
 
-### Option 1: Relay streams to fallback mount
-- Relay → `/new-fallback`, Mixxx → `/new`
-- Icecast `fallback-override=1` lets encoder take priority
-- **Tried this (commit 38d81eb) - BROKE fallback entirely**
-- Reason: Icecast config wasn't reloading properly
+```
+On Container Startup:
+  └── Icecast gets config with ALL mounts:
+        /new              (main, with fallback-override=1)
+        /new-fallback     (hidden, for relay)
 
-### Option 2: App kills relay when it detects encoder connection
-- Monitor Icecast for new source on mount
-- When detected, kill FFmpeg relay
-- **Untested**
+When Fallback Enabled:
+  └── FFmpeg → /new-fallback (mount already exists!)
 
-### Option 3: User manually stops relay before connecting Mixxx
-- Workaround, not ideal
-- User would need to turn off fallback in UI first
-
----
-
-## Key Settings (Working)
-
-| Setting | Value |
-|---------|-------|
-| Icecast Port | 8100 |
-| Protocol | icecast:// |
-| Codec | libmp3lame -b:a 128k |
-| Loglevel | info |
-| Mount target | Main mount (not -fallback) |
+When Mixxx Connects:
+  └── Mixxx → /new
+  └── fallback-override=1 gives encoder priority
+  └── Listeners hear Mixxx, not fallback
+```
 
 ---
 
-## What We Need To Decide
+## Files Changed
 
-Before making ANY code change, we need to pick a solution for the encoder override issue.
+### server/icecastConfig.js
+- `generateMountXml()` now ALWAYS creates `-fallback` mount
+- No conditional on `hasRelay` anymore
 
-Which option do you want to try?
+### server/relayManager.js  
+- Line ~51: `targetMount = fallback ? mount-fallback : mount`
+- Fallback mode streams to `-fallback` mount
+
+---
+
+## Test Checklist
+
+After deploy (container restart):
+
+- [ ] Mixxx connects to station
+- [ ] Enable fallback, save
+- [ ] Disconnect Mixxx → fallback should activate
+- [ ] Stream plays audio (from fallback)
+- [ ] Reconnect Mixxx → should take over (CRITICAL TEST)
+- [ ] Disconnect Mixxx again → fallback resumes
