@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
 import * as relayManager from './relayManager.js';
+import * as icecastConfig from './icecastConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -308,6 +309,9 @@ app.post('/api/stations', (req, res) => {
 
         db.createStation(station);
 
+        // Regenerate Icecast config with new mount
+        icecastConfig.regenerateIcecastConfig();
+
         // Return connection info
         res.status(201).json({
             success: true,
@@ -460,6 +464,11 @@ app.put('/api/stations/:id', async (req, res) => {
             }
         }
 
+        // Regenerate Icecast config if relay settings changed
+        if (relaySettingsChanged) {
+            icecastConfig.regenerateIcecastConfig();
+        }
+
         res.json({ success: true, message: 'Station updated' });
     } catch (error) {
         console.error('Error updating station:', error);
@@ -476,6 +485,10 @@ app.delete('/api/stations/:id', (req, res) => {
         }
 
         db.deleteStation(req.params.id);
+
+        // Regenerate Icecast config without deleted mount
+        icecastConfig.regenerateIcecastConfig();
+
         res.json({ success: true, message: 'Station deleted' });
     } catch (error) {
         console.error('Error deleting station:', error);

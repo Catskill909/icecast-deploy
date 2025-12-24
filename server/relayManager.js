@@ -57,8 +57,9 @@ export function startRelay(stationId) {
         // -i: Input URL
         // -c:a copy: Copy audio codec (no transcoding, passthrough)
         // -f mp3: Force mp3 output format for Icecast
-        // icecast://: Output to Icecast
-        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
+        // icecast://: Output to Icecast (uses fallback mount so encoder can use main mount)
+        const fallbackMount = `${mountPoint}-fallback`;
+        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${fallbackMount}`;
 
         const ffmpegArgs = [
             '-hide_banner',
