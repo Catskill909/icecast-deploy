@@ -1,7 +1,7 @@
-# Relay & Fallback Feature - Complete System Audit
+# Relay & Fallback Feature - Handoff Document
 
 **Date:** December 24, 2024  
-**Status:** 🔧 MULTIPLE FIXES APPLIED - Ready for Testing
+**Status:** 🔧 FIXES APPLIED - NEEDS TESTING
 
 ---
 
@@ -9,31 +9,60 @@
 
 **ICECAST RUNS ON PORT 8100. NOT 8000.**
 
-This has caused problems multiple times. If you ever see `8000` in the codebase for Icecast:
-- `server/relayManager.js` line 16: MUST be 8100
-- `server/icecastConfig.js` line 17: MUST be 8100
+Files that MUST have 8100:
+- `server/relayManager.js` line 16
+- `server/icecastConfig.js` line 17
 
 ---
 
-## The Problem
+## Architecture Overview
 
-**WHAT SHOULD HAPPEN:**
-- Primary mode: Relay starts on server boot, station shows LIVE
-- Fallback mode: When encoder drops, relay auto-starts
-
-**WHAT ACTUALLY HAPPENED:**
-- Station shows OFFLINE regardless of relay configuration
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Docker Container                         │
+│                                                              │
+│  ┌──────────────┐         ┌──────────────┐                  │
+│  │   Icecast    │◄───────►│   Node.js    │                  │
+│  │   :8100      │         │   :3000      │                  │
+│  └──────────────┘         └──────────────┘                  │
+│         ▲                        │                          │
+│         │                        │ API/Status               │
+│         │                        ▼                          │
+│    ┌────┴────┐              ┌─────────────┐                 │
+│    │ FFmpeg  │              │ Web UI      │                 │
+│    │ (relay) │              │             │                 │
+│    └─────────┘              └─────────────┘                 │
+└─────────────────────────────────────────────────────────────┘
+        ▲                             ▲
+        │                             │
+   External                      Listeners
+   Stream URL                    (HTTPS)
+```
 
 ---
 
-## Fixes Applied
+## Relay Modes
 
-| Fix | File | Line | Issue |
-|-----|------|------|-------|
-| 1 | relayManager.js | 16 | Port default was 8000, changed to 8100 |
-| 2 | relayManager.js | 62 | Loglevel was 'warning', changed to 'info' |
-| 3 | relayManager.js | 58 | Protocol was `icecast://`, changed to `http://` with PUT |
-| 4 | relayManager.js | 67-68 | Codec was `-c:a copy`, changed to `-c:a libmp3lame -b:a 128k` |
+### PRIMARY Mode
+- Relay starts on server boot
+- FFmpeg streams from external URL to Icecast mount
+- No encoder needed
+
+### FALLBACK Mode
+- Encoder (Mixxx) is primary source
+- When encoder drops, relay auto-starts
+- Keeps station LIVE during outage
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `server/relayManager.js` | Spawns FFmpeg, manages relay processes |
+| `server/icecastConfig.js` | Generates icecast.xml dynamically |
+| `server/index.js` | Fallback trigger (lines 1032-1035), startup (lines 1445-1451) |
+| `src/pages/Diagnostics.jsx` | Debug UI at /diagnostics |
 
 ---
 
@@ -42,54 +71,53 @@ This has caused problems multiple times. If you ever see `8000` in the codebase 
 ```bash
 ffmpeg -hide_banner -loglevel info \
   -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
-  -i https://supersoul.site:8000/OSS-320 \
+  -i [EXTERNAL_URL] \
   -c:a libmp3lame -b:a 128k \
   -f mp3 -content_type audio/mpeg \
   -method PUT \
-  http://source:streamdock_source@127.0.0.1:8100/new
+  http://source:[PASSWORD]@127.0.0.1:8100/[MOUNT]
 ```
 
 ---
 
-## Why These Fixes
+## Fixes Applied (Dec 24)
 
-### Fix 1: Port 8100
-- Icecast runs on 8100 inside Docker
-- Default was 8000 = FFmpeg couldn't connect
-
-### Fix 2: Loglevel 'info'
-- Status detection looks for "Opening" and "Stream #"
-- These are INFO level messages
-- With 'warning' level, they were hidden = status never changed
-
-### Fix 3: HTTP PUT instead of icecast://
-- Alpine FFmpeg may not have icecast protocol compiled
-- HTTP PUT is standard for Icecast 2.4+
-- More widely supported
-
-### Fix 4: libmp3lame instead of copy
-- Input stream codec might vary
-- Copy can fail if codec doesn't match
-- Explicit encoding is more reliable
+| Issue | Fix |
+|-------|-----|
+| Port default 8000 | Changed to 8100 |
+| Loglevel 'warning' hid connection messages | Changed to 'info' |
+| `icecast://` protocol not in Alpine FFmpeg | Changed to HTTP PUT |
+| `-c:a copy` codec mismatch | Changed to `-c:a libmp3lame` |
 
 ---
 
 ## Test Steps
 
-1. **Deploy this update**
-2. **Test PRIMARY mode:**
-   - Edit station → External Source → Enable → Primary → Save
-   - Station should show LIVE (no Mixxx needed)
-3. **Test FALLBACK mode:**
-   - Set back to Fallback mode
-   - Connect Mixxx → Station shows LIVE
-   - Disconnect Mixxx → Station should STAY LIVE via fallback
+1. Deploy update
+2. **PRIMARY test:** Enable relay + Primary mode, save. Station should show LIVE.
+3. **FALLBACK test:** Enable relay + Fallback mode. Connect Mixxx. Disconnect Mixxx. Station should stay LIVE.
 
 ---
 
-## Files Changed
+## Environment Variables
 
-| File | Change |
-|------|--------|
-| `server/relayManager.js` | Port, loglevel, HTTP PUT, libmp3lame |
-| `RELAY_FEATURE.md` | This audit document |
+| Variable | Value | Set In |
+|----------|-------|--------|
+| ICECAST_PORT | 8100 | Dockerfile, supervisord.conf |
+| ICECAST_HOST | 127.0.0.1 | supervisord.conf |
+| ICECAST_SOURCE_PASSWORD | streamdock_source | supervisord.conf |
+
+---
+
+## What Works ✅
+
+- Mixxx direct streaming to Icecast
+- Station status detection
+- Diagnostics page
+- Icecast admin panel
+- All UI features
+
+## What Needs Testing 🔧
+
+- Primary relay mode
+- Fallback relay mode
