@@ -271,3 +271,27 @@ This restores fallback to main mount (works, but Mixxx can't reconnect).
 4. **Standard patterns exist** - should have researched first
 5. **Document as you go** - not at the end
 6. **Fallback and encoder reconnect are mutually exclusive with current approach** - need different architecture
+
+---
+
+## Failed Attempt: December 24, 2024 ~4:53 PM
+
+**Tried:** Stream to `-fallback` mount + polling checks relay status
+
+**Result:** ❌ Broke fallback completely (again)
+
+**Commits:** 4a2a110 → REVERTED → a95e9bd
+
+**Root cause:** `-fallback` mount not accessible when relay tries to connect
+
+---
+
+## Final Status
+
+| Feature | Status |
+|---------|--------|
+| Fallback activates | ✅ WORKS |
+| Stream plays audio | ✅ WORKS |
+| Mixxx reconnect during fallback | ❌ LIMITATION |
+
+**This is an architectural limitation.** Accept it or add manual "Stop Fallback" button.
