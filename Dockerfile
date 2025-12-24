@@ -57,5 +57,6 @@ ENV DATABASE_PATH=/app/data/stations.db
 EXPOSE 3000
 EXPOSE 8100
 
-# Start supervisor (runs both icecast and node)
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+# Start via startup.sh which generates icecast config BEFORE starting supervisord
+# This ensures all mounts (including -fallback) exist when Icecast starts
+CMD ["/app/startup.sh"]
