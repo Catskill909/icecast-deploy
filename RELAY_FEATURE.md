@@ -1,40 +1,76 @@
-# Relay & Fallback Feature - Status
+# Relay & Fallback Feature - Complete Documentation
 
 **Date:** December 24, 2024  
-**Current Commit:** Restored from 58958aa  
+**Status:** 🔧 FIX DEPLOYED - Testing Required
 
 ---
 
-## Current State
+## Root Cause & Fix
 
-**relayManager.js** restored from commit 58958aa - the WORKING version where fallback activated correctly.
+**Problem:** Icecast started before Node.js generated config → fallback mounts didn't exist.
 
-Key setting: Relay streams to MAIN mount (not -fallback mount)
-
----
-
-## Known Issue
-
-When fallback is streaming, Mixxx cannot connect because relay occupies the mount.
-
-**This is accepted for now.** User must disable fallback before reconnecting Mixxx.
+**Fix:** New `startup.sh` script that:
+1. Generates Icecast config (creates all -fallback mounts)
+2. Then starts Icecast and Node.js
 
 ---
 
-## Working Settings
+## How Standard Icecast Fallback Works
 
-| Setting | Value |
-|---------|-------|
-| Port | 8100 |
-| Protocol | icecast:// |
-| Codec | libmp3lame -b:a 128k |
-| Target | Main mount (e.g., /new) |
+```
+Container Starts:
+  startup.sh → generates /etc/icecast.xml with ALL mounts
+  └── /new (main mount with fallback-override=1)
+  └── /new-fallback (hidden, for relay)
+
+Fallback Mode:
+  FFmpeg → /new-fallback
+  Listeners on /new hear fallback via fallback-mount setting
+
+Encoder Connects:
+  Mixxx → /new
+  fallback-override=1 → encoder takes priority
+  Listeners now hear Mixxx
+
+Encoder Disconnects:
+  Mount /new empty → falls back to /new-fallback
+  Listeners hear fallback again
+```
+
+---
+
+## Files Changed
+
+| File | Change |
+|------|--------|
+| `startup.sh` | NEW - generates config before starting services |
+| `Dockerfile` | Uses startup.sh instead of direct supervisord |
+| `relayManager.js` | Streams to -fallback mount for fallback mode |
+| `icecastConfig.js` | Pre-creates -fallback mounts for ALL stations |
+
+---
+
+## Key Code
+
+### relayManager.js line 53
+```javascript
+const targetMount = station.relay_mode === 'fallback' 
+    ? `${mountPoint}-fallback` 
+    : mountPoint;
+```
+
+### icecastConfig.js lines 34-44
+Creates BOTH mounts for every station:
+- Main mount with `fallback-mount` and `fallback-override=1`
+- Hidden `-fallback` mount
 
 ---
 
 ## Test Checklist
 
-- [ ] Mixxx connects
-- [ ] Enable fallback, save
-- [ ] Disconnect Mixxx → fallback activates
+After deploy:
+- [ ] Mixxx connects to /new
+- [ ] Enable fallback, disconnect Mixxx → fallback activates
 - [ ] Stream plays audio
+- [ ] Reconnect Mixxx → should take over (THIS IS THE FIX)
+- [ ] Disconnect Mixxx → fallback resumes

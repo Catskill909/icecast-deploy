@@ -47,14 +47,21 @@ export function startRelay(stationId) {
     const relayUrl = station.relay_url;
     const mountPoint = station.mount_point;
 
+    // STANDARD ICECAST FALLBACK:
+    // - Fallback mode: stream to -fallback mount so encoder can take priority on main mount
+    // - Primary mode: stream directly to main mount (always-on relay)
+    // - The -fallback mounts are pre-created at container startup by startup.sh
+    const targetMount = station.relay_mode === 'fallback' ? `${mountPoint}-fallback` : mountPoint;
+
     console.log(`[RELAY] Starting relay for station ${station.name} (${stationId})`);
+    console.log(`[RELAY] Mode: ${station.relay_mode}`);
     console.log(`[RELAY] Source: ${relayUrl}`);
-    console.log(`[RELAY] Target: icecast://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`);
+    console.log(`[RELAY] Target: icecast://${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${targetMount}`);
 
     try {
         // Build ffmpeg command
         // Using icecast:// protocol for source streaming
-        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
+        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${targetMount}`;
 
         const ffmpegArgs = [
             '-hide_banner',
