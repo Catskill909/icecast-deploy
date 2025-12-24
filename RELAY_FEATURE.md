@@ -323,3 +323,23 @@ This restores fallback to main mount (works, but Mixxx can't reconnect).
 **Workaround:** Stop fallback manually before reconnecting Mixxx
 
 **10+ hours spent today. 2 major fix attempts both failed. This is the working state.**
+
+---
+
+## Next Step: Encoder Reconnect Listener
+
+**Idea (for next session):**
+
+When fallback activates (working now), start a listener that:
+1. Periodically PAUSES relay for 3-5 seconds
+2. During pause, mount is FREE → encoder can connect
+3. If encoder connects → polling detects it → auto-stop relay
+4. If no encoder → resume relay
+
+**This is code we control.** No Icecast config changes needed.
+
+**Files to modify:**
+- `server/relayManager.js` - add pause/resume logic with timer
+- `server/index.js` - polling already detects when mount goes live
+
+**Key insight:** We can't detect encoder TRYING to connect. But we can create a window for it to succeed, then detect if it DID connect.
