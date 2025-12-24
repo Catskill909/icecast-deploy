@@ -53,9 +53,8 @@ export function startRelay(stationId) {
 
     try {
         // Build ffmpeg command
-        // Using HTTP PUT method which is more widely supported than icecast://
-        // Format: http://source:password@host:port/mount
-        const icecastUrl = `http://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
+        // Using icecast:// protocol for source streaming
+        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
 
         const ffmpegArgs = [
             '-hide_banner',
@@ -68,7 +67,6 @@ export function startRelay(stationId) {
             '-b:a', '128k',              // 128kbps bitrate
             '-f', 'mp3',                 // Output format
             '-content_type', 'audio/mpeg',
-            '-method', 'PUT',            // Use HTTP PUT method
             icecastUrl                   // Output to Icecast
         ];
 
