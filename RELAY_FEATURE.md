@@ -9,39 +9,42 @@
 
 **ICECAST RUNS ON PORT 8100. NOT 8000.**
 
----
-
-## What It Does
-
-**PRIMARY Mode:** Relay streams from external URL as main source  
-**FALLBACK Mode:** When encoder drops, relay auto-activates to keep station live
+If you ever see `8000` in the codebase, it's WRONG:
+- `server/relayManager.js` line 16: MUST be 8100
+- `server/icecastConfig.js` line 17: MUST be 8100
 
 ---
 
-## Verified Working ✅
+## All Bugs Encountered & Fixed
 
-| Test | Result |
-|------|--------|
-| Mixxx direct streaming | ✅ WORKS |
-| Primary relay mode | ✅ WORKS |
-| Fallback activation on encoder drop | ✅ WORKS |
-| Stream URL plays audio | ✅ WORKS |
-| Status shows LIVE correctly | ✅ WORKS |
-
----
-
-## Key Fixes That Made It Work
-
-| Fix | Issue | Solution |
-|-----|-------|----------|
-| Port | Default was 8000 | Changed to **8100** |
-| Protocol | HTTP PUT didn't work | Changed to **icecast://** |
-| Codec | `-c:a copy` unreliable | Changed to **`-c:a libmp3lame`** |
-| Loglevel | 'warning' hid status | Changed to **'info'** |
+| Bug | Root Cause | Fix | Date |
+|-----|-----------|-----|------|
+| Relay not connecting | Port default was 8000 | Changed to 8100 | Dec 24 |
+| Status never "running" | Loglevel 'warning' hid messages | Changed to 'info' | Dec 24 |
+| HTTP PUT didn't stream | Icecast rejected PUT method | Use `icecast://` protocol | Dec 24 |
+| Codec mismatch errors | `-c:a copy` failed on some streams | Use `-c:a libmp3lame` | Dec 24 |
+| FALLBACK badge color | Tried to change logic, broke feature | Keep both conditions | Dec 24 |
 
 ---
 
-## FFmpeg Command (Final Working Version)
+## ⚠️ DO NOT CHANGE: FALLBACK Badge Logic
+
+The current condition works and should NOT be changed:
+
+```javascript
+station.relayStatus === 'active' || (isLive && station.relayMode === 'fallback')
+```
+
+**Attempted fix that BROKE it:**
+```javascript
+station.relayStatus === 'active'  // ❌ This broke fallback!
+```
+
+**Why:** The `relayStatus` from the API may not update fast enough. The combined condition ensures the badge shows green in both cases.
+
+---
+
+## Working FFmpeg Command
 
 ```bash
 ffmpeg -hide_banner -loglevel info \
@@ -61,9 +64,24 @@ ffmpeg -hide_banner -loglevel info \
 | `server/relayManager.js` | FFmpeg spawn and management |
 | `server/icecastConfig.js` | Dynamic Icecast config |
 | `server/index.js` | Fallback trigger, startup |
+| `src/pages/Stations.jsx` | Station cards with FALLBACK badge |
+| `src/pages/Diagnostics.jsx` | Debug page |
 
 ---
 
-## Future Enhancement
+## What Works ✅
 
-- [ ] Change FALLBACK badge to **green** when relay is actively streaming (currently orange)
+- [x] Primary relay mode
+- [x] Fallback activation on encoder drop
+- [x] Stream URL plays audio
+- [x] Email alerts for fallback activation
+- [x] Diagnostics page
+- [x] Sidebar menu with Diagnostics
+- [x] FALLBACK badge turns green when live
+
+---
+
+## Known Limitations
+
+- FALLBACK badge is green when station is live (even via encoder)
+- Would need backend to track source type to show orange when encoder is live
