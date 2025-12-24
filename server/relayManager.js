@@ -13,7 +13,7 @@ const activeRelays = new Map();
 
 // Icecast config from environment
 const ICECAST_HOST = process.env.ICECAST_HOST || 'localhost';
-const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8000;
+const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8100; // Must match Icecast!
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
 
 /**
@@ -53,23 +53,22 @@ export function startRelay(stationId) {
 
     try {
         // Build ffmpeg command
-        // -re: Read input at native frame rate (important for live streams)
-        // -i: Input URL
-        // -c:a copy: Copy audio codec (no transcoding, passthrough)
-        // -f mp3: Force mp3 output format for Icecast
-        // icecast://: Output to Icecast
-        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
+        // Using HTTP PUT method which is more widely supported than icecast://
+        // Format: http://source:password@host:port/mount
+        const icecastUrl = `http://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
 
         const ffmpegArgs = [
             '-hide_banner',
-            '-loglevel', 'warning',
+            '-loglevel', 'info',         // Need info level to see connection messages
             '-reconnect', '1',           // Auto-reconnect if source disconnects
             '-reconnect_streamed', '1',
             '-reconnect_delay_max', '5', // Max 5 seconds between reconnect attempts
             '-i', relayUrl,              // Input URL
-            '-c:a', 'copy',              // Copy audio (no transcoding)
+            '-c:a', 'libmp3lame',        // Encode to MP3 (avoids codec issues)
+            '-b:a', '128k',              // 128kbps bitrate
             '-f', 'mp3',                 // Output format
             '-content_type', 'audio/mpeg',
+            '-method', 'PUT',            // Use HTTP PUT method
             icecastUrl                   // Output to Icecast
         ];
 

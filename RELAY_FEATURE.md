@@ -1,106 +1,85 @@
-# Relay & Fallback Feature Tracker
+# Relay & Fallback Feature - Complete System Audit
 
-## Current Status: � FIX APPLIED - Ready for Testing
-
----
-
-## THE ISSUE
-
-**When encoder disconnects, fallback relay starts but station does NOT show as LIVE.**
-
-Relay status stays at "starting" (never becomes "running").
+**Date:** December 24, 2024  
+**Status:** 🔧 MULTIPLE FIXES APPLIED - Ready for Testing
 
 ---
 
-## ROOT CAUSE FOUND ✅
+## The Problem
 
-### The Problem: `-re` Flag With Network Streams
+**WHAT SHOULD HAPPEN:**
+- Primary mode: Relay starts on server boot, station shows LIVE
+- Fallback mode: When encoder drops, relay auto-starts
 
-The FFmpeg command was using `-re` (read at native frame rate) which is **WRONG for live network streams**.
-
-From FFmpeg documentation research:
-> "The `-re` flag is generally not recommended and often unnecessary or counterproductive for actual live network input streams"
-> "When `-re` is applied to a live network stream, FFmpeg might introduce unnecessary buffering... or stall, waiting for data"
-
-**This explains why:**
-- FFmpeg spawns ✅
-- But never outputs "Opening" or "Stream #" to stderr
-- Status stays at "starting" forever
-- No errors because ffmpeg is just stalling/waiting
-
-### Additional Issue: `-c:a copy` with Mixed Codecs
-
-Using `-c:a copy` (passthrough) can fail if input codec doesn't match expected output. Changed to explicit MP3 encoding for reliability.
+**WHAT ACTUALLY HAPPENED:**
+- Station shows OFFLINE regardless of relay configuration
 
 ---
 
-## FIX APPLIED
+## Fixes Applied
 
-**File:** `server/relayManager.js`
+| Fix | File | Line | Issue |
+|-----|------|------|-------|
+| 1 | relayManager.js | 16 | Port default was 8000, changed to 8100 |
+| 2 | relayManager.js | 62 | Loglevel was 'warning', changed to 'info' |
+| 3 | relayManager.js | 58 | Protocol was `icecast://`, changed to `http://` with PUT |
+| 4 | relayManager.js | 67-68 | Codec was `-c:a copy`, changed to `-c:a libmp3lame -b:a 128k` |
 
-**Before (BROKEN):**
-```javascript
-const ffmpegArgs = [
-    '-hide_banner',
-    '-loglevel', 'warning',
-    '-re',                    // ❌ WRONG for network streams!
-    '-reconnect', '1',
-    '-i', relayUrl,
-    '-c:a', 'copy',           // ❌ Can fail with codec mismatch
-    '-f', 'mp3',
-    ...
-];
-```
+---
 
-**After (FIXED):**
-```javascript
-const ffmpegArgs = [
-    '-hide_banner',
-    '-loglevel', 'info',      // Better debug output
-    // NOTE: Do NOT use -re with network streams - it causes stalling!
-    '-reconnect', '1',
-    '-i', relayUrl,
-    '-c:a', 'libmp3lame',     // ✅ Explicit MP3 encoding
-    '-b:a', '128k',           // ✅ Set bitrate
-    '-f', 'mp3',
-    ...
-];
+## Current FFmpeg Command
+
+```bash
+ffmpeg -hide_banner -loglevel info \
+  -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 \
+  -i https://supersoul.site:8000/OSS-320 \
+  -c:a libmp3lame -b:a 128k \
+  -f mp3 -content_type audio/mpeg \
+  -method PUT \
+  http://source:streamdock_source@127.0.0.1:8100/new
 ```
 
 ---
 
-## Changes Made
+## Why These Fixes
 
-| Change | Reason |
-|--------|--------|
-| Removed `-re` flag | Causes stalling with live network input |
-| Changed `-c:a copy` to `-c:a libmp3lame` | Ensures proper codec conversion |
-| Added `-b:a 128k` | Sets consistent output bitrate |
-| Changed loglevel to `info` | Better visibility of connection status |
+### Fix 1: Port 8100
+- Icecast runs on 8100 inside Docker
+- Default was 8000 = FFmpeg couldn't connect
+
+### Fix 2: Loglevel 'info'
+- Status detection looks for "Opening" and "Stream #"
+- These are INFO level messages
+- With 'warning' level, they were hidden = status never changed
+
+### Fix 3: HTTP PUT instead of icecast://
+- Alpine FFmpeg may not have icecast protocol compiled
+- HTTP PUT is standard for Icecast 2.4+
+- More widely supported
+
+### Fix 4: libmp3lame instead of copy
+- Input stream codec might vary
+- Copy can fail if codec doesn't match
+- Explicit encoding is more reliable
 
 ---
 
 ## Test Steps
 
-1. Deploy the update
-2. Configure station with fallback relay
-3. Connect Mixxx encoder → verify station shows LIVE
-4. Disconnect Mixxx → watch diagnostics page
-5. Expected: Relay status should change from "starting" to "running"
-6. Expected: Station should show LIVE (via fallback)
-7. Reconnect Mixxx → should switch back seamlessly
+1. **Deploy this update**
+2. **Test PRIMARY mode:**
+   - Edit station → External Source → Enable → Primary → Save
+   - Station should show LIVE (no Mixxx needed)
+3. **Test FALLBACK mode:**
+   - Set back to Fallback mode
+   - Connect Mixxx → Station shows LIVE
+   - Disconnect Mixxx → Station should STAY LIVE via fallback
 
 ---
 
-## Files Modified
+## Files Changed
 
-- `server/relayManager.js` - Fixed ffmpeg args
-
----
-
-## Previous Fixes (Already Applied)
-
-- Port default from 8000 to 8100
-- Config path to `/etc/icecast.xml` in production
-- Dockerfile chmod for config file
-- Startup config regeneration
+| File | Change |
+|------|--------|
+| `server/relayManager.js` | Port, loglevel, HTTP PUT, libmp3lame |
+| `RELAY_FEATURE.md` | This audit document |
