@@ -395,7 +395,7 @@ export default function Stations() {
                     </CardContent>
                 </Card>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                     {stations.map(station => {
                         const { isLive, listeners } = getStationStatus(station.mountPoint);
                         return (
