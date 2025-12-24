@@ -156,7 +156,8 @@ async function sendAlertEmail(type, title, message, station = null) {
         const typeStyles = {
             stream_down: { emoji: '🔴', color: '#f87171', label: 'STREAM DOWN' },
             stream_up: { emoji: '🟢', color: '#4ade80', label: 'STREAM RECOVERED' },
-            milestone: { emoji: '🎉', color: '#4b7baf', label: 'MILESTONE' }
+            milestone: { emoji: '🎉', color: '#4b7baf', label: 'MILESTONE' },
+            fallback_activated: { emoji: '⚠️', color: '#f59e0b', label: 'FALLBACK ACTIVE' }
         };
         const style = typeStyles[type] || typeStyles.milestone;
 
@@ -262,16 +263,6 @@ app.use('/api', requireAuth);
 // Serve static React build in production
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../dist')));
-}
-
-// Generate a random password for source connections
-function generatePassword(length = 12) {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let password = '';
-    for (let i = 0; i < length; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
 }
 
 // Create a new station (mount point)
@@ -932,21 +923,45 @@ function checkAndGenerateAlerts(activeMounts) {
         if (!isActive && prev.live) {
             const alertKey = `offline_${mount}`;
             if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN) {
-                db.createAlert(
-                    'error',
-                    'Broadcast Ended',
-                    `${stationInfo.name} has gone offline`,
-                    stationInfo.id
-                );
                 lastAlertTime[alertKey] = now;
-                console.log(`[ALERT] Station ${mount} went OFFLINE`);
 
-                sendAlertEmail(
-                    'stream_down',
-                    `Stream Down: ${stationInfo.name}`,
-                    `The stream "${stationInfo.name}" has gone offline and is no longer broadcasting. Please check the source encoder.`,
-                    stationInfo
-                );
+                // Check if station has fallback relay configured
+                if (station?.relay_enabled && station?.relay_mode === 'fallback' && station?.relay_url) {
+                    // START FALLBACK RELAY
+                    console.log(`[FALLBACK] Encoder dropped for ${stationInfo.name}, starting fallback relay...`);
+                    relayManager.startRelay(station.id);
+
+                    db.createAlert(
+                        'warning',
+                        'Fallback Activated',
+                        `${stationInfo.name} encoder dropped, fallback stream started`,
+                        stationInfo.id
+                    );
+
+                    sendAlertEmail(
+                        'fallback_activated',
+                        `Fallback Active: ${stationInfo.name}`,
+                        `The encoder for "${stationInfo.name}" disconnected. Fallback stream has been automatically activated.`,
+                        stationInfo
+                    );
+                } else {
+                    // Normal stream down (no fallback configured)
+                    console.log(`[ALERT] Station ${mount} went OFFLINE`);
+
+                    db.createAlert(
+                        'error',
+                        'Broadcast Ended',
+                        `${stationInfo.name} has gone offline`,
+                        stationInfo.id
+                    );
+
+                    sendAlertEmail(
+                        'stream_down',
+                        `Stream Down: ${stationInfo.name}`,
+                        `The stream "${stationInfo.name}" has gone offline and is no longer broadcasting. Please check the source encoder.`,
+                        stationInfo
+                    );
+                }
             }
         }
 

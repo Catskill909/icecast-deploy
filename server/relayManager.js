@@ -198,6 +198,16 @@ export function getRelayStatus(stationId) {
 }
 
 /**
+ * Check if a relay is currently active (running)
+ * @param {string} stationId - The station ID
+ * @returns {boolean} - True if relay is running
+ */
+export function isActive(stationId) {
+    const relay = activeRelays.get(stationId);
+    return relay && relay.status === 'running';
+}
+
+/**
  * Get all active relays
  * @returns {Array} - Array of relay status objects
  */
@@ -271,6 +281,7 @@ export default {
     startRelay,
     stopRelay,
     getRelayStatus,
+    isActive,
     getAllActiveRelays,
     startPrimaryRelays,
     stopAllRelays

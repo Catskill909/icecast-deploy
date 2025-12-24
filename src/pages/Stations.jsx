@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Headphones, ExternalLink, Pencil, Loader2, Globe } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Headphones, ExternalLink, Pencil, Loader2, Globe, Rss } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -127,6 +127,16 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                         ) : (
                             <span className="px-2 py-0.5 bg-[#1e2337] text-[#64748b] text-[10px] font-bold uppercase tracking-wider rounded-full border border-[#2a3044]">
                                 OFFLINE
+                            </span>
+                        )}
+                        {/* Relay indicator */}
+                        {station.relayEnabled && station.relayUrl && (
+                            <span className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border ${station.relayMode === 'primary'
+                                    ? 'bg-[#4b7baf]/20 text-[#4b7baf] border-[#4b7baf]/30'
+                                    : 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20'
+                                }`}>
+                                <Rss className="w-2.5 h-2.5" />
+                                {station.relayMode === 'primary' ? 'RELAY' : 'FALLBACK'}
                             </span>
                         )}
                     </div>
