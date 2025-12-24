@@ -13,7 +13,7 @@ const activeRelays = new Map();
 
 // Icecast config from environment
 const ICECAST_HOST = process.env.ICECAST_HOST || 'localhost';
-const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8100; // Must match Icecast port!
+const ICECAST_INTERNAL_PORT = process.env.ICECAST_PORT || 8000;
 const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdock_source';
 
 /**
@@ -57,27 +57,23 @@ export function startRelay(stationId) {
         // -i: Input URL
         // -c:a copy: Copy audio codec (no transcoding, passthrough)
         // -f mp3: Force mp3 output format for Icecast
-        // icecast://: Output to Icecast (uses fallback mount so encoder can use main mount)
-        const fallbackMount = `${mountPoint}-fallback`;
-        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${fallbackMount}`;
+        // icecast://: Output to Icecast
+        const icecastUrl = `icecast://source:${ICECAST_SOURCE_PASSWORD}@${ICECAST_HOST}:${ICECAST_INTERNAL_PORT}${mountPoint}`;
 
         const ffmpegArgs = [
             '-hide_banner',
-            '-loglevel', 'info',         // Changed to info for better debugging
-            // NOTE: Do NOT use -re with network streams - it causes stalling!
+            '-loglevel', 'warning',
             '-reconnect', '1',           // Auto-reconnect if source disconnects
             '-reconnect_streamed', '1',
             '-reconnect_delay_max', '5', // Max 5 seconds between reconnect attempts
-            '-i', relayUrl,              // Input URL (network stream)
-            '-c:a', 'libmp3lame',        // Encode to MP3 (more reliable than copy)
-            '-b:a', '128k',              // 128kbps bitrate
+            '-i', relayUrl,              // Input URL
+            '-c:a', 'copy',              // Copy audio (no transcoding)
             '-f', 'mp3',                 // Output format
             '-content_type', 'audio/mpeg',
             icecastUrl                   // Output to Icecast
         ];
 
         console.log(`[RELAY] Command: ffmpeg ${ffmpegArgs.join(' ')}`);
-        console.log(`[RELAY] Streaming to fallback mount: ${fallbackMount}`);
 
         const process = spawn('ffmpeg', ffmpegArgs, {
             stdio: ['ignore', 'pipe', 'pipe']
@@ -90,7 +86,7 @@ export function startRelay(stationId) {
             startTime: Date.now(),
             url: relayUrl,
             stationId,
-            mountPoint: fallbackMount // Store the actual fallback mount being used
+            mountPoint
         };
         activeRelays.set(stationId, relayInfo);
 
@@ -105,19 +101,14 @@ export function startRelay(stationId) {
         // Handle stderr (ffmpeg outputs progress here)
         process.stderr.on('data', (data) => {
             const output = data.toString().trim();
-            // Log ALL non-progress output for debugging
-            if (!output.includes('size=') && !output.includes('time=') && !output.includes('bitrate=')) {
-                console.log(`[RELAY ${stationId}] STDERR: ${output}`);
+            // Only log non-progress lines (progress is noisy)
+            if (!output.includes('size=') && !output.includes('time=')) {
+                console.log(`[RELAY ${stationId}] ${output}`);
             }
-            // When we see "Opening..." or stream info, connection is working
+            // When we see "Opening..." it means connection is being attempted
             if (output.includes('Opening') || output.includes('Stream #')) {
-                console.log(`[RELAY ${stationId}] Connection established, status: running`);
                 relayInfo.status = 'running';
                 updateRelayStatusInDb(stationId, 'active');
-            }
-            // Log errors explicitly
-            if (output.toLowerCase().includes('error') || output.includes('failed')) {
-                console.error(`[RELAY ${stationId}] ERROR: ${output}`);
             }
         });
 
