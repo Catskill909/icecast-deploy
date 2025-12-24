@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image, Globe, Save, Settings, Bell, Plus, X, AlertTriangle } from 'lucide-react';
+import { Image, Globe, Save, Settings, Bell, Plus, X, AlertTriangle, Rss, Radio } from 'lucide-react';
 import Modal from './ui/Modal';
 import Input from './ui/Input';
 import Button from './ui/Button';
@@ -13,7 +13,10 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
         genre: '',
         logoUrl: '',
         websiteUrl: '',
-        alertEmails: []
+        alertEmails: [],
+        relayUrl: '',
+        relayEnabled: false,
+        relayMode: 'fallback'
     });
     const [newEmail, setNewEmail] = useState('');
     const [loading, setLoading] = useState(false);
@@ -28,7 +31,10 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                 genre: station.genre || 'Various',
                 logoUrl: station.logoUrl || '',
                 websiteUrl: station.websiteUrl || '',
-                alertEmails: station.alertEmails || []
+                alertEmails: station.alertEmails || [],
+                relayUrl: station.relayUrl || '',
+                relayEnabled: station.relayEnabled || false,
+                relayMode: station.relayMode || 'fallback'
             });
         }
     }, [station]);
@@ -169,6 +175,81 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                             className="w-full h-full object-cover"
                                             onError={(e) => e.target.style.display = 'none'}
                                         />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* External Source / Relay Section */}
+                        <div className="pt-5 border-t border-[#2d3555]">
+                            <h3 className="text-sm font-medium text-[#94a3b8] uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <Rss className="w-4 h-4" />
+                                External Source
+                            </h3>
+
+                            <div className="bg-[#1e2337]/50 rounded-lg p-3 text-sm text-[#94a3b8] mb-4 border border-[#2d3555]">
+                                <p className="leading-relaxed opacity-80 text-xs">
+                                    Relay an external stream URL. Use as primary source or fallback when encoder disconnects.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Input
+                                    label="Relay URL"
+                                    name="relayUrl"
+                                    value={formData.relayUrl}
+                                    onChange={handleChange}
+                                    placeholder="https://stream.example.com/mount"
+                                    icon={Radio}
+                                />
+
+                                <div className="flex items-center gap-3">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.relayEnabled}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, relayEnabled: e.target.checked }))}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-[#2d3555] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#4b7baf]/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#22c55e]"></div>
+                                    </label>
+                                    <span className="text-sm text-white">Enable Relay</span>
+                                </div>
+
+                                {formData.relayEnabled && formData.relayUrl && (
+                                    <div className="space-y-2">
+                                        <label className="block text-sm font-medium text-[#94a3b8]">
+                                            Relay Mode
+                                        </label>
+                                        <div className="flex gap-4">
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="relayMode"
+                                                    value="primary"
+                                                    checked={formData.relayMode === 'primary'}
+                                                    onChange={handleChange}
+                                                    className="w-4 h-4 text-[#4b7baf] bg-[#2d3555] border-[#4b7baf] focus:ring-[#4b7baf]"
+                                                />
+                                                <span className="text-sm text-white">Primary Source</span>
+                                            </label>
+                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="relayMode"
+                                                    value="fallback"
+                                                    checked={formData.relayMode === 'fallback'}
+                                                    onChange={handleChange}
+                                                    className="w-4 h-4 text-[#4b7baf] bg-[#2d3555] border-[#4b7baf] focus:ring-[#4b7baf]"
+                                                />
+                                                <span className="text-sm text-white">Fallback</span>
+                                            </label>
+                                        </div>
+                                        <p className="text-xs text-[#64748b] mt-1">
+                                            {formData.relayMode === 'primary'
+                                                ? 'Station will relay this URL. No encoder needed.'
+                                                : 'Encoder is primary. Auto-switch to relay if encoder drops.'}
+                                        </p>
                                     </div>
                                 )}
                             </div>

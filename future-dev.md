@@ -127,11 +127,28 @@ Instead of a separate "Relays" menu, relay functionality is integrated directly 
 
 ### New Station Fields
 ```
-relayUrl        - External stream URL (Icecast, Shoutcast, direct MP3/AAC)
+relayUrl        - External stream URL
 relayEnabled    - Toggle relay on/off
 relayMode       - 'primary' or 'fallback'
 relayStatus     - 'idle' | 'active' | 'error' | 'standby'
 ```
+
+### Supported Formats & Sources
+
+| Audio Formats | Stream Sources |
+|---------------|----------------|
+| MP3 (audio/mpeg) | Icecast servers |
+| AAC (audio/aac, audio/aacp) | Shoutcast servers |
+| Ogg Vorbis (audio/ogg) | Direct HTTP/HTTPS URLs |
+| Opus (audio/opus) | HLS streams (.m3u8) |
+
+#### URL Validation Requirements
+The "Test URL" feature must:
+1. **Fetch headers** - Check `Content-Type` is audio/*
+2. **Accept redirects** - Many streams use 302 redirects
+3. **Handle ICY protocol** - Shoutcast uses `ICY 200 OK` instead of `HTTP/1.1 200`
+4. **Verify stream data** - Attempt to read first few bytes to confirm audio
+5. **Report format** - Display detected format to user (e.g., "MP3 128kbps")
 
 ### Implementation: App-Controlled Relay (Option B)
 Rather than relying on Icecast's native fallback-mount (which requires config restarts), our app handles relay logic dynamically:

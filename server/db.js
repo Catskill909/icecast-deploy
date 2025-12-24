@@ -26,7 +26,11 @@ db.exec(`
     logo_url TEXT,
     website_url TEXT,
     alert_emails TEXT,
-    updated_at TEXT
+    updated_at TEXT,
+    relay_url TEXT,
+    relay_enabled INTEGER DEFAULT 0,
+    relay_mode TEXT DEFAULT 'fallback',
+    relay_status TEXT DEFAULT 'idle'
   )
 `);
 
@@ -42,6 +46,20 @@ try {
 } catch (e) { /* Column already exists */ }
 try {
     db.exec(`ALTER TABLE stations ADD COLUMN updated_at TEXT`);
+} catch (e) { /* Column already exists */ }
+
+// Migration: Relay columns for external stream support
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN relay_url TEXT`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN relay_enabled INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN relay_mode TEXT DEFAULT 'fallback'`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN relay_status TEXT DEFAULT 'idle'`);
 } catch (e) { /* Column already exists */ }
 
 // Migration: Update old stream URLs to new subdomain format
@@ -99,10 +117,11 @@ const deleteStation = (id) => {
 };
 
 const updateStation = (id, updates) => {
-    const { name, description, genre, logoUrl, websiteUrl, alertEmails } = updates;
+    const { name, description, genre, logoUrl, websiteUrl, alertEmails, relayUrl, relayEnabled, relayMode } = updates;
     return db.prepare(`
         UPDATE stations 
-        SET name = ?, description = ?, genre = ?, logo_url = ?, website_url = ?, alert_emails = ?, updated_at = ?
+        SET name = ?, description = ?, genre = ?, logo_url = ?, website_url = ?, alert_emails = ?, 
+            relay_url = ?, relay_enabled = ?, relay_mode = ?, updated_at = ?
         WHERE id = ?
     `).run(
         name,
@@ -111,6 +130,9 @@ const updateStation = (id, updates) => {
         logoUrl || null,
         websiteUrl || null,
         alertEmails ? JSON.stringify(alertEmails) : null,
+        relayUrl || null,
+        relayEnabled ? 1 : 0,
+        relayMode || 'fallback',
         new Date().toISOString(),
         id
     );

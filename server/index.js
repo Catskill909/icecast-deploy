@@ -361,7 +361,11 @@ app.get('/api/stations', (req, res) => {
             logoUrl: s.logo_url,
             websiteUrl: s.website_url,
             createdAt: s.created_at,
-            alertEmails: s.alert_emails ? JSON.parse(s.alert_emails) : []
+            alertEmails: s.alert_emails ? JSON.parse(s.alert_emails) : [],
+            relayUrl: s.relay_url || '',
+            relayEnabled: s.relay_enabled === 1,
+            relayMode: s.relay_mode || 'fallback',
+            relayStatus: s.relay_status || 'idle'
         })));
     } catch (error) {
         console.error('Error fetching stations:', error);
@@ -391,6 +395,10 @@ app.get('/api/stations/:id', (req, res) => {
             websiteUrl: station.website_url,
             createdAt: station.created_at,
             alertEmails: station.alert_emails ? JSON.parse(station.alert_emails) : [],
+            relayUrl: station.relay_url || '',
+            relayEnabled: station.relay_enabled === 1,
+            relayMode: station.relay_mode || 'fallback',
+            relayStatus: station.relay_status || 'idle',
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
                 port: ICECAST_PUBLIC_PORT,
@@ -414,7 +422,7 @@ app.put('/api/stations/:id', (req, res) => {
             return res.status(404).json({ error: 'Station not found' });
         }
 
-        const { name, description, genre, logoUrl, websiteUrl, alertEmails } = req.body;
+        const { name, description, genre, logoUrl, websiteUrl, alertEmails, relayUrl, relayEnabled, relayMode } = req.body;
 
         // Validate required fields
         if (!name || !name.trim()) {
@@ -427,7 +435,10 @@ app.put('/api/stations/:id', (req, res) => {
             genre: genre || 'Various',
             logoUrl: logoUrl || null,
             websiteUrl: websiteUrl || null,
-            alertEmails: Array.isArray(alertEmails) ? alertEmails : null
+            alertEmails: Array.isArray(alertEmails) ? alertEmails : null,
+            relayUrl: relayUrl || null,
+            relayEnabled: relayEnabled || false,
+            relayMode: relayMode || 'fallback'
         });
 
         res.json({ success: true, message: 'Station updated' });
