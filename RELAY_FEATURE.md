@@ -17,9 +17,23 @@ Implemented standard Icecast fallback relay feature. Faced multiple issues due t
 
 ## The Full Journey
 
-### Phase 1: Initial Debugging (~2 hours)
+### Phase 0: Earlier Context (from previous session)
 
-**Starting Problem:** Relay feature wasn't working at all.
+**Docker Disk Space Crisis:**
+- Coolify server was at 99% disk usage
+- Deployments were failing with `ENOSPC` errors
+- Ran `docker system prune -a -f` to clean up
+- Reduced to 75% - deployments working again
+
+**UI Additions:**
+- Added "Diagnostics" page to sidebar menu (`/diagnostics`)
+- Route was already protected by `ProtectedLayout` in App.jsx
+
+---
+
+### Phase 1: Initial Relay Debugging (~2 hours)
+
+**Starting Problem:** Relay feature wasn't working at all. Stream URL wasn't playing audio.
 
 **Bugs Found & Fixed:**
 
@@ -30,7 +44,10 @@ Implemented standard Icecast fallback relay feature. Faced multiple issues due t
 | HTTP PUT failed | Tried HTTP PUT method, Icecast returned 400 | Use icecast:// | a4c3aaf |
 | Codec copy failed | `-c:a copy` failed on some streams | Use libmp3lame | 230f1e4 |
 
-**Working State Achieved:** Fallback activates when encoder drops ✅
+**Working State Achieved:** 
+- User said "Wooo hoo!!!!! finally !!! it works it works!"
+- Fallback activates when encoder drops ✅
+- Stream URL plays audio ✅
 
 ---
 
