@@ -111,6 +111,111 @@ Brainstorming session for StreamDock features and StationDock integration.
 
 ---
 
+## 🔄 Relay & Restreaming (Phase 2.5)
+
+> **Goal**: Allow stations to pull audio from external stream URLs, either as a primary source or as an automatic fallback when the encoder disconnects.
+
+### Concept: Unified Station Model
+Instead of a separate "Relays" menu, relay functionality is integrated directly into existing station cards. Each station can optionally have an external stream URL configured.
+
+### Station Relay Modes
+
+| Mode | Behavior |
+|------|----------|
+| **Primary Source** | Station rebroadcasts the external URL. No encoder needed. |
+| **Fallback** | Encoder is primary. If encoder drops, auto-switch to relay URL. Switch back when encoder returns. |
+
+### New Station Fields
+```
+relayUrl        - External stream URL (Icecast, Shoutcast, direct MP3/AAC)
+relayEnabled    - Toggle relay on/off
+relayMode       - 'primary' or 'fallback'
+relayStatus     - 'idle' | 'active' | 'error' | 'standby'
+```
+
+### Implementation: App-Controlled Relay (Option B)
+Rather than relying on Icecast's native fallback-mount (which requires config restarts), our app handles relay logic dynamically:
+
+1. **Monitor encoder status** - Polling detects when encoder disconnects
+2. **Activate relay** - App starts pulling from relay URL and pushing to Icecast mount
+3. **Monitor for encoder return** - When encoder reconnects, gracefully stop relay
+4. **Status tracking** - Show current source (Encoder / Relay / Fallback Active) in UI
+
+### UI Changes
+
+#### Edit Station Modal - New Section
+```
+─────────── External Source ───────────
+
+Relay URL:  [https://stream.example.com/mount]
+            [Test URL]
+
+            ☑ Enable Relay
+
+Relay Mode: ○ Primary Source (no encoder needed)
+            ● Fallback (auto-switch when encoder drops)
+```
+
+#### Station Card Status Display
+```
+┌──────────────────────────────────────┐
+│ 🎵 My Station               🔴 LIVE │
+│ Source: 📡 Encoder                   │  ← Shows current source
+│ Relay:  ✓ Standby (fallback ready)   │
+│ Listeners: 45                        │
+└──────────────────────────────────────┘
+```
+
+When failover is active:
+```
+│ Source: ⚠️ Fallback Active           │
+│ Relay:  🔄 Streaming from backup     │
+```
+
+### Technical Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   StreamDock Server                  │
+├─────────────────────────────────────────────────────┤
+│  Relay Manager Service                               │
+│  ├── polls Icecast status every 5s                  │
+│  ├── detects encoder disconnect per station         │
+│  ├── spawns relay stream (ffmpeg or node stream)    │
+│  └── monitors relay health & encoder return         │
+└─────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────┐
+│                    Icecast Server                    │
+│  /my-station ← receives from encoder OR relay       │
+└─────────────────────────────────────────────────────┘
+```
+
+### Relay Engine Options
+- **ffmpeg**: `ffmpeg -i <relay_url> -c copy -f mp3 icecast://source:pass@host/mount`
+- **Node.js stream pipe**: Fetch relay URL, pipe to Icecast via http-proxy
+- **liquidsoap**: More complex but handles reconnection gracefully
+
+### Alerts Integration
+- [x] Existing "Stream Down" alert fires when encoder drops
+- [ ] New "Fallback Activated" alert when relay takes over
+- [ ] New "Encoder Restored" alert when switching back
+- [ ] Email notifications for all relay events (uses existing SMTP config)
+
+### Checklist
+- [ ] Add relay fields to database schema
+- [ ] Add relay fields to Edit Station modal
+- [ ] Add "Test URL" validation endpoint
+- [ ] Create Relay Manager service
+- [ ] Update station cards to show relay status
+- [ ] Implement fallback activation logic
+- [ ] Implement encoder-return detection
+- [ ] Add relay-specific alerts
+- [ ] Documentation & Help page updates
+
+---
+
 ## 👥 Multi-User & DJ Features
 
 ### DJ Accounts
