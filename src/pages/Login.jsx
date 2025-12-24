@@ -43,7 +43,7 @@ export default function Login() {
     return (
         <div className="fixed inset-0 z-50 bg-[#0a0e17] flex items-center justify-center overflow-hidden">
             <div className="w-full max-w-sm px-4">
-                <Card className="border-[#1e2337] bg-[#0d1219] shadow-2xl">
+                <Card className="border-[#1a1a1a] bg-black shadow-2xl">
                     <CardContent className="p-8">
                         <div className="flex flex-col items-center mb-8">
                             <img
