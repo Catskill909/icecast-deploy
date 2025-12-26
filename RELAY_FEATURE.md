@@ -419,7 +419,35 @@ if (isActive && !prev.live) {
 | Disconnect encoder | GREEN | "Fallback Active" |
 | Reconnect encoder | ORANGE | "Encoder Reconnected" |
 
-**Status:** 🔄 TESTING - Deployed commit `5984c63`
+### Badge Color Bug Fix (Commit `f3777af`)
+
+**Problem:** Badge stayed ORANGE even after enabling fallback (tested 2+ days).
+
+**Root Cause:** When Liquidsoap restarts (from enabling fallback), `checkAndGenerateAlerts()` runs its first poll:
+```javascript
+if (!previousMountStatus[mount]) {
+    previousMountStatus[mount] = { live: isActive, listeners: 0 };
+    return;  // ← EARLY RETURN - BADGE UPDATE CODE NEVER REACHED!
+}
+```
+
+The badge update logic was placed AFTER this early return, so it never executed on server restart.
+
+**Fix:** Added badge update BEFORE the early return:
+```javascript
+if (!previousMountStatus[mount]) {
+    previousMountStatus[mount] = { live: isActive, listeners: 0 };
+
+    // NEW: Set badge GREEN if fallback station is already LIVE
+    if (isActive && station?.relay_enabled && station?.relay_mode === 'fallback') {
+        db.updateRelayStatus(station.id, 'active');  // GREEN badge
+    }
+
+    return;
+}
+```
+
+**Status:** 🔄 TESTING - Deployed commit `f3777af`
 
 ---
 
