@@ -52,7 +52,8 @@ Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
 |-------|--------|-------------|
 | Phase 1 | ✅ Complete | Liquidsoap in Docker, all 3 services running |
 | Phase 2 | ✅ Complete | Encoder connection tested and working |
-| Phase 3 | ❌ Failed & Reverted | Dynamic config broke Liquidsoap |
+| Phase 3 | ✅ Complete | Liquidsoap Dynamic Config & Fallback Logic |
+| Phase 4 | 📅 Planned | UI Integration & Cleanup (Remove FFmpeg) |
 
 ---
 
@@ -156,7 +157,32 @@ ERROR: gcc-15.2.0-r2: v2 package integrity error
 
 ---
 
-## Next: Phase 3 - HTTP Fallback (NEEDS NEW APPROACH)
+## Phase 4: UI Integration & Cleanup (Next Steps)
+
+### Goal
+Make the UI control Liquidsoap directly and remove the legacy FFmpeg code.
+
+### 1. Refactor API Endpoints (`server/index.js`)
+Currently, these endpoints call `relayManager` (FFmpeg). We will change them to:
+- **`POST /api/relay/:id/start`**:
+    - Update DB: `relay_enabled = 1`
+    - Regenerate Liquidsoap Config
+- **`POST /api/relay/:id/stop`**:
+    - Update DB: `relay_enabled = 0`
+    - Regenerate Liquidsoap Config
+
+### 2. Dashboard Status badges
+- **Current:** "FALLBACK ACTIVE" relies on FFmpeg process status.
+- **New:**
+    - "Relay Enabled": Check `relay_enabled` DB flag.
+    - "On Air": Check Icecast stats (is the mount active?).
+    - *Future:* Query Liquidsoap via Telnet/Socket for granular source status.
+
+### 3. Delete Legacy Code
+- Remove `server/relayManager.js`
+- Remove FFmpeg dependency calls in `index.js` startup
+
+---
 
 ## Key Files
 
