@@ -150,6 +150,12 @@ ERROR: gcc-15.2.0-r2: v2 package integrity error
 **Cause:** `mksafe()` wrapper on the fallback input made it "always available", confusing Liquidsoap's priority logic.
 **Fix:** Removed `mksafe()` from the fallback HTTP input. Now `fallback()` correctly prefers the live source when available.
 
+### Fix for "Mountpoint in use" / Zombie Process (Phase 4.3)
+**Problem:** "Connection failed: 403, Mountpoint in use" logs when toggling relay.
+**Cause:** Liquidsoap restart via `supervisorctl` sometimes left the old process running ("Zombie"), holding port 8100.
+**Fix:** Updated `regenerateLiquidsoapConfig` to use an aggressive kill command:
+`supervisorctl stop liquidsoap && pkill -9 liquidsoap || true && supervisorctl start liquidsoap`
+
 ---
 
 ## Current State (After Phase 4.1)
