@@ -1020,6 +1020,12 @@ function checkAndGenerateAlerts(activeMounts) {
                 lastAlertTime[alertKey] = now;
                 console.log(`[ALERT] Station ${mount} went LIVE`);
 
+                // If this station has fallback, set status back to 'ready' (Orange badge)
+                if (station?.relay_enabled && station?.relay_mode === 'fallback') {
+                    db.updateRelayStatus(station.id, 'ready');
+                    debugLog(`[FALLBACK] Encoder reconnected for ${stationInfo.name}, status set to ready.`);
+                }
+
                 sendAlertEmail(
                     'stream_up',
                     `Stream Recovered: ${stationInfo.name}`,
@@ -1052,6 +1058,10 @@ function checkAndGenerateAlerts(activeMounts) {
                         `${stationInfo.name} encoder dropped, fallback stream started`,
                         stationInfo.id
                     );
+
+                    // Update status to 'active' so badge turns GREEN
+                    db.updateRelayStatus(station.id, 'active');
+                    debugLog(`[FALLBACK] Status updated to 'active' for ${stationInfo.name}.`);
 
                     sendAlertEmail(
                         'fallback_activated',

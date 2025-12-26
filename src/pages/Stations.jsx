@@ -138,7 +138,7 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                                     : 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20'  // ORANGE when standby
                                 }`}>
                                 <Rss className="w-2.5 h-2.5" />
-                                {station.relayMode === 'primary' ? 'RELAY' : 'FALLBACK READY'}
+                                {station.relayMode === 'primary' ? 'RELAY' : 'AUTO FALLBACK'}
                             </span>
                         )}
                     </div>
