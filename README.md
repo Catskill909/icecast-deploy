@@ -186,13 +186,11 @@ Use these settings in BUTT, Mixxx, OBS, or other streaming software:
 | Setting | Value |
 |---------|-------|
 | **Server** | `icecast.supersoul.top` |
-| **Port** | `8001` |
+| **Port** | `8100` |
 | **Mount** | `/your-mount-point` |
-| **Password** | `streamdock_source` |
+| **Password** | (from station card) |
 | **Format** | MP3 or AAC |
 | **Bitrate** | 64-320 kbps |
-
-> **Note:** Encoders now connect to Liquidsoap on port 8001, which manages source priority and outputs to Icecast.
 
 ## 🔗 Stream URLs
 
