@@ -749,7 +749,8 @@ app.post('/api/relay/:stationId/start', async (req, res) => {
     console.log(`[API] Enabling relay for station: ${stationId}`);
     try {
         // Set status to 'ready' (Orange badge) to indicate fallback protection is active
-        db.updateStation(stationId, { relayEnabled: true, relayStatus: 'ready' });
+        db.updateStation(stationId, { relayEnabled: true });
+        db.updateRelayStatus(stationId, 'ready');
         await liquidsoopConfig.regenerateLiquidsoapConfig();
         res.json({ success: true, message: 'Relay enabled and config regenerated' });
     } catch (error) {
@@ -764,7 +765,8 @@ app.post('/api/relay/:stationId/stop', async (req, res) => {
     console.log(`[API] Disabling relay for station: ${stationId}`);
     try {
         // Set status to 'idle' (Removes badge or shows disabled state)
-        db.updateStation(stationId, { relayEnabled: false, relayStatus: 'idle' });
+        db.updateStation(stationId, { relayEnabled: false });
+        db.updateRelayStatus(stationId, 'idle');
         await liquidsoopConfig.regenerateLiquidsoapConfig();
         res.json({ success: true, message: 'Relay disabled and config regenerated' });
     } catch (error) {
@@ -773,17 +775,16 @@ app.post('/api/relay/:stationId/stop', async (req, res) => {
     }
 });
 
-// Get relay status for a station
+// Get relay status for a station (Stubbed - Phase 4)
 app.get('/api/relay/:stationId/status', (req, res) => {
-    const { stationId } = req.params;
-    const status = relayManager.getRelayStatus(stationId);
-    res.json(status);
+    // Phase 4: Status is now fully managed by DB and Liquidsoap detection.
+    // We return a default 'ready' or fetching from DB would be better, but for now safe stub.
+    res.json({ status: 'ready', active: false });
 });
 
-// Get all active relays
+// Get all active relays (Stubbed - Phase 4)
 app.get('/api/relays/active', (req, res) => {
-    const relays = relayManager.getAllActiveRelays();
-    res.json(relays);
+    res.json([]);
 });
 
 // Health check (Moved up to public routes)
