@@ -199,8 +199,14 @@ Based on user testing, the following UI changes were made:
     - Text: "Interruption Warning: Saving changes to relay settings will restart the stream engine. If currently live, expect a 2-5 second audio drop."
 
 2.  **Badge Text Clarification:**
-    - Changed badge from "FALLBACK" to "FALLBACK READY".
+    - Changed badge from "FALLBACK" to "AUTO FALLBACK".
     - This sets the expectation that Orange means "Protection Active" rather than "Waiting to Switch".
+
+3.  **Dynamic Badge Color (Phase 5.1):**
+    - Badge now dynamically changes color based on actual state:
+    - 🟠 **Orange:** Fallback is configured, encoder is live (fallback on standby)
+    - 🟢 **Green:** Fallback is actively playing (encoder disconnected)
+    - When encoder reconnects, badge returns to Orange automatically
 
 
 ## Current State (Post-Audit)
