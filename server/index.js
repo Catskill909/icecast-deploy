@@ -30,6 +30,8 @@ const ICECAST_SOURCE_PASSWORD = process.env.ICECAST_SOURCE_PASSWORD || 'streamdo
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 // Stream subdomain for HTTPS streaming (bypasses Traefik timeout)
 const STREAM_HOST = process.env.STREAM_HOST || 'stream.supersoul.top';
+// Liquidsoap port for encoder connections (encoders connect here, not to Icecast)
+const LIQUIDSOAP_PORT = process.env.LIQUIDSOAP_PORT || 8001;
 
 // Track previous mount status for alert generation
 let previousMountStatus = {}; // { "/mount": { live: true, listeners: 0 } }
@@ -411,7 +413,7 @@ app.post('/api/stations', (req, res) => {
             },
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
-                port: ICECAST_PUBLIC_PORT,
+                port: LIQUIDSOAP_PORT,
                 mountPoint: station.mountPoint,
                 sourcePassword: station.sourcePassword,
                 protocol: 'http',
@@ -484,7 +486,7 @@ app.get('/api/stations/:id', (req, res) => {
             relayStatus: station.relay_status || 'idle',
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
-                port: ICECAST_PUBLIC_PORT,
+                port: LIQUIDSOAP_PORT,
                 mountPoint: station.mount_point,
                 sourcePassword: station.source_password,
                 protocol: 'http',
