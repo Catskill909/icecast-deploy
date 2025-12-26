@@ -301,7 +301,7 @@ When fallback is enabled:
 
 ---
 
-## Phase 7: Webhook Callbacks (PLANNED)
+## Phase 7: Webhook Callbacks (IN PROGRESS - December 26, 2024)
 
 ### Industry-Standard Solution
 
@@ -309,7 +309,7 @@ Research into how professional radio stations handle this revealed the correct a
 
 These callbacks fire **directly** when an encoder connects or disconnects - no polling, no delays, no Icecast dependency.
 
-### How It Will Work
+### How It Works
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -324,25 +324,72 @@ These callbacks fire **directly** when an encoder connects or disconnects - no p
                               ↓
                      Node.js receives webhook
                               ↓
+              - Updates badge (ORANGE when encoder connected)
               - Updates badge (GREEN when fallback active)
-              - Sends "Fallback Active" email
+              - Sends "Fallback Activated" email
 ```
 
-### Files To Modify
+### Files Modified
 
 | File | Change |
 |------|--------|
 | `server/liquidsoopConfig.js` | Add `on_connect`/`on_disconnect` callbacks to `input.harbor` |
 | `server/index.js` | Add `/api/encoder/:id/connected` and `/api/encoder/:id/disconnected` endpoints |
-| `server/liquidsoapClient.js` | **DELETE** (telnet approach abandoned) |
+| `server/liquidsoapClient.js` | **DELETED** (telnet approach abandoned) |
 
-### Expected Behavior After Implementation
+### Implementation Attempts (December 26, 2024)
+
+#### Attempt 1: Full function syntax with `end`
+```liquidsoap
+on_connect=fun(~headers, ~uri, ~protocol, _) -> 
+    log("Encoder connected")
+    ignore(process.run("curl ..."))
+end
+```
+**Result:** ❌ Parse error - `end` syntax incorrect
+
+#### Attempt 2: Thread wrapper with `end`
+```liquidsoap
+on_connect=fun(_) -> thread.run(fun() -> ignore(process.run("curl ..."))) end
+```
+**Result:** ❌ Parse error at `end` - single expressions don't use `end`
+
+#### Attempt 3: Simplified single expression (CURRENT)
+```liquidsoap
+on_connect=fun(_) -> ignore(process.run("curl ...")),
+on_disconnect=fun() -> ignore(process.run("curl ..."))
+```
+**Result:** 🔄 TESTING - Pushed commit `6351ebb`
+
+### Liquidsoap 2.2.5 Callback Syntax Notes
+
+From official docs (reference.html):
+- `on_connect` type: `([string * string]) -> unit` - receives list of headers
+- `on_disconnect` type: `() -> unit` - receives nothing
+- Default `on_connect`: `fun (_) -> ()`
+- Default `on_disconnect`: `{()}`
+
+**Key Learning:** In Liquidsoap 2.x:
+- Single expression: `fun(x) -> expr` (NO `end`)
+- Multiple expressions: `fun(x) -> expr1; expr2 end` (WITH `end`)
+
+### Commit History
+
+| Commit | Description | Result |
+|--------|-------------|--------|
+| `92dd215` | First webhook implementation with broken syntax | ❌ Parse error |
+| `ede0d8f` | Reverted to working config | ✅ Streaming restored |
+| `97d1aa7` | Added `thread.run` wrapper with `end` | ❌ Parse error |
+| `0ba3c9e` | Emergency revert | ✅ Streaming restored |
+| `6351ebb` | Simplified syntax without `end` | 🔄 TESTING |
+
+### Expected Behavior After Working Implementation
 
 1. Encoder connects → Liquidsoap fires `on_connect` → Node.js sets badge ORANGE
 2. Encoder disconnects → Liquidsoap fires `on_disconnect` → Node.js sends email + badge GREEN
 3. Encoder reconnects → `on_connect` → badge ORANGE (fallback standby)
 
-**Status:** ✅ IMPLEMENTED - Deployed December 26, 2024
+**Status:** 🔄 IN PROGRESS - Testing commit `6351ebb`
 
 
 ## Current State (Post-Audit)
