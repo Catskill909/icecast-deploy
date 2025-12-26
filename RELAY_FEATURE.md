@@ -233,6 +233,22 @@ Based on user testing, the following UI changes were made:
 
 This is a **new feature** requiring significant development, not a bug fix.
 
+---
+
+## Phase 6: Liquidsoap Telnet Integration (PLANNED)
+
+**Goal:** Query Liquidsoap directly to determine active source (encoder vs fallback).
+
+**Approach:**
+1. Enable Liquidsoap telnet server (port 1234)
+2. Register custom commands in radio.liq to expose source status
+3. Create Node.js telnet client to query Liquidsoap
+4. Replace Icecast-based detection with Liquidsoap-based detection
+
+**See:** `implementation_plan.md` for full technical details.
+
+**Status:** Planning Complete, Awaiting Approval
+
 
 ## Current State (Post-Audit)
 
