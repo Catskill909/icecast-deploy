@@ -11,23 +11,24 @@
 | Mixxx encoder connects | ✅ Working |
 | Audio switches (live → fallback → live) | ✅ Working |
 | Fallback auto-activates when encoder drops | ✅ Working |
-| "Fallback Active" email | ✅ Fixed (commit `5984c63`) |
+| "Fallback Active" email | ✅ Fixed |
+| "Stream Recovered" email | ✅ Fixed |
+| Badge turns GREEN when fallback starts | ✅ Working (requires page refresh) |
 
-### What's Being Tested 🔄
-| Feature | Status | Commit |
-|---------|--------|--------|
-| Badge turns GREEN when fallback starts | ✅ Working | `f3777af` |
-| Auto-reload after saving (shows badge immediately) | ✅ Working | `62f7560` |
+### ❌ CRITICAL ISSUES (For Next Session)
+| Issue | Symptom | Root Cause |
+|-------|---------|------------|
+| **Badge Color (Encoder)** | **Badge stays GREEN** even when Encoder is live (should be ORANGE) | **Liquidsoap Webhooks NOT Firing.** The system doesn't know the Encoder is connected, so it assumes the active stream is the Fallback. |
+| **Badge Refresh** | Need to refresh page to see Green button after enabling fallback | Race condition: Page reloads before Server updates DB status. `window.location.reload()` fires too fast. |
 
-### Known Issues ⚠️
-1. **Liquidsoap webhooks not firing** - `on_connect`/`on_disconnect` callbacks exist in code but never seen in logs
-2. **Badge color updates depend on polling** - 5-second delay before badge changes
+### Test Results (User Verified)
+1. **Enable Fallback:** Station goes LIVE. Email sent correctly. Badge turns GREEN (after refresh). ✅
+2. **Connect Mixxx:** Audio switches to Mixxx. **Badge STAYS GREEN** (Fail). ❌
+3. **Disconnect Mixxx:** Audio switches to Fallback. Badge stays GREEN. ✅
 
-### Test Procedure
-1. Disable fallback, wait 10 seconds
-2. Enable fallback → Badge should be **GREEN** + email "Fallback Active"
-3. Connect Mixxx → Badge turns **ORANGE**
-4. Disconnect Mixxx → Badge turns **GREEN** + email "Fallback Active"
+### Next Steps (Code Required)
+1. **Fix Liquidsoap Webhooks:** `on_connect`/`on_disconnect` are not triggering the API. Check Liquidsoap logs & config syntax again. Code is in `liquidsoopConfig.js` but might be failing silently.
+2. **Fix UI Refresh:** Add a delay before `window.location.reload()` in `EditStationModal.jsx`, or implement polling.
 
 ### Key Files
 | File | Purpose |
