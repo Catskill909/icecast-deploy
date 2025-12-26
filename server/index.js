@@ -1033,8 +1033,10 @@ function checkAndGenerateAlerts(activeMounts) {
                 // Check if station has fallback relay configured
                 if (station?.relay_enabled && station?.relay_mode === 'fallback' && station?.relay_url) {
                     // START FALLBACK RELAY
-                    debugLog(`[FALLBACK] Encoder dropped for ${stationInfo.name}, starting fallback relay...`);
-                    relayManager.startRelay(station.id);
+                    // START FALLBACK RELAY
+                    // Phase 4: relayManager removed. Liquidsoap handles this automatically.
+                    debugLog(`[FALLBACK] Encoder dropped for ${stationInfo.name}, Liquidsoap should activate fallback.`);
+                    // relayManager.startRelay(station.id); // REMOVED
 
                     db.createAlert(
                         'warning',
