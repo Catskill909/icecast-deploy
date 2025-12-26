@@ -121,16 +121,16 @@ ${mountsXml}
 
 /**
  * Write icecast.xml to disk and trigger reload
- * Writes to /etc/icecast.xml which is where Icecast reads from in Docker
+ * Writes to /etc/icecast2/icecast.xml which is where Icecast reads from in Docker (Debian)
  */
 export async function regenerateIcecastConfig() {
     try {
         const config = generateIcecastConfig();
 
-        // In Docker, Icecast reads from /etc/icecast.xml
+        // In Docker (Debian), Icecast reads from /etc/icecast2/icecast.xml
         // In dev, use project root
         const configPath = process.env.NODE_ENV === 'production'
-            ? '/etc/icecast.xml'
+            ? '/etc/icecast2/icecast.xml'
             : path.join(__dirname, '../icecast.xml');
 
         fs.writeFileSync(configPath, config, 'utf8');

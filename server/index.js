@@ -298,9 +298,9 @@ app.get('/api/diagnostics', async (req, res) => {
         let icecastConfig = '';
         try {
             const fs = await import('fs');
-            // In production, config is at /etc/icecast.xml
+            // In production (Debian), config is at /etc/icecast2/icecast.xml
             const configPath = process.env.NODE_ENV === 'production'
-                ? '/etc/icecast.xml'
+                ? '/etc/icecast2/icecast.xml'
                 : path.join(__dirname, '../icecast.xml');
             const fullConfig = fs.readFileSync(configPath, 'utf8');
             // Extract mount sections

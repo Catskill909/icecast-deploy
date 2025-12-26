@@ -559,3 +559,32 @@ Password: streamdock_source
 1. Commit and push
 2. Update Coolify Ports Mappings: `8100:8100,8001:8001`
 3. Deploy and test - container should start with all 3 services
+
+### ❌ Build Failed - 8:43 PM
+
+**Error:** 
+```
+ERROR: unable to select packages:
+  liquidsoap (no such package):
+    required by: world[liquidsoap@edge]
+```
+
+**Root cause:** Liquidsoap is NOT in Alpine repos (edge or otherwise).
+
+**Fix:** Use official `savonet/liquidsoap` Docker image in multi-stage build. Copy Liquidsoap binary from their image into our Alpine container.
+
+### Applying Fix...
+
+**Changed approach:** Switch from Alpine to Debian Slim
+
+| File | Change |
+|------|--------|
+| `Dockerfile` | Use `node:20-slim` (Debian), install Liquidsoap from apt.liquidsoap.info |
+| `supervisord.conf` | Use `icecast2` binary and `/etc/icecast2/` path |
+| `icecastConfig.js` | Path: `/etc/icecast2/icecast.xml` |
+| `index.js` | Path: `/etc/icecast2/icecast.xml` |
+
+**Why Debian instead of Alpine:**
+- Liquidsoap requires glibc (Alpine uses musl)
+- Official Liquidsoap packages available for Debian via apt.liquidsoap.info
+- Debian's icecast2 package is well-tested
