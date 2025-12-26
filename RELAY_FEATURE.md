@@ -588,3 +588,25 @@ ERROR: unable to select packages:
 - Liquidsoap requires glibc (Alpine uses musl)
 - Official Liquidsoap packages available for Debian via apt.liquidsoap.info
 - Debian's icecast2 package is well-tested
+
+### ❌ Build Failed Again - 8:51 PM
+
+**Error:**
+```
+curl: (6) Could not resolve host: apt.liquidsoap.info
+gpg: no valid OpenPGP data found.
+```
+
+**Root cause:** Coolify build environment can't resolve apt.liquidsoap.info DNS.
+
+**Fix:** Use official `savonet/liquidsoap` Docker image in multi-stage build instead of apt repository.
+
+### Attempt #3 - 8:53 PM
+
+**Approach:** Multi-stage build copying Liquidsoap binary from official `savonet/liquidsoap:v2.2.5` Docker image.
+
+```dockerfile
+FROM savonet/liquidsoap:v2.2.5 AS liquidsoap
+...
+COPY --from=liquidsoap /usr/bin/liquidsoap /usr/bin/liquidsoap
+```
