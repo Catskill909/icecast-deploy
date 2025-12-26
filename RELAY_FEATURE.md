@@ -505,3 +505,34 @@ Mixxx → Liquidsoap → Icecast (one stream)
 - Crossfades
 - Silence detection
 - Telnet control from Node.js
+
+---
+
+## Coolify Configuration Notes
+
+**Current Traefik Labels (for stream subdomain):**
+```
+traefik.http.routers.stream-https.rule=Host(`stream.supersoul.top`)
+traefik.http.services.stream-service.loadbalancer.server.port=8100
+```
+
+**With Liquidsoap - What Changes:**
+
+| Port | Purpose | Traefik Needed? | Change? |
+|------|---------|-----------------|---------|
+| 3000 | Web UI/API | Yes (via domain) | No change |
+| 8100 | Icecast (listener output) | Yes (stream subdomain) | No change |
+| 8001 | Liquidsoap (encoder input) | No (raw TCP) | **NEW - add to Ports Exposes/Mappings** |
+
+**Coolify Changes Needed:**
+1. Ports Exposes: `3000,8100` → `3000,8100,8001`
+2. Ports Mappings: `8100:8100` → `8100:8100,8001:8001`
+3. Traefik labels: **No changes** (stream subdomain stays on 8100)
+
+**Encoder Connection (after Liquidsoap):**
+```
+Server: icecast.supersoul.top
+Port: 8001 (was 8100)
+Mount: /live
+Password: streamdock_source
+```
