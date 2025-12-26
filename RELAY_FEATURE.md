@@ -1,6 +1,6 @@
 # Relay & Fallback Feature
 
-> **Last Updated:** December 26, 2024 @ 5:49 PM EST
+> **Last Updated:** December 26, 2024 @ 6:22 PM EST
 
 ---
 ## ⚠️⚠️⚠️ THE ONLY ISSUE - READ THIS FIRST ⚠️⚠️⚠️
@@ -11,30 +11,97 @@
 - 🟢 **GREEN** = Fallback is THE ACTIVE source (streaming audio right now)
 - 🟠 **ORANGE** = Fallback is on STANDBY (encoder is the main source)
 
-### Bug #1: Save doesn't update badge immediately
-1. Enable relay fallback → Save
-2. Badge shows ORANGE ❌ WRONG (should be GREEN)
-3. Manual page refresh → Badge turns GREEN ✅ CORRECT
+---
 
-### Bug #2: Encoder connecting doesn't change badge
-1. Badge is GREEN (fallback streaming)
-2. Connect Mixxx (encoder)
-3. Audio switches correctly ✅
-4. Badge stays GREEN ❌ WRONG (should turn ORANGE)
+## 🧪 LATEST TEST (December 26, 2024 @ 6:17 PM)
 
-**EVERYTHING ELSE WORKS:**
-- ✅ Streaming
-- ✅ Audio switching
-- ✅ Emails
-- ✅ Fallback activation
-- ✅ Encoder connection
-- ✅ All functions
-
-**IT'S JUST THE BUTTON COLOR.**
+| Step | Action | Expected | Actual | Status |
+|------|--------|----------|--------|--------|
+| 1 | Station off | - | - | ✅ |
+| 2 | Enable fallback, save | GREEN | GREEN | ✅ |
+| 3 | **Refresh page** | GREEN | **ORANGE** | ❌ BUG |
 
 ---
 
-## 🚨 CURRENT STATUS (Handoff Summary)
+## 🔍 DOUBLE AUDIT COMPLETE (December 26, 2024 @ 6:22 PM)
+
+### All 9 Places That Set Button Color
+
+| Line | Context | Sets | Correct? |
+|------|---------|------|----------|
+| 545 | `PUT /api/stations/:id` - Edit station | GREEN when enabled | ✅ |
+| 757 | `POST /api/relay/start` - Start endpoint | ORANGE | n/a (not used by UI) |
+| 773 | `POST /api/relay/stop` - Stop endpoint | idle | ✅ |
+| 813 | Webhook: encoder connects | ORANGE | ✅ |
+| 838 | Webhook: encoder disconnects | GREEN | ✅ |
+| 1074 | First poll, station LIVE | GREEN | ⚠️ may override |
+| **1103** | **Poll: stream LIVE + status='active'** | **ORANGE** | **❌ THE BUG** |
+| 1115 | Poll: stream LIVE + status≠'active' | GREEN | ✅ |
+| 1181 | Poll: stream OFFLINE | GREEN | ✅ (legacy, rarely runs) |
+
+### Frontend Logic (CORRECT ✅)
+**File:** `src/pages/Stations.jsx` line 136
+```jsx
+station.relayStatus === 'active' ? GREEN : ORANGE
+```
+
+### API Response (CORRECT ✅)
+**File:** `server/index.js` lines 452, 485
+```javascript
+relayStatus: s.relay_status || 'idle'
+```
+
+### Database (CORRECT ✅)
+**File:** `server/db.js` line 250
+```javascript
+updateRelayStatus(id, status)
+```
+
+---
+
+## ❌ ROOT CAUSE: Line 1091-1103
+
+**File:** `server/index.js`
+
+```javascript
+// CHECK: Stream went LIVE (Recovery)
+if (isActive && !prev.live) {
+    if (station?.relay_enabled && station?.relay_mode === 'fallback') {
+        if (station?.relay_status === 'active') {  // ← Line 1091
+            // Encoder reconnected after being down
+            db.updateRelayStatus(station.id, 'ready');  // ← Line 1103 - FORCES ORANGE!
+        }
+    }
+}
+```
+
+### Why This Is Wrong:
+
+1. User enables fallback → API sets `relay_status = 'active'` (GREEN) ✅
+2. Liquidsoap starts → Stream goes LIVE
+3. User refreshes page → Polling runs
+4. Polling sees: `isActive=true`, `!prev.live=true` (stream just went LIVE)
+5. Polling checks: `relay_status === 'active'` → TRUE
+6. Polling WRONGLY assumes: "Encoder must have reconnected!"
+7. Polling sets: `relay_status = 'ready'` (ORANGE) ❌
+
+**The polling cannot distinguish between:**
+- Fallback just started streaming (should stay GREEN)
+- Encoder reconnected (should turn ORANGE)
+
+---
+
+## ✅ THE FIX
+
+**Remove line 1103** (the `db.updateRelayStatus(station.id, 'ready')` call).
+
+Let ONLY the webhooks control button color:
+- Webhook `on_connect` → ORANGE (encoder is live)
+- Webhook `on_disconnect` → GREEN (fallback is active)
+
+---
+
+## 🚨 CURRENT STATUS
 
 ### What's Working ✅
 | Feature | Status |
@@ -43,9 +110,15 @@
 | Mixxx encoder connects | ✅ Working |
 | Audio switches (live → fallback → live) | ✅ Working |
 | Fallback auto-activates when encoder drops | ✅ Working |
-| "Fallback Active" email | ✅ Fixed |
-| "Stream Recovered" email | ✅ Fixed |
-| Badge turns GREEN when fallback starts | ✅ Working (requires page refresh) |
+| "Fallback Active" email | ✅ Working |
+| "Stream Recovered" email | ✅ Working |
+| Badge turns GREEN on enable | ✅ Working |
+
+### What's NOT Working ❌
+| Issue | Status |
+|-------|--------|
+| Badge stays GREEN after refresh | ❌ Polling overrides to ORANGE |
+| Badge updates when encoder connects | ❌ Needs webhook + no polling override |
 
 ### ❌ CRITICAL ISSUES (For Next Session)
 | Issue | Symptom | Root Cause | Status |

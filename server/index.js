@@ -1099,9 +1099,8 @@ function checkAndGenerateAlerts(activeMounts) {
                         lastAlertTime[alertKey] = now;
                         console.log(`[ALERT] Station ${mount} encoder RECONNECTED`);
 
-                        // Set badge to ORANGE (fallback on standby)
-                        db.updateRelayStatus(station.id, 'ready');
-                        debugLog(`[FALLBACK] Encoder reconnected for ${stationInfo.name}, status set to ready.`);
+                        // Badge color controlled by webhooks, not polling
+                        debugLog(`[FALLBACK] Encoder reconnected for ${stationInfo.name}`);
 
                         sendAlertEmail(
                             'stream_up',
@@ -1111,9 +1110,8 @@ function checkAndGenerateAlerts(activeMounts) {
                         );
                     } else {
                         // Fallback just started (not encoder reconnecting)
-                        // Set badge to GREEN (fallback is actively playing)
-                        db.updateRelayStatus(station.id, 'active');
-                        debugLog(`[FALLBACK] Fallback started for ${stationInfo.name} (no encoder was connected), status set to active.`);
+                        // Badge color controlled by webhooks, not polling
+                        debugLog(`[FALLBACK] Fallback started for ${stationInfo.name} (no encoder was connected)`);
 
                         db.createAlert(
                             'info',
@@ -1177,9 +1175,8 @@ function checkAndGenerateAlerts(activeMounts) {
                         stationInfo.id
                     );
 
-                    // Update status to 'active' so badge turns GREEN
-                    db.updateRelayStatus(station.id, 'active');
-                    debugLog(`[FALLBACK] Status updated to 'active' for ${stationInfo.name}.`);
+                    // Badge color controlled by webhooks, not polling
+                    debugLog(`[FALLBACK] Encoder dropped for ${stationInfo.name}.`);
 
                     sendAlertEmail(
                         'fallback_activated',
