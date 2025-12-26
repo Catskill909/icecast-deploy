@@ -1462,20 +1462,16 @@ app.listen(PORT, () => {
         await liquidsoopConfig.regenerateLiquidsoapConfig();
 
         // Then start any primary mode relays
-        // Relay manager (FFmpeg) disabled in Phase 4 - handled by Liquidsoap
-        // Relay manager (FFmpeg) disabled in Phase 4 - handled by Liquidsoap
     }, 5000); // Wait 5 seconds for Icecast to be ready
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('[SHUTDOWN] Received SIGTERM, stopping relays...');
-    // relayManager.stopAllRelays();
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
     console.log('[SHUTDOWN] Received SIGINT, stopping relays...');
-    // Relay manager (FFmpeg) disabled in Phase 4 - handled by Liquidsoap
     process.exit(0);
 });

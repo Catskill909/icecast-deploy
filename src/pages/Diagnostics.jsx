@@ -156,7 +156,7 @@ export default function Diagnostics() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-white">
                                 <Rss className="w-5 h-5 text-[#f59e0b]" />
-                                Active Relays (FFmpeg Processes)
+                                Active Relays
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -198,10 +198,10 @@ export default function Diagnostics() {
                                 {data.recentLogs?.length > 0 ? (
                                     data.recentLogs.map((log, i) => (
                                         <div key={i} className={`py-1 ${log.includes('[ERROR]') ? 'text-red-400' :
-                                                log.includes('[FALLBACK]') ? 'text-[#f59e0b]' :
-                                                    log.includes('[RELAY]') ? 'text-green-400' :
-                                                        log.includes('[DEBUG]') ? 'text-blue-400' :
-                                                            'text-[#94a3b8]'
+                                            log.includes('[FALLBACK]') ? 'text-[#f59e0b]' :
+                                                log.includes('[RELAY]') ? 'text-green-400' :
+                                                    log.includes('[DEBUG]') ? 'text-blue-400' :
+                                                        'text-[#94a3b8]'
                                             }`}>
                                             {log}
                                         </div>
