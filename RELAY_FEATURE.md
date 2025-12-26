@@ -381,15 +381,103 @@ From official docs (reference.html):
 | `ede0d8f` | Reverted to working config | ✅ Streaming restored |
 | `97d1aa7` | Added `thread.run` wrapper with `end` | ❌ Parse error |
 | `0ba3c9e` | Emergency revert | ✅ Streaming restored |
-| `6351ebb` | Simplified syntax without `end` | 🔄 TESTING |
+| `6351ebb` | Simplified syntax without `end` | 🔄 Testing |
+| `5984c63` | Fixed email logic (see below) | 🔄 Testing |
 
-### Expected Behavior After Working Implementation
+### Email Logic Fix (Commit `5984c63`)
 
-1. Encoder connects → Liquidsoap fires `on_connect` → Node.js sets badge ORANGE
-2. Encoder disconnects → Liquidsoap fires `on_disconnect` → Node.js sends email + badge GREEN
-3. Encoder reconnects → `on_connect` → badge ORANGE (fallback standby)
+**Problem:** When enabling fallback on an OFFLINE station, system sent "Stream Recovered" instead of "Fallback Active".
 
-**Status:** 🔄 IN PROGRESS - Testing commit `6351ebb`
+**Root Cause:** `checkAndGenerateAlerts()` detected `isActive && !prev.live` (stream went online) but didn't distinguish between:
+- Encoder reconnecting (should send "Encoder Reconnected")
+- Fallback starting up (should send "Fallback Active")
+
+**Fix:** Added logic to check `relay_status` before deciding which email to send:
+```javascript
+if (isActive && !prev.live) {
+    if (station?.relay_enabled && station?.relay_mode === 'fallback') {
+        if (station?.relay_status === 'active') {
+            // Encoder reconnected (fallback was playing) → badge ORANGE
+            sendAlertEmail('stream_up', 'Encoder Reconnected: ...');
+        } else {
+            // Fallback just started → badge GREEN
+            sendAlertEmail('fallback_activated', 'Fallback Active: ...');
+        }
+    } else {
+        // Normal station → "Stream Recovered"
+    }
+}
+```
+
+### Expected Behavior After Fix
+
+| Action | Badge | Email |
+|--------|-------|-------|
+| Enable fallback on OFFLINE station | GREEN | "Fallback Active" |
+| Connect encoder (Mixxx) | ORANGE | (none) |
+| Disconnect encoder | GREEN | "Fallback Active" |
+| Reconnect encoder | ORANGE | "Encoder Reconnected" |
+
+**Status:** 🔄 TESTING - Deployed commit `5984c63`
+
+---
+
+## Local Testing (Before Deploy)
+
+### Why Test Locally?
+Each production deploy costs 2-5 minutes and risks breaking live streaming. Test locally first!
+
+### Option 1: Run Docker Locally
+```bash
+cd /Users/paulhenshaw/Desktop/icecast-deploy
+
+# Build the image
+docker build -t streamdock-test .
+
+# Run with required env vars
+docker run -it --rm \
+  -p 3001:3001 \
+  -p 8001:8001 \
+  -p 8100:8100 \
+  -e PORT=3001 \
+  -e ICECAST_HOST=127.0.0.1 \
+  -e ICECAST_PORT=8100 \
+  -e ICECAST_SOURCE_PASSWORD=streamdock_source \
+  -e ADMIN_PASSWORD=admin123 \
+  streamdock-test
+
+# Access at http://localhost:3001
+```
+
+### Option 2: Test Liquidsoap Syntax Only
+Create a test script and validate before committing:
+```bash
+# Create minimal test file
+cat > /tmp/test.liq << 'EOF'
+live = input.harbor(
+    "/test",
+    port=8001,
+    password="test",
+    on_connect=fun(_) -> ignore(process.run("echo connected")),
+    on_disconnect=fun() -> ignore(process.run("echo disconnected"))
+)
+output.dummy(live)
+EOF
+
+# Test syntax with Docker
+docker run --rm -v /tmp/test.liq:/test.liq savonet/liquidsoap:v2.2.5 liquidsoap --check /test.liq
+```
+
+If `--check` passes with no errors, the syntax is valid.
+
+### Option 3: Check Logs After Deploy
+```bash
+# SSH to Coolify server
+ssh root@<your-server>
+
+# View Liquidsoap logs in container
+docker logs <container-id> 2>&1 | grep -i "error\|parse\|connect"
+```
 
 
 ## Current State (Post-Audit)
