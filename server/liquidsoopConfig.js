@@ -60,12 +60,21 @@ output.icecast(
     }
     // For FALLBACK mode or no relay: live input
     else {
-        // Live input - NO mksafe! Only outputs when encoder connected.
-        config += `# Live input from encoder (NO mksafe - only active when connected)
+        // Live input with webhook callbacks (Phase 7)
+        // on_connect/on_disconnect notify Node.js when encoder status changes
+        config += `# Live input from encoder with webhook callbacks (Phase 7)
 live_${id} = input.harbor(
     "${mount}",
     port=8001,
-    password="${ICECAST_SOURCE_PASSWORD}"
+    password="${ICECAST_SOURCE_PASSWORD}",
+    on_connect=fun(~headers, ~uri, ~protocol, _) -> 
+        log("Encoder connected for ${station.name}")
+        ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/connected -H 'Content-Type: application/json' -d '{}'"))
+    end,
+    on_disconnect=fun() ->
+        log("Encoder disconnected for ${station.name}")
+        ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/disconnected -H 'Content-Type: application/json' -d '{}'"))
+    end
 )
 
 `;
@@ -74,9 +83,6 @@ live_${id} = input.harbor(
         if (relayEnabled && relayUrl) {
             config += `# HTTP fallback source
 http_${id} = input.http("${relayUrl}")
-http_${id} = input.http("${relayUrl}")
-# Removed mksafe so fallback releases properly when live connects
-
 
 # Priority: live first, then HTTP fallback
 source_${id} = fallback(
@@ -94,12 +100,6 @@ output.icecast(
     description="${station.description || 'StreamDock station'}",
     fallible=true,
     source_${id}
-)
-
-# Telnet status command for this station (Phase 6)
-server.register(
-    "source_${id}",
-    fun (_) -> if live_${id}.is_ready() then "live" else "fallback" end
 )
 
 `;
@@ -149,11 +149,6 @@ settings.init.allow_root.set(true)
 
 # Harbor settings - accept encoder connections on port 8001
 settings.harbor.bind_addrs.set(["0.0.0.0"])
-
-# Telnet server for external status queries (Phase 6)
-settings.server.telnet.set(true)
-settings.server.telnet.port.set(1234)
-settings.server.telnet.bind_addr.set("127.0.0.1")
 
 `;
 

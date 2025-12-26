@@ -11,7 +11,6 @@ import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
 import * as icecastConfig from './icecastConfig.js';
 import * as liquidsoopConfig from './liquidsoopConfig.js';
-import * as liquidsoapClient from './liquidsoapClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -795,6 +794,77 @@ app.get('/api/relays/active', (req, res) => {
     res.json([]);
 });
 
+// ==========================================
+// ENCODER WEBHOOK ENDPOINTS (Phase 7)
+// Called by Liquidsoap on_connect/on_disconnect callbacks
+// ==========================================
+
+// Encoder connected - set badge to ORANGE (fallback on standby)
+app.post('/api/encoder/:stationId/connected', (req, res) => {
+    const { stationId } = req.params;
+    const station = db.getStationById(stationId);
+
+    if (!station) {
+        console.warn(`[ENCODER WEBHOOK] Station not found: ${stationId}`);
+        return res.status(404).json({ error: 'Station not found' });
+    }
+
+    debugLog(`[ENCODER] Connected: ${station.name}`);
+
+    // If fallback was active, update badge to ORANGE (standby)
+    if (station.relay_enabled && station.relay_mode === 'fallback') {
+        db.updateRelayStatus(station.id, 'ready');
+        debugLog(`[ENCODER] ${station.name} badge set to ORANGE (fallback on standby)`);
+
+        // Create in-app alert
+        db.createAlert('success', 'Encoder Connected',
+            `${station.name} encoder is now live`, station.id);
+    }
+
+    res.json({ ok: true, status: 'connected' });
+});
+
+// Encoder disconnected - set badge to GREEN and send email (fallback is active)
+app.post('/api/encoder/:stationId/disconnected', (req, res) => {
+    const { stationId } = req.params;
+    const station = db.getStationById(stationId);
+
+    if (!station) {
+        console.warn(`[ENCODER WEBHOOK] Station not found: ${stationId}`);
+        return res.status(404).json({ error: 'Station not found' });
+    }
+
+    debugLog(`[ENCODER] Disconnected: ${station.name}`);
+
+    if (station.relay_enabled && station.relay_mode === 'fallback' && station.relay_url) {
+        // Update badge to GREEN (fallback is now active)
+        db.updateRelayStatus(station.id, 'active');
+        debugLog(`[ENCODER] ${station.name} badge set to GREEN (fallback ACTIVE)`);
+
+        // Create in-app alert
+        db.createAlert('warning', 'Fallback Activated',
+            `${station.name} encoder dropped, fallback stream started`, station.id);
+
+        // Send email alert
+        const stationInfo = {
+            id: station.id,
+            name: station.name,
+            mount: station.mount_point,
+            streamUrl: station.stream_url,
+            alert_emails: station.alert_emails
+        };
+
+        sendAlertEmail(
+            'fallback_activated',
+            `Fallback Active: ${station.name}`,
+            `The encoder for "${station.name}" disconnected. Fallback stream has been automatically activated.`,
+            stationInfo
+        );
+    }
+
+    res.json({ ok: true, status: 'disconnected' });
+});
+
 // Health check (Moved up to public routes)
 
 // Secure Icecast status page proxy
@@ -955,49 +1025,6 @@ app.get('/api/icecast-status', async (req, res) => {
         res.json({ live: false, mounts: [], error: error.message });
     }
 });
-
-// ==========================================
-// PHASE 6: LIQUIDSOAP SOURCE STATUS UPDATE
-// ==========================================
-// Query Liquidsoap telnet to determine which source is active
-// and update the relay_status in the database accordingly
-async function updateSourceStatuses() {
-    try {
-        const allStations = db.getAllStations();
-
-        // Only check stations with fallback enabled
-        const fallbackStations = allStations.filter(
-            s => s.relay_enabled && s.relay_mode === 'fallback' && s.relay_url
-        );
-
-        if (fallbackStations.length === 0) {
-            return; // No fallback stations to check
-        }
-
-        for (const station of fallbackStations) {
-            const activeSource = await liquidsoapClient.getActiveSource(station.id);
-
-            // Skip if we couldn't determine the source (will retry on next poll)
-            if (activeSource === 'unknown') {
-                debugLog(`[PHASE 6] Station ${station.name}: Telnet returned unknown, skipping (will retry)`);
-                continue;
-            }
-
-            // Update status based on which source is active
-            // 'live' = encoder is connected (fallback on standby) = 'ready' (Orange)
-            // 'fallback' = fallback is playing (encoder disconnected) = 'active' (Green)
-            const newStatus = activeSource === 'fallback' ? 'active' : 'ready';
-
-            // Only update if status changed
-            if (station.relay_status !== newStatus) {
-                db.updateRelayStatus(station.id, newStatus);
-                debugLog(`[PHASE 6] Station ${station.name}: Source is ${activeSource}, status updated to ${newStatus}`);
-            }
-        }
-    } catch (error) {
-        console.error('[PHASE 6] Error updating source statuses:', error.message);
-    }
-}
 
 // Check for status changes and generate alerts
 // Check for status changes and generate alerts

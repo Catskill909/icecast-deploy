@@ -235,22 +235,114 @@ This is a **new feature** requiring significant development, not a bug fix.
 
 ---
 
-## Phase 6: Liquidsoap Telnet Integration (IMPLEMENTED)
+## Phase 6: Liquidsoap Telnet Integration (FAILED - REVERTED)
 
 **Goal:** Query Liquidsoap directly to determine active source (encoder vs fallback).
 
-**Files Modified:**
+**What Was Tried:**
 1. `server/liquidsoopConfig.js` - Added telnet server (port 1234) and `server.register()` commands
 2. `server/liquidsoapClient.js` - NEW: Node.js telnet client to query source status
 3. `server/index.js` - Added `updateSourceStatuses()` function called during polling
 
-**How It Works:**
-1. Liquidsoap radio.liq now includes telnet server on port 1234
-2. Each fallback station registers a command: `source_{stationId}` returns "live" or "fallback"
-3. Node.js queries Liquidsoap every 5 seconds (during Icecast status poll)
-4. Database `relay_status` is updated: 'active' (Green) when fallback plays, 'ready' (Orange) when encoder is live
+**Why It Failed:**
+1. Telnet queries returned `'unknown'` frequently
+2. Timing issues during Liquidsoap restarts caused unreliable responses
+3. Integration into `checkAndGenerateAlerts()` broke email alerts entirely
+4. Badge never turned green because status was always skipped on 'unknown'
 
-**Status:** Code Complete, Awaiting Deploy & Test
+**Status:** ❌ REVERTED - Code removed from `checkAndGenerateAlerts()`. Telnet approach abandoned.
+
+---
+
+## Deep Audit: Root Cause Analysis (December 26, 2024)
+
+### The Fundamental Problem
+
+When fallback relay is enabled, Liquidsoap's `fallback()` function switches sources **internally**. From Icecast's perspective, the stream NEVER goes offline - it just switches audio sources seamlessly.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     LIQUIDSOAP                               │
+│                                                              │
+│  Encoder ────► input.harbor() ─┐                             │
+│                                ├─► fallback() ───► Icecast   │
+│  Fallback ───► input.http()  ──┘                             │
+│                                                              │
+│  (Source switching happens HERE - invisible to Icecast)     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### The Code That Never Triggers
+
+In `server/index.js`, the alert logic checks:
+```javascript
+if (!isActive && prev.live) {  // ← NEVER TRUE WHEN FALLBACK IS ON
+    sendAlertEmail('fallback_activated', ...);
+}
+```
+
+When fallback is enabled:
+1. Encoder disconnects from Liquidsoap
+2. Liquidsoap's `fallback()` instantly switches to HTTP source
+3. Icecast never stops receiving audio
+4. `isActive` remains `true`
+5. Email is never sent, badge never turns green
+
+### What Works vs What's Broken
+
+| Feature | Status | Why |
+|---------|--------|-----|
+| Streaming | ✅ | Direct path works |
+| Fallback auto-switch | ✅ | Liquidsoap handles internally |
+| Encoder override | ✅ | Liquidsoap priority works |
+| Email (relay OFF) | ✅ | Icecast sees OFFLINE |
+| Email (relay ON) | ❌ | Icecast never sees OFFLINE |
+| Badge color | ❌ | Same reason |
+
+---
+
+## Phase 7: Webhook Callbacks (PLANNED)
+
+### Industry-Standard Solution
+
+Research into how professional radio stations handle this revealed the correct approach: **Liquidsoap's built-in `on_connect` and `on_disconnect` callbacks**.
+
+These callbacks fire **directly** when an encoder connects or disconnects - no polling, no delays, no Icecast dependency.
+
+### How It Will Work
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     LIQUIDSOAP                               │
+│                                                              │
+│  input.harbor(                                               │
+│    on_connect    → curl POST /api/encoder/:id/connected      │
+│    on_disconnect → curl POST /api/encoder/:id/disconnected   │
+│  )                                                           │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+                              ↓
+                     Node.js receives webhook
+                              ↓
+              - Updates badge (GREEN when fallback active)
+              - Sends "Fallback Active" email
+```
+
+### Files To Modify
+
+| File | Change |
+|------|--------|
+| `server/liquidsoopConfig.js` | Add `on_connect`/`on_disconnect` callbacks to `input.harbor` |
+| `server/index.js` | Add `/api/encoder/:id/connected` and `/api/encoder/:id/disconnected` endpoints |
+| `server/liquidsoapClient.js` | **DELETE** (telnet approach abandoned) |
+
+### Expected Behavior After Implementation
+
+1. Encoder connects → Liquidsoap fires `on_connect` → Node.js sets badge ORANGE
+2. Encoder disconnects → Liquidsoap fires `on_disconnect` → Node.js sends email + badge GREEN
+3. Encoder reconnects → `on_connect` → badge ORANGE (fallback standby)
+
+**Status:** ✅ IMPLEMENTED - Deployed December 26, 2024
 
 
 ## Current State (Post-Audit)
