@@ -382,7 +382,8 @@ From official docs (reference.html):
 | `97d1aa7` | Added `thread.run` wrapper with `end` | ❌ Parse error |
 | `0ba3c9e` | Emergency revert | ✅ Streaming restored |
 | `6351ebb` | Simplified syntax without `end` | 🔄 Testing |
-| `5984c63` | Fixed email logic (see below) | 🔄 Testing |
+| `5984c63` | Fixed email logic (see below) | ✅ Working |
+| `f3777af` | Fixed badge GREEN on server restart | 🔄 Testing |
 
 ### Email Logic Fix (Commit `5984c63`)
 
