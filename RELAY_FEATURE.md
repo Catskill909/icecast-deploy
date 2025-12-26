@@ -52,18 +52,59 @@ Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
 |-------|--------|-------------|
 | Phase 1 | ✅ Complete | Liquidsoap in Docker, all 3 services running |
 | Phase 2 | ✅ Complete | Encoder connection tested and working |
-| Phase 3 | 🔜 Next | HTTP fallback input |
+| Phase 3 | ❌ Failed & Reverted | Dynamic config broke Liquidsoap |
 
 ---
 
-## Next: Phase 3 - HTTP Fallback
+## Phase 3 Attempt & Failure (December 25, 2024 ~10:55 PM)
 
-1. Add HTTP input source to `radio.liq` for fallback relay
-2. Configure fallback priority (live > relay > silence)  
-3. Update Node.js relay logic (simpler - just turn HTTP source on/off)
-4. Test automatic switching when encoder disconnects
+### What We Tried
+1. Created `server/liquidsoopConfig.js` - generate radio.liq from database
+2. Rewrote `server/relayManager.js` - use Liquidsoap instead of FFmpeg
+3. Integrated with `server/index.js` - regenerate config on station changes
+
+### What Happened
+**Commit 25c2acd:** First attempt deployed.
+- All stations showed LIVE even with nothing connected
+- Reason: `mksafe()` wrapper caused continuous output to all mounts
+
+**Commit c9a1d55:** Tried to fix with `fallible=true`.
+- Removed `mksafe()`, added `fallible=true` to output
+- **RESULT:** Broke Liquidsoap completely
+- 404 errors on all streams
+- Mixxx couldn't connect: "Can't connect to streaming server"
+
+### Revert
+**Commit 2df6272:** Reverted both commits.
+- Restored working Phase 2 state
+- Manual radio.liq with single /live mount
+- FFmpeg-based relay manager
+
+### Lessons Learned
+1. `fallible=true` on output.icecast may crash Liquidsoap 2.2.5
+2. Dynamic per-station config generation needs different approach
+3. Test on staging first, not production
+
+### Next Approach for Phase 3
+- Research Liquidsoap 2.2.5 proper fallible output handling
+- Consider using `output.dummy` for testing
+- Maybe keep simple single-station config, enhance relay logic instead
 
 ---
+
+## Current State (After Revert)
+
+**Working:**
+- Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
+- Single mount: `/live` → `/stream`
+
+**Not yet working:**
+- Multi-station dynamic config
+- HTTP fallback integration
+
+---
+
+## Next: Phase 3 - HTTP Fallback (NEEDS NEW APPROACH)
 
 ## Key Files
 
