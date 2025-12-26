@@ -525,8 +525,8 @@ traefik.http.services.stream-service.loadbalancer.server.port=8100
 | 8001 | Liquidsoap (encoder input) | No (raw TCP) | **NEW - add to Ports Exposes/Mappings** |
 
 **Coolify Changes Needed:**
-1. Ports Exposes: `3000,8100` → `3000,8100,8001`
-2. Ports Mappings: `8100:8100` → `8100:8100,8001:8001`
+1. Ports Mappings field: `8100:8100` → `8100:8100,8001:8001`
+2. Dockerfile: Add `EXPOSE 8001`
 3. Traefik labels: **No changes** (stream subdomain stays on 8100)
 
 **Encoder Connection (after Liquidsoap):**
@@ -536,3 +536,26 @@ Port: 8001 (was 8100)
 Mount: /live
 Password: streamdock_source
 ```
+
+---
+
+## Phase 1 Implementation: December 25, 2024 ~8:37 PM
+
+**Files Created/Modified:**
+
+| File | Change |
+|------|--------|
+| `Dockerfile` | Added `liquidsoap@edge` package, `EXPOSE 8001` |
+| `radio.liq` | **NEW** - Liquidsoap config with harbor input |
+| `supervisord.conf` | Added `[program:liquidsoap]` section |
+
+**What was added:**
+- Liquidsoap package from Alpine edge/community repo
+- Harbor input listening on port 8001 for encoder connections
+- Output to local Icecast on port 8100
+- Supervisor manages 3 processes: Icecast, Node.js, Liquidsoap
+
+**Next steps:**
+1. Commit and push
+2. Update Coolify Ports Mappings: `8100:8100,8001:8001`
+3. Deploy and test - container should start with all 3 services

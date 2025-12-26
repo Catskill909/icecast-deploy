@@ -16,7 +16,9 @@ RUN npm run build
 FROM node:20-alpine AS production
 
 # Install Icecast, supervisor, curl, ffmpeg, and build tools for better-sqlite3
-RUN apk add --no-cache icecast supervisor curl ffmpeg python3 make g++
+# Add edge/community repo for Liquidsoap
+RUN echo "@edge https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+    apk add --no-cache icecast supervisor curl ffmpeg python3 make g++ liquidsoap@edge
 
 WORKDIR /app
 
@@ -41,8 +43,11 @@ RUN chmod 666 /etc/icecast.xml
 # Fix Icecast permissions
 RUN chown -R node:node /var/log/icecast
 
-# Supervisor config to run both Icecast and Node
+# Supervisor config to run Icecast, Node, and Liquidsoap
 COPY supervisord.conf /etc/supervisord.conf
+
+# Liquidsoap config
+COPY radio.liq /app/radio.liq
 
 # All config hardcoded
 ENV NODE_ENV=production
@@ -53,9 +58,13 @@ ENV ICECAST_PUBLIC_HOST=icecast.supersoul.top
 ENV ICECAST_SOURCE_PASSWORD=streamdock_source
 ENV DATABASE_PATH=/app/data/stations.db
 
-# Single port - Node.js proxies streams from internal Icecast
+# Ports:
+# 3000 - Node.js API/Web UI
+# 8100 - Icecast (listener output)
+# 8001 - Liquidsoap harbor (encoder input)
 EXPOSE 3000
 EXPOSE 8100
+EXPOSE 8001
 
 # Start supervisor (runs both icecast and node)
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]
