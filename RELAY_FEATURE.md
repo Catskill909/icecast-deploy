@@ -610,3 +610,40 @@ FROM savonet/liquidsoap:v2.2.5 AS liquidsoap
 ...
 COPY --from=liquidsoap /usr/bin/liquidsoap /usr/bin/liquidsoap
 ```
+
+### ❌ Attempt #3 Failed - 9:04 PM
+
+**Error:** `/usr/lib/liquidsoap: not found`
+
+**Root cause:** Liquidsoap image has different file structure than expected.
+
+### Pausing to Research - 9:05 PM
+
+Four failed attempts. Need to research the STANDARD way to run Liquidsoap in Docker.
+
+### Research Findings - 9:06 PM
+
+**Official Documentation says:**
+1. Docker images at `savonet/liquidsoap` on Docker Hub (tagged v2.2.5, etc.)
+2. Alpine APK packages available from GitHub releases at `savonet/liquidsoap-release-assets`
+3. Standard approach: Run Liquidsoap container separately, not combined with other services
+
+**Two valid approaches:**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **A. Separate containers** (docker-compose) | Clean, standard, each container does one thing | Requires architectural change to how we deploy |
+| **B. Use savonet/liquidsoap as base image** | Simple, everything in one container | Adds Node.js + Icecast on top of Liquidsoap base |
+
+**Decision:** Try Approach B - use `savonet/liquidsoap:v2.2.5` as BASE image, then install Node.js and Icecast on top.
+
+### Attempt #4 - 9:10 PM
+
+**Approach:** Use `savonet/liquidsoap:v2.2.5` as BASE image (Debian-based), add Node.js and Icecast.
+
+```dockerfile
+FROM savonet/liquidsoap:v2.2.5 AS production
+RUN apt-get install -y icecast2 supervisor
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+```
