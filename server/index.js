@@ -9,7 +9,7 @@ import nodemailer from 'nodemailer';
 import cookieParser from 'cookie-parser';
 import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
-import * as relayManager from './relayManager.js';
+// import relayManager from './relayManager.js'; // REMOVED: Legacy FFmpeg manager
 import * as icecastConfig from './icecastConfig.js';
 import * as liquidsoopConfig from './liquidsoopConfig.js';
 
