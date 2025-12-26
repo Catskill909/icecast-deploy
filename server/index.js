@@ -537,8 +537,16 @@ app.put('/api/stations/:id', async (req, res) => {
         // Handle relay settings change - Liquidsoap handles logic via config regeneration
         if (relaySettingsChanged) {
             console.log(`[Relay] Station ${req.params.id}: Relay settings changed, regenerating config...`);
-            // We no longer manually start/stop FFmpeg relays here.
-            // Liquidsoap picks up the changes when config is regenerated below.
+
+            // Fix: Explicitly update relayStatus based on enabled state
+            // If enabled -> 'ready' (for fallback) or 'active' (for primary)
+            // If disabled -> 'idle'
+            const effectiveMode = relayMode || 'fallback';
+            const newStatus = isNowRelayEnabled
+                ? (effectiveMode === 'primary' ? 'active' : 'ready')
+                : 'idle';
+
+            db.updateRelayStatus(req.params.id, newStatus);
         }
 
         // Regenerate configs if relay settings changed
