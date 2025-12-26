@@ -156,17 +156,25 @@ ERROR: gcc-15.2.0-r2: v2 package integrity error
 **Fix:** Updated `regenerateLiquidsoapConfig` to use an aggressive kill command:
 `supervisorctl stop liquidsoap && pkill -9 liquidsoap || true && supervisorctl start liquidsoap`
 
+### Fix for Persistent "Green Badge" (Phase 4.4)
+**Problem:** The "FALLBACK" badge remained Green (Active) even when disabling/enabling via the Edit Modal.
+**Cause:** 
+1. The `updateStation` database function ignored the `relayStatus` field.
+2. The Edit Modal uses `PUT` (unlike the main toggle buttons which use `POST`), and the `PUT` handler was not updating the status.
+**Fix:** 
+1. Updated `PUT /api/stations/:id` to explicitly calculate and set `relayStatus` ('ready', 'active', or 'idle').
+2. Updated `POST` endpoints to force-update status using `db.updateRelayStatus`.
+
 ---
 
-## Current State (After Phase 4.1)
+## Current State (Phase 4 Complete)
 
 **Working:**
-- Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
-- Single mount: `/live` → `/stream`
-
-**Not yet working:**
-- Multi-station dynamic config
-- HTTP fallback integration
+- **Encoders:** Connect to Port 8001.
+- **Relay Logic:** Liquidsoap manages primary + fallback inputs automatically.
+- **UI Status:** Badges reflect correct state (Green=Streaming, Orange=Ready/Fallback, Grey=Offline).
+- **Updates:** Toggling relay in Dashboard OR Edit Modal correctly updates DB and server config.
+- **Safety:** "Zombie" processes are killed on restart; legacy FFmpeg code removed.
 
 ---
 
