@@ -235,19 +235,22 @@ This is a **new feature** requiring significant development, not a bug fix.
 
 ---
 
-## Phase 6: Liquidsoap Telnet Integration (PLANNED)
+## Phase 6: Liquidsoap Telnet Integration (IMPLEMENTED)
 
 **Goal:** Query Liquidsoap directly to determine active source (encoder vs fallback).
 
-**Approach:**
-1. Enable Liquidsoap telnet server (port 1234)
-2. Register custom commands in radio.liq to expose source status
-3. Create Node.js telnet client to query Liquidsoap
-4. Replace Icecast-based detection with Liquidsoap-based detection
+**Files Modified:**
+1. `server/liquidsoopConfig.js` - Added telnet server (port 1234) and `server.register()` commands
+2. `server/liquidsoapClient.js` - NEW: Node.js telnet client to query source status
+3. `server/index.js` - Added `updateSourceStatuses()` function called during polling
 
-**See:** `implementation_plan.md` for full technical details.
+**How It Works:**
+1. Liquidsoap radio.liq now includes telnet server on port 1234
+2. Each fallback station registers a command: `source_{stationId}` returns "live" or "fallback"
+3. Node.js queries Liquidsoap every 5 seconds (during Icecast status poll)
+4. Database `relay_status` is updated: 'active' (Green) when fallback plays, 'ready' (Orange) when encoder is live
 
-**Status:** Planning Complete, Awaiting Approval
+**Status:** Code Complete, Awaiting Deploy & Test
 
 
 ## Current State (Post-Audit)
