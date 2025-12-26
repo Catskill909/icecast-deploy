@@ -1,8 +1,12 @@
-# Build stage for React
-FROM node:20-alpine AS builder
+# Build stage for React - Using Debian-based image to avoid Alpine package issues
+FROM node:20-slim AS builder
 
 # Install Python and build tools for better-sqlite3
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

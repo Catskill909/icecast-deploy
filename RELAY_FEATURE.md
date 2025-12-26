@@ -92,6 +92,20 @@ Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
 
 ---
 
+## Build Failure: Alpine Package Corruption (December 25, 2024 ~11:08 PM)
+
+**Error:**
+```
+ERROR: gcc-15.2.0-r2: failed to extract usr/bin/cpp: I/O error
+ERROR: gcc-15.2.0-r2: v2 package integrity error
+```
+
+**Cause:** Alpine Linux package mirror corruption (infrastructure issue, not code)
+
+**Fix:** Changed Dockerfile builder stage from `node:20-alpine` to `node:20-slim` (Debian-based)
+
+---
+
 ## Current State (After Revert)
 
 **Working:**
