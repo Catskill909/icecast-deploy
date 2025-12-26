@@ -748,7 +748,8 @@ app.post('/api/relay/:stationId/start', async (req, res) => {
     const { stationId } = req.params;
     console.log(`[API] Enabling relay for station: ${stationId}`);
     try {
-        db.updateStation(stationId, { relayEnabled: true });
+        // Set status to 'ready' (Orange badge) to indicate fallback protection is active
+        db.updateStation(stationId, { relayEnabled: true, relayStatus: 'ready' });
         await liquidsoopConfig.regenerateLiquidsoapConfig();
         res.json({ success: true, message: 'Relay enabled and config regenerated' });
     } catch (error) {
@@ -762,7 +763,8 @@ app.post('/api/relay/:stationId/stop', async (req, res) => {
     const { stationId } = req.params;
     console.log(`[API] Disabling relay for station: ${stationId}`);
     try {
-        db.updateStation(stationId, { relayEnabled: false });
+        // Set status to 'idle' (Removes badge or shows disabled state)
+        db.updateStation(stationId, { relayEnabled: false, relayStatus: 'idle' });
         await liquidsoopConfig.regenerateLiquidsoapConfig();
         res.json({ success: true, message: 'Relay disabled and config regenerated' });
     } catch (error) {
