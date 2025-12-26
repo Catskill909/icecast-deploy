@@ -96,6 +96,8 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
 
             onSave();
             onClose();
+            // Reload page to show updated badge colors (relay status changes)
+            window.location.reload();
         } catch (err) {
             setError(err.message);
         } finally {
