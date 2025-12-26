@@ -9,7 +9,6 @@ import nodemailer from 'nodemailer';
 import cookieParser from 'cookie-parser';
 import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
-// import relayManager from './relayManager.js'; // REMOVED: Legacy FFmpeg manager
 import * as icecastConfig from './icecastConfig.js';
 import * as liquidsoopConfig from './liquidsoopConfig.js';
 
@@ -289,7 +288,7 @@ app.get('/api/diagnostics', async (req, res) => {
         }
 
         // Get active relays
-        const activeRelays = relayManager.getAllActiveRelays();
+        const activeRelays = []; // Phase 4: Managed by Liquidsoap
 
         // Mark which stations are live based on Icecast status
         const stationsWithStatus = stations.map(s => ({
@@ -1464,7 +1463,7 @@ app.listen(PORT, () => {
 
         // Then start any primary mode relays
         // Relay manager (FFmpeg) disabled in Phase 4 - handled by Liquidsoap
-        // relayManager.startPrimaryRelays();
+        // Relay manager (FFmpeg) disabled in Phase 4 - handled by Liquidsoap
     }, 5000); // Wait 5 seconds for Icecast to be ready
 });
 
@@ -1477,6 +1476,6 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
     console.log('[SHUTDOWN] Received SIGINT, stopping relays...');
-    // relayManager.stopAllRelays();
+    // Relay manager (FFmpeg) disabled in Phase 4 - handled by Liquidsoap
     process.exit(0);
 });
