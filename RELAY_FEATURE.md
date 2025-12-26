@@ -167,7 +167,18 @@ ERROR: gcc-15.2.0-r2: v2 package integrity error
 
 ---
 
-## Current State (Phase 4 Complete)
+### Deep Audit & Final Cleanup (Phase 4.5)
+**Problem:** A "Deep Audit" of the codebase revealed latent references to the deleted `relayManager`.
+- **Specific Find:** The `/api/diagnostics` endpoint contained a call to `relayManager.getAllActiveRelays()`.
+- **Risk:** Accessing the analytics/diagnostics page would have caused a server crash.
+**Fix:** 
+1. Deleted the crash-inducing line in `server/index.js`.
+2. Removed all commented-out legacy code and unused imports throughout the server.
+3. Verified 0 occurrences of `relayManager` or `ffmpeg` in the active codebase.
+
+---
+
+## Current State (Post-Audit)
 
 **Working:**
 - **Encoders:** Connect to Port 8001.
