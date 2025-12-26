@@ -61,10 +61,13 @@ Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
 | Commit | Result | Description |
 |--------|--------|-------------|
 | `f5f7469` | ✅ WORKING | Phase 2 - static /stream mount |
-| `25c2acd` | ⚠️ Partial | Phase 3 - dynamic config worked BUT mksafe bug |
-| `c9a1d55` | ❌ Failed | Tried fallible=true, crashed Liquidsoap |
-| `2df6272` | ⚠️ Reverted | Code reverted, station shows OFFLINE |
-| `77b5c83` | ⚠️ Current | Fixed Alpine builder, but station still OFFLINE |
+| `25c2acd` | ⚠️ Partial | Phase 3 - mksafe bug (all stations LIVE) |
+| `c9a1d55` | ❌ Failed | Tried fallible=true incorrectly |
+| `2df6272` | ⚠️ Reverted | Code reverted to Phase 2 |
+| `77b5c83` | ⚠️ Build fix | Fixed Alpine → Debian builder |
+| `0f1b710` | ⚠️ Partial | Restored dynamic config, missing fallible=true |
+| `1d1781b` | ⚠️ Partial | Fixed port 8100 → 8001 in API |
+| `c57e8f2` | 🔄 TESTING | Added fallible=true to output.icecast |
 
 ---
 
@@ -77,6 +80,7 @@ Phase 3 (25c2acd) used `mksafe()` on the live input, which caused:
 
 ### The Fix
 Restore dynamic config from Phase 3 but WITHOUT `mksafe()` on the live input.
+Instead, add `fallible=true` to `output.icecast` to allow fallible sources.
 - Station shows LIVE only when encoder connected
 - Station shows OFFLINE when encoder disconnected
 
