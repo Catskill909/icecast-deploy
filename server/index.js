@@ -1002,9 +1002,6 @@ async function updateSourceStatuses() {
 // Check for status changes and generate alerts
 // Check for status changes and generate alerts
 function checkAndGenerateAlerts(activeMounts) {
-    // Phase 6: Also update relay statuses from Liquidsoap
-    updateSourceStatuses();
-
     const now = Date.now();
     const ALERT_COOLDOWN = 60000; // 1 minute between same alerts
 
