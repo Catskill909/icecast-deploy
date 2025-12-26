@@ -534,23 +534,11 @@ app.put('/api/stations/:id', async (req, res) => {
         });
 
         // Handle relay start/stop based on settings change
+        // Handle relay settings change - Liquidsoap handles logic via config regeneration
         if (relaySettingsChanged) {
-            if (!isNowRelayEnabled && wasRelayEnabled) {
-                // Relay was disabled - stop it
-                console.log(`[Relay] Station ${req.params.id}: Relay disabled, stopping...`);
-                await relayManager.stopRelay(req.params.id);
-            } else if (isNowRelayEnabled && relayUrl && relayMode === 'primary') {
-                // Relay enabled in primary mode - start it
-                console.log(`[Relay] Station ${req.params.id}: Relay enabled (primary), starting...`);
-                relayManager.startRelay(req.params.id);
-            } else if (isNowRelayEnabled && relayMode === 'fallback' && station.relay_mode === 'primary') {
-                // Changed from primary to fallback mode - stop relay (fallback only activates on encoder drop)
-                console.log(`[Relay] Station ${req.params.id}: Mode changed to fallback, stopping relay...`);
-                await relayManager.stopRelay(req.params.id);
-            } else if (!isNowRelayEnabled || !relayUrl) {
-                // No relay URL or disabled - ensure stopped
-                await relayManager.stopRelay(req.params.id);
-            }
+            console.log(`[Relay] Station ${req.params.id}: Relay settings changed, regenerating config...`);
+            // We no longer manually start/stop FFmpeg relays here.
+            // Liquidsoap picks up the changes when config is regenerated below.
         }
 
         // Regenerate configs if relay settings changed
@@ -755,27 +743,31 @@ app.post('/api/relay/test-url', async (req, res) => {
 // RELAY CONTROL API
 // ==========================================
 
-// Start relay for a station
-app.post('/api/relay/:stationId/start', (req, res) => {
+// Start relay for a station (Enable + Update Config)
+app.post('/api/relay/:stationId/start', async (req, res) => {
     const { stationId } = req.params;
-    console.log(`[API] Starting relay for station: ${stationId}`);
-    const result = relayManager.startRelay(stationId);
-    if (result.success) {
-        res.json(result);
-    } else {
-        res.status(400).json(result);
+    console.log(`[API] Enabling relay for station: ${stationId}`);
+    try {
+        db.updateStation(stationId, { relayEnabled: true });
+        await liquidsoopConfig.regenerateLiquidsoapConfig();
+        res.json({ success: true, message: 'Relay enabled and config regenerated' });
+    } catch (error) {
+        console.error('Error starting relay:', error);
+        res.status(500).json({ success: false, error: 'Failed to start relay' });
     }
 });
 
-// Stop relay for a station
-app.post('/api/relay/:stationId/stop', (req, res) => {
+// Stop relay for a station (Disable + Update Config)
+app.post('/api/relay/:stationId/stop', async (req, res) => {
     const { stationId } = req.params;
-    console.log(`[API] Stopping relay for station: ${stationId}`);
-    const result = relayManager.stopRelay(stationId);
-    if (result.success) {
-        res.json(result);
-    } else {
-        res.status(400).json(result);
+    console.log(`[API] Disabling relay for station: ${stationId}`);
+    try {
+        db.updateStation(stationId, { relayEnabled: false });
+        await liquidsoopConfig.regenerateLiquidsoapConfig();
+        res.json({ success: true, message: 'Relay disabled and config regenerated' });
+    } catch (error) {
+        console.error('Error stopping relay:', error);
+        res.status(500).json({ success: false, error: 'Failed to stop relay' });
     }
 });
 
@@ -1458,19 +1450,20 @@ app.listen(PORT, () => {
         await liquidsoopConfig.regenerateLiquidsoapConfig();
 
         // Then start any primary mode relays
-        relayManager.startPrimaryRelays();
+        // Relay manager (FFmpeg) disabled in Phase 4 - handled by Liquidsoap
+        // relayManager.startPrimaryRelays();
     }, 5000); // Wait 5 seconds for Icecast to be ready
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('[SHUTDOWN] Received SIGTERM, stopping relays...');
-    relayManager.stopAllRelays();
+    // relayManager.stopAllRelays();
     process.exit(0);
 });
 
 process.on('SIGINT', () => {
     console.log('[SHUTDOWN] Received SIGINT, stopping relays...');
-    relayManager.stopAllRelays();
+    // relayManager.stopAllRelays();
     process.exit(0);
 });

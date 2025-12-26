@@ -74,7 +74,9 @@ live_${id} = input.harbor(
         if (relayEnabled && relayUrl) {
             config += `# HTTP fallback source
 http_${id} = input.http("${relayUrl}")
-http_${id} = mksafe(http_${id})
+http_${id} = input.http("${relayUrl}")
+# Removed mksafe so fallback releases properly when live connects
+
 
 # Priority: live first, then HTTP fallback
 source_${id} = fallback(

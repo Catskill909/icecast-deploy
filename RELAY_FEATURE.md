@@ -53,7 +53,7 @@ Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
 | Phase 1 | ✅ Complete | Liquidsoap in Docker, all 3 services running |
 | Phase 2 | ✅ Complete | Encoder connection tested and working |
 | Phase 3 | ✅ Complete | Liquidsoap Dynamic Config & Fallback Logic |
-| Phase 4 | 📅 Planned | UI Integration & Cleanup (Remove FFmpeg) |
+| Phase 4 | � In Progress | UI Integration (API endpoints refactored) |
 
 ---
 
@@ -145,7 +145,14 @@ ERROR: gcc-15.2.0-r2: v2 package integrity error
 
 ---
 
-## Current State (After Revert)
+### Fix for "Fallback Override" Issue (Phase 4.1)
+**Problem:** When fallback was enabled, it played over the live stream and wouldn't let go.
+**Cause:** `mksafe()` wrapper on the fallback input made it "always available", confusing Liquidsoap's priority logic.
+**Fix:** Removed `mksafe()` from the fallback HTTP input. Now `fallback()` correctly prefers the live source when available.
+
+---
+
+## Current State (After Phase 4.1)
 
 **Working:**
 - Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
