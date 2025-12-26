@@ -1,6 +1,38 @@
 # Relay & Fallback Feature
 
-> **Last Updated:** December 26, 2024 @ 5:00 PM EST
+> **Last Updated:** December 26, 2024 @ 5:49 PM EST
+
+---
+## ⚠️⚠️⚠️ THE ONLY ISSUE - READ THIS FIRST ⚠️⚠️⚠️
+
+**EVERYTHING ELSE WORKS. IT'S JUST THE BUTTON COLOR.**
+
+### Badge Color Rules
+- 🟢 **GREEN** = Fallback is THE ACTIVE source (streaming audio right now)
+- 🟠 **ORANGE** = Fallback is on STANDBY (encoder is the main source)
+
+### Bug #1: Save doesn't update badge immediately
+1. Enable relay fallback → Save
+2. Badge shows ORANGE ❌ WRONG (should be GREEN)
+3. Manual page refresh → Badge turns GREEN ✅ CORRECT
+
+### Bug #2: Encoder connecting doesn't change badge
+1. Badge is GREEN (fallback streaming)
+2. Connect Mixxx (encoder)
+3. Audio switches correctly ✅
+4. Badge stays GREEN ❌ WRONG (should turn ORANGE)
+
+**EVERYTHING ELSE WORKS:**
+- ✅ Streaming
+- ✅ Audio switching
+- ✅ Emails
+- ✅ Fallback activation
+- ✅ Encoder connection
+- ✅ All functions
+
+**IT'S JUST THE BUTTON COLOR.**
+
+---
 
 ## 🚨 CURRENT STATUS (Handoff Summary)
 

@@ -538,12 +538,9 @@ app.put('/api/stations/:id', async (req, res) => {
             console.log(`[Relay] Station ${req.params.id}: Relay settings changed, regenerating config...`);
 
             // Fix: Explicitly update relayStatus based on enabled state
-            // If enabled -> 'ready' (for fallback) or 'active' (for primary)
+            // If enabled -> 'active' (GREEN) because fallback IS now streaming
             // If disabled -> 'idle'
-            const effectiveMode = relayMode || 'fallback';
-            const newStatus = isNowRelayEnabled
-                ? (effectiveMode === 'primary' ? 'active' : 'ready')
-                : 'idle';
+            const newStatus = isNowRelayEnabled ? 'active' : 'idle';
 
             db.updateRelayStatus(req.params.id, newStatus);
         }
