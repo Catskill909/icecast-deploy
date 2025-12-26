@@ -1,6 +1,6 @@
 # Relay & Fallback Feature
 
-> **Last Updated:** December 26, 2024 @ 1:56 PM EST
+> **Last Updated:** December 26, 2024 @ 5:00 PM EST
 
 ## 🚨 CURRENT STATUS (Handoff Summary)
 
@@ -16,18 +16,26 @@
 | Badge turns GREEN when fallback starts | ✅ Working (requires page refresh) |
 
 ### ❌ CRITICAL ISSUES (For Next Session)
-| Issue | Symptom | Root Cause |
-|-------|---------|------------|
-| **Badge Color (Encoder)** | **Badge stays GREEN** even when Encoder is live (should be ORANGE) | **Liquidsoap Webhooks NOT Firing.** The system doesn't know the Encoder is connected, so it assumes the active stream is the Fallback. |
-| **Badge Refresh** | Need to refresh page to see Green button after enabling fallback | Race condition: Page reloads before Server updates DB status. `window.location.reload()` fires too fast. |
+| Issue | Symptom | Root Cause | Status |
+|-------|---------|------------|--------|
+| **Badge Color (Encoder)** | Badge stays GREEN when Encoder is live (should be ORANGE) | **Dockerfile was overwriting generated config.** `COPY radio.liq` copied old static file (no webhooks) over the dynamically generated one. | 🔧 FIX DEPLOYED - Needs testing |
+| **Badge Refresh** | Need to refresh page to see Green button after enabling fallback | Race condition: Page reloads before Server updates DB status. | ❌ Still needs fix |
+
+### Fix Applied (December 26, 2024 @ 5:00 PM)
+**Webhook Config Override Fix:**
+- `Dockerfile` - Changed `COPY radio.liq /app/radio.liq` → `COPY radio.liq /app/radio.liq.template`
+- `start-liquidsoap.sh` (NEW) - Waits for Node.js to generate real config, falls back to template
+- `supervisord.conf` - Uses startup script instead of direct Liquidsoap call
+
+**Why this fixes it:** Node.js generates `radio.liq` WITH webhooks → Liquidsoap reads that file → `on_connect`/`on_disconnect` callbacks fire
 
 ### Test Results (User Verified)
 1. **Enable Fallback:** Station goes LIVE. Email sent correctly. Badge turns GREEN (after refresh). ✅
-2. **Connect Mixxx:** Audio switches to Mixxx. **Badge STAYS GREEN** (Fail). ❌
+2. **Connect Mixxx:** Audio switches to Mixxx. **Badge STAYS GREEN** (Fail). ❌ ← Fix deployed, needs retest
 3. **Disconnect Mixxx:** Audio switches to Fallback. Badge stays GREEN. ✅
 
 ### Next Steps (Code Required)
-1. **Fix Liquidsoap Webhooks:** `on_connect`/`on_disconnect` are not triggering the API. Check Liquidsoap logs & config syntax again. Code is in `liquidsoopConfig.js` but might be failing silently.
+1. ~~**Fix Liquidsoap Webhooks:**~~ ✅ FIXED - Deploy and test
 2. **Fix UI Refresh:** Add a delay before `window.location.reload()` in `EditStationModal.jsx`, or implement polling.
 
 ### Key Files
@@ -37,6 +45,8 @@
 | `server/liquidsoopConfig.js` | Generates `radio.liq` with `on_connect`/`on_disconnect` callbacks |
 | `server/db.js` | `updateRelayStatus()` function |
 | `src/pages/Stations.jsx` | Frontend badge color logic (line 136) |
+| `Dockerfile` | Build config - now uses template for radio.liq |
+| `start-liquidsoap.sh` | NEW - Startup script to wait for generated config |
 
 ---
 

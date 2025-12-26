@@ -57,8 +57,10 @@ RUN chown -R liquidsoap:liquidsoap /var/log/icecast2
 # Supervisor config
 COPY supervisord.conf /etc/supervisor/conf.d/streamdock.conf
 
-# Liquidsoap config
-COPY radio.liq /app/radio.liq
+# Liquidsoap config (template only - regenerated on startup with webhooks)
+COPY radio.liq /app/radio.liq.template
+COPY start-liquidsoap.sh /app/start-liquidsoap.sh
+RUN chmod +x /app/start-liquidsoap.sh
 
 # Environment
 ENV NODE_ENV=production
