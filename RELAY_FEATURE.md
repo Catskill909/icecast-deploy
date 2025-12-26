@@ -17,7 +17,7 @@
 | Feature | Status | Commit |
 |---------|--------|--------|
 | Badge turns GREEN when fallback starts | ✅ Working | `f3777af` |
-| Auto-reload after saving (shows badge immediately) | 🔄 Testing | `62f7560` |
+| Auto-reload after saving (shows badge immediately) | ✅ Working | `62f7560` |
 
 ### Known Issues ⚠️
 1. **Liquidsoap webhooks not firing** - `on_connect`/`on_disconnect` callbacks exist in code but never seen in logs
