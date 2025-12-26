@@ -60,12 +60,15 @@ output.icecast(
     }
     // For FALLBACK mode or no relay: live input
     else {
-        // Live input from encoder
-        config += `# Live input from encoder (NO mksafe - only active when connected)
+        // Live input from encoder with webhook callbacks
+        // on_connect receives headers list, on_disconnect receives nothing
+        config += `# Live input from encoder with webhook callbacks
 live_${id} = input.harbor(
     "${mount}",
     port=8001,
-    password="${ICECAST_SOURCE_PASSWORD}"
+    password="${ICECAST_SOURCE_PASSWORD}",
+    on_connect=fun(_) -> thread.run(fun() -> ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/connected"))) end,
+    on_disconnect={thread.run(fun() -> ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/disconnected")))}
 )
 
 `;
