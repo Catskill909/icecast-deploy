@@ -133,9 +133,9 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                         {station.relayEnabled && station.relayUrl && (
                             <span className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full border ${station.relayMode === 'primary'
                                 ? 'bg-[#4b7baf]/20 text-[#4b7baf] border-[#4b7baf]/30'  // Blue for primary relay
-                                : station.relayStatus === 'active'
-                                    ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20'  // GREEN when fallback IS streaming
-                                    : 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20'  // ORANGE when standby
+                                : isLive
+                                    ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20'  // GREEN when stream is LIVE (fallback working)
+                                    : 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20'  // ORANGE when stream is offline
                                 }`}>
                                 <Rss className="w-2.5 h-2.5" />
                                 {station.relayMode === 'primary' ? 'RELAY' : 'AUTO FALLBACK'}
