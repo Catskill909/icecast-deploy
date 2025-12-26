@@ -343,3 +343,118 @@ When fallback activates (working now), start a listener that:
 - `server/index.js` - polling already detects when mount goes live
 
 **Key insight:** We can't detect encoder TRYING to connect. But we can create a window for it to succeed, then detect if it DID connect.
+
+---
+
+## Alternative: Liquidsoap (Industry Standard) - December 25, 2024
+
+**The other AI is correct.** Liquidsoap is the industry-standard solution for exactly this problem.
+
+### Why Liquidsoap Solves Our Problem
+
+Our current architecture:
+```
+Mixxx → Icecast ← FFmpeg (fight for same mount)
+```
+
+Liquidsoap architecture:
+```
+Mixxx → Liquidsoap → Icecast (one stream, Liquidsoap manages sources)
+          ↑
+     FFmpeg/Playlist
+```
+
+**Liquidsoap handles:**
+- Accepting multiple sources (live + fallback)
+- Priority/switching between them
+- Silence detection
+- Outputs ONE stream to Icecast
+
+**Icecast stays simple** - just serves one stream per mount.
+
+### Is This Possible With Our Setup?
+
+**YES, but requires significant changes:**
+
+| Change | Effort | Risk |
+|--------|--------|------|
+| Add Liquidsoap to Dockerfile | Medium | Breaking change |
+| Configure input.harbor for live | Low | Config only |
+| Add fallback playlist/stream | Low | Config only |
+| Update encoder port (8001 not 8100) | Low | User docs update |
+| Modify relayManager.js | High | May not be needed |
+| Update supervisord.conf | Low | Add new process |
+
+### Architecture Change
+
+**Current:**
+```
+Port 8100: Icecast (encoder connects directly)
+Node.js:   FFmpeg relay → Icecast
+```
+
+**With Liquidsoap:**
+```
+Port 8001: Liquidsoap harbor (encoder connects here)
+Port 8100: Icecast (Liquidsoap streams to here)
+Node.js:   Tells Liquidsoap which source to use (optional)
+```
+
+### Minimal Liquidsoap Config
+
+```liquidsoap
+# /app/radio.liq
+
+# Live input from encoder
+live = input.harbor("live", port=8001)
+
+# Fallback from external stream (our current relay URL)
+fallback_stream = input.http("http://fallback-url/stream")
+
+# Priority: live first, fallback if live drops
+radio = fallback(track_sensitive=false, [live, fallback_stream])
+
+# Output to Icecast
+output.icecast(%mp3,
+  host="127.0.0.1",
+  port=8100,
+  password="streamdock_source",
+  mount="/stream",
+  radio)
+```
+
+### Pros vs Cons
+
+**Pros:**
+- Industry standard - battle-tested
+- Handles the exact problem we've failed to solve
+- Clean separation of concerns
+- Future features (autodj, scheduling, transitions)
+
+**Cons:**
+- Significant architecture change
+- Learning curve for Liquidsoap syntax
+- More processes to manage
+- May need to update user documentation for new encoder port
+
+### Recommendation
+
+**This IS the correct long-term solution.** Our current FFmpeg-to-Icecast approach is fighting against Icecast's design. Liquidsoap was built specifically for multi-source streaming.
+
+**Implementation path:**
+1. Add Liquidsoap to Dockerfile
+2. Create basic `radio.liq` config
+3. Update supervisord to run Liquidsoap
+4. Change encoder documentation to use port 8001
+5. Eventually: integrate Node.js control of Liquidsoap via telnet
+
+**Effort estimate:** 4-8 hours if done carefully with documentation.
+
+### Decision Point
+
+| Option | Effort | Reliability |
+|--------|--------|-------------|
+| Keep current (pause/resume hack) | Low | Fragile |
+| Liquidsoap integration | Medium-High | Industry-proven |
+
+**My recommendation:** Liquidsoap. The pause/resume approach is clever but hacky. Liquidsoap is what professionals use.
