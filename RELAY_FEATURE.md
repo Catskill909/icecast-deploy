@@ -1,6 +1,6 @@
 # Relay & Fallback Feature
 
-## ✅ Current Working Configuration (December 25, 2024)
+## ✅ WORKING (December 26, 2024 - Commit `c57e8f2`)
 
 ### Encoder Settings (Mixxx, BUTT, OBS, etc.)
 
@@ -8,51 +8,43 @@
 |---------|-------|
 | **Host** | `icecast.supersoul.top` |
 | **Port** | `8001` |
-| **Mount** | `/live` |
+| **Mount** | **Your station's mount** (e.g., `/kpft`, `/new`) |
 | **Password** | `streamdock_source` |
 | **Protocol** | Icecast2 |
 
+> **Note:** Each station gets its own mount in Liquidsoap. Use the mount shown in your station card.
+
 ### Listener URL
 ```
-stream.supersoul.top/stream
+stream.supersoul.top/{mount}
 ```
 
-### Architecture
+---
+
+## Architecture
+
 ```
 Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
-                ↑
-          HTTP Fallback (Phase 3)
+              ↑
+        HTTP Fallback
 ```
 
----
-
-## How It Works
-
-**The Problem We Solved:**
-- Icecast only allows ONE source per mount point
-- When fallback relay was active, encoder couldn't connect
-- Both were fighting for the same mount
-
-**The Solution (Liquidsoap):**
-- Encoder connects to Liquidsoap on port 8001
-- Fallback feeds into Liquidsoap
-- Liquidsoap picks the winner and sends ONE stream to Icecast
-- No more mount conflicts!
-
-**Automatic Priority:**
-1. 🎙️ Live encoder (if connected)
-2. 📡 Fallback relay (if live drops)
-3. 🔇 Silence (if nothing else)
+**How it works:**
+- Encoder connects to **Liquidsoap** (port 8001), NOT Icecast directly
+- Liquidsoap handles source priority (live > fallback > silence)
+- Liquidsoap outputs ONE stream to Icecast
+- **No mount conflicts** - encoder can connect even when fallback is active
 
 ---
 
-## Phase Status
+## Key Files
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 1 | ✅ Complete | Liquidsoap in Docker, all 3 services running |
-| Phase 2 | ✅ Complete | Encoder connection tested and working |
-| Phase 3 | ❌ Failed & Reverted | Dynamic config broke Liquidsoap |
+| File | Purpose |
+|------|---------|
+| `server/liquidsoopConfig.js` | Generates `radio.liq` from database |
+| `radio.liq` | Liquidsoap config (auto-generated, don't edit) |
+| `Dockerfile` | Uses `savonet/liquidsoap:v2.2.5` as base |
+| `supervisord.conf` | Runs Icecast + Liquidsoap + Node.js |
 
 ---
 
@@ -60,227 +52,54 @@ Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
 
 | Commit | Result | Description |
 |--------|--------|-------------|
-| `f5f7469` | ✅ WORKING | Phase 2 - static /stream mount |
-| `25c2acd` | ⚠️ Partial | Phase 3 - mksafe bug (all stations LIVE) |
-| `c9a1d55` | ❌ Failed | Tried fallible=true incorrectly |
-| `2df6272` | ⚠️ Reverted | Code reverted to Phase 2 |
-| `77b5c83` | ⚠️ Build fix | Fixed Alpine → Debian builder |
-| `0f1b710` | ⚠️ Partial | Restored dynamic config, missing fallible=true |
-| `1d1781b` | ⚠️ Partial | Fixed port 8100 → 8001 in API |
-| `c57e8f2` | 🔄 TESTING | Added fallible=true to output.icecast |
+| `f5f7469` | ✅ | Phase 2 - static /stream mount |
+| `25c2acd` | ⚠️ | Phase 3 - mksafe bug (all stations LIVE) |
+| `c9a1d55` | ❌ | Tried fallible=true incorrectly |
+| `2df6272` | ⚠️ | Code reverted to Phase 2 |
+| `77b5c83` | ⚠️ | Fixed Alpine → Debian builder |
+| `0f1b710` | ⚠️ | Restored dynamic config, missing fallible=true |
+| `1d1781b` | ⚠️ | Fixed port 8100 → 8001 in API |
+| `c57e8f2` | ✅ | **WORKING** - Added fallible=true |
 
 ---
 
-## Phase 3 Fix (December 25, 2024 ~11:33 PM)
+## Lessons Learned (Bad Paths to Avoid)
 
-### The Problem
-Phase 3 (25c2acd) used `mksafe()` on the live input, which caused:
-- Silence output when no encoder connected
-- ALL stations appeared LIVE even without encoder
+### ❌ DON'T use `mksafe()` on `input.harbor`
+**Why:** Causes continuous output even without encoder. All stations appear LIVE.
 
-### The Fix
-Restore dynamic config from Phase 3 but WITHOUT `mksafe()` on the live input.
-Instead, add `fallible=true` to `output.icecast` to allow fallible sources.
-- Station shows LIVE only when encoder connected
-- Station shows OFFLINE when encoder disconnected
+### ❌ DON'T output fallible source without `fallible=true`
+**Why:** Liquidsoap crashes with "Error 7: That source is fallible".
 
-### Mixxx Settings After Fix
-| Setting | Value |
-|---------|-------|
-| Host | `icecast.supersoul.top` |
-| Port | `8001` |
-| Mount | **Your station's mount** (e.g., `/new`) |
-| Password | `streamdock_source` |
+### ❌ DON'T return Icecast port (8100) for encoder settings
+**Why:** Encoders must connect to Liquidsoap port 8001, not Icecast.
+
+### ✅ DO use `fallible=true` on `output.icecast`
+**Why:** Allows fallible sources like `input.harbor`. Station only shows LIVE when encoder connected.
 
 ---
 
-## Phase 3 Attempt & Failure (December 25, 2024 ~10:55 PM)
+## The Fix (Final Working Solution)
 
-### What We Tried
-1. Created `server/liquidsoopConfig.js` - generate radio.liq from database
-2. Rewrote `server/relayManager.js` - use Liquidsoap instead of FFmpeg
-3. Integrated with `server/index.js` - regenerate config on station changes
+```liquidsoap
+# NO mksafe on live input
+live = input.harbor("mount", port=8001, password="...")
 
-### What Happened
-**Commit 25c2acd:** First attempt deployed.
-- All stations showed LIVE even with nothing connected
-- Reason: `mksafe()` wrapper caused continuous output to all mounts
-
-**Commit c9a1d55:** Tried to fix with `fallible=true`.
-- Removed `mksafe()`, added `fallible=true` to output
-- **RESULT:** Broke Liquidsoap completely
-- 404 errors on all streams
-- Mixxx couldn't connect: "Can't connect to streaming server"
-
-### Revert
-**Commit 2df6272:** Reverted both commits.
-- Restored working Phase 2 state
-- Manual radio.liq with single /live mount
-- FFmpeg-based relay manager
-
-### Lessons Learned
-1. `fallible=true` on output.icecast may crash Liquidsoap 2.2.5
-2. Dynamic per-station config generation needs different approach
-3. Test on staging first, not production
-
-### Next Approach for Phase 3
-- Research Liquidsoap 2.2.5 proper fallible output handling
-- Consider using `output.dummy` for testing
-- Maybe keep simple single-station config, enhance relay logic instead
-
----
-
-## Build Failure: Alpine Package Corruption (December 25, 2024 ~11:08 PM)
-
-**Error:**
-```
-ERROR: gcc-15.2.0-r2: failed to extract usr/bin/cpp: I/O error
-ERROR: gcc-15.2.0-r2: v2 package integrity error
+# Use fallible=true on output
+output.icecast(
+    %mp3(bitrate=128),
+    host="127.0.0.1",
+    port=8100,
+    password="...",
+    mount="/mount",
+    fallible=true,  # <-- THIS IS KEY
+    live
+)
 ```
 
-**Cause:** Alpine Linux package mirror corruption (infrastructure issue, not code)
-
-**Fix:** Changed Dockerfile builder stage from `node:20-alpine` to `node:20-slim` (Debian-based)
-
 ---
 
-## Current State (After Revert)
+## Historical Archive
 
-**Working:**
-- Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
-- Single mount: `/live` → `/stream`
-
-**Not yet working:**
-- Multi-station dynamic config
-- HTTP fallback integration
-
----
-
-## Next: Phase 3 - HTTP Fallback (NEEDS NEW APPROACH)
-
-## Key Files
-
-| File | Purpose |
-|------|---------|
-| `Dockerfile` | Uses `savonet/liquidsoap:v2.2.5` base image |
-| `radio.liq` | Liquidsoap config - harbor input, Icecast output |
-| `supervisord.conf` | Runs Icecast + Node.js + Liquidsoap |
-| `icecast.xml` | Icecast config - uses `icecast2` user |
-
----
-
-## Summary: Before vs After
-
-| Before | After |
-|--------|-------|
-| Mixxx → Icecast :8100 | Mixxx → Liquidsoap :8001 → Icecast :8100 |
-| FFmpeg → Icecast (mount conflict) | HTTP fallback → Liquidsoap (no conflict) |
-| Manual reconnection when fallback active | Automatic - Liquidsoap handles priority |
-
----
----
-
-# Historical Archive
-
-> **Note:** The content below is historical context from December 24-25, 2024. 
-> It documents the journey from failed approaches to the successful Liquidsoap integration.
-
----
-
-## December 24, 2024: Pre-Liquidsoap Attempts
-
-**Time Spent:** ~10 hours  
-**Final Result:** Fallback worked, but encoder couldn't reconnect when fallback was active.
-
-### The Original Problem
-
-| Feature | Status |
-|---------|--------|
-| Fallback activates when encoder drops | ✅ WORKS |
-| Stream plays audio | ✅ WORKS |
-| Mixxx can reconnect when fallback active | ❌ NOT WORKING |
-
-**Root Cause:** Both encoder and fallback tried to use the same Icecast mount point.
-
-### Phase 0: Docker Disk Space Crisis
-- Coolify server at 99% disk usage
-- Ran `docker system prune -a -f` to clean up
-- Reduced to 75% - deployments working again
-
-### Phase 1: Initial Relay Debugging (~2 hours)
-
-**Bugs Found & Fixed:**
-
-| Bug | Fix |
-|-----|-----|
-| Port mismatch (8000 vs 8100) | Changed to 8100 |
-| FFmpeg logging hidden | Changed to 'info' level |
-| HTTP PUT failed | Use icecast:// protocol |
-| Codec copy failed | Use libmp3lame |
-
-### Phase 2: Badge Color Chase (~2 hours)
-Multiple attempts to fix FALLBACK badge colors - cosmetic issue.
-
-### Phase 3: Encoder Can't Reconnect (~3 hours)
-- Tried streaming to `-fallback` mount
-- Broke fallback completely
-- Icecast `reloadconfig` doesn't add new mounts
-- **Reverted**
-
-### Phase 4: The Real Fix (~2 hours)
-- Tried `startup.sh` to generate config before Icecast starts
-- Also broke the server
-- **Reverted**
-
-**Final Status Dec 24:** Fallback works, but it's an architectural limitation.
-
----
-
-## December 25, 2024: Liquidsoap Integration
-
-**Decision:** Adopt Liquidsoap as the industry-standard solution.
-
-### Advantages of Liquidsoap
-- Industry standard for multi-source streaming
-- Handles source priority/switching
-- Future features: AutoDJ, scheduling, transitions
-- Clean separation of concerns
-
-### Docker Build Attempts (7 total)
-
-| Attempt | Issue | Fix |
-|---------|-------|-----|
-| #1 | `liquidsoap` package not in Alpine | Switch to Debian |
-| #2 | `apt.liquidsoap.info` DNS unresolvable | Use official Docker image |
-| #3 | `/usr/lib/liquidsoap` not found | Use image as BASE |
-| #4 | Permission denied on apt-get | Add `USER root` |
-| #5 | Liquidsoap got wrong args from CMD | Add `ENTRYPOINT []` |
-| #6 | Icecast: user 'node' not found | Use `icecast2` user |
-| #7 | ✅ SUCCESS | All 3 services running |
-
-### What Changed in Docker Setup
-
-| File | Change |
-|------|--------|
-| `Dockerfile` | Base: `savonet/liquidsoap:v2.2.5`, add Node.js + Icecast |
-| `supervisord.conf` | 3 programs: icecast, nodejs, liquidsoap |
-| `icecast.xml` | User: `icecast2`, paths: `/etc/icecast2/` |
-| `radio.liq` | NEW: harbor input on 8001, output to Icecast |
-
-### Coolify Configuration
-
-| Setting | Value |
-|---------|-------|
-| Ports Mappings | `8100:8100,8001:8001` |
-| Traefik (stream subdomain) | → port 8100 (unchanged) |
-
----
-
-## Lessons Learned
-
-1. **Always check port numbers** - 8000 vs 8100 cost hours
-2. **Startup order matters** - Config must exist before Icecast starts
-3. **Icecast reloadconfig is limited** - Doesn't add new mounts
-4. **Standard patterns exist** - Should have researched Liquidsoap sooner
-5. **Document as you go** - Not at the end
-6. **Docker base images have quirks** - ENTRYPOINTs, users, paths vary
+> See git history for December 24-25, 2024 attempts.
+> The pre-Liquidsoap FFmpeg approach is deprecated and should not be used.
