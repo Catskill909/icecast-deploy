@@ -1071,8 +1071,13 @@ function checkAndGenerateAlerts(activeMounts) {
             // Check if it's actually live right now on first run
             previousMountStatus[mount] = { live: isActive, listeners: 0 };
 
-            // If it is live on first run (server restart), don't trigger "Recovered" immediately 
-            // unless we want to... skipping to avoid spam on restart.
+            // For fallback-enabled stations that are LIVE on first poll (server just restarted),
+            // set badge to GREEN since fallback is actively playing
+            if (isActive && station?.relay_enabled && station?.relay_mode === 'fallback' && station?.relay_url) {
+                db.updateRelayStatus(station.id, 'active');
+                debugLog(`[FALLBACK] Station ${mount} is live on startup with fallback enabled, setting status to active (GREEN).`);
+            }
+
             return;
         }
 
