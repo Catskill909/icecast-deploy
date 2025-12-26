@@ -11,6 +11,7 @@ import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
 import * as relayManager from './relayManager.js';
 import * as icecastConfig from './icecastConfig.js';
+import * as liquidsoopConfig from './liquidsoopConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -395,6 +396,9 @@ app.post('/api/stations', (req, res) => {
         // Regenerate Icecast config with new mount
         icecastConfig.regenerateIcecastConfig();
 
+        // Regenerate Liquidsoap config for new station
+        liquidsoopConfig.regenerateLiquidsoapConfig();
+
         // Return connection info
         res.status(201).json({
             success: true,
@@ -547,9 +551,11 @@ app.put('/api/stations/:id', async (req, res) => {
             }
         }
 
-        // Regenerate Icecast config if relay settings changed
+        // Regenerate configs if relay settings changed
         if (relaySettingsChanged) {
             icecastConfig.regenerateIcecastConfig();
+            // Liquidsoap handles relay automatically - just regenerate config
+            await liquidsoopConfig.regenerateLiquidsoapConfig();
         }
 
         res.json({ success: true, message: 'Station updated' });
@@ -569,8 +575,9 @@ app.delete('/api/stations/:id', (req, res) => {
 
         db.deleteStation(req.params.id);
 
-        // Regenerate Icecast config without deleted mount
+        // Regenerate configs without deleted station
         icecastConfig.regenerateIcecastConfig();
+        liquidsoopConfig.regenerateLiquidsoapConfig();
 
         res.json({ success: true, message: 'Station deleted' });
     } catch (error) {
@@ -1441,12 +1448,16 @@ app.listen(PORT, () => {
     console.log(`StreamDock API running on port ${PORT}`);
     console.log(`Icecast server: ${ICECAST_HOST}:${ICECAST_INTERNAL_PORT} (Public: ${ICECAST_PUBLIC_PORT})`);
 
-    // Regenerate Icecast config on startup to ensure fallback mounts are configured
+    // Regenerate configs on startup
     setTimeout(async () => {
         console.log('[STARTUP] Regenerating Icecast config...');
         await icecastConfig.regenerateIcecastConfig();
 
-        // Then start any primary mode relays
+        // Generate Liquidsoap config for all stations
+        console.log('[STARTUP] Regenerating Liquidsoap config...');
+        await liquidsoopConfig.regenerateLiquidsoapConfig();
+
+        // Then start any primary mode relays (for status tracking)
         relayManager.startPrimaryRelays();
     }, 5000); // Wait 5 seconds for Icecast to be ready
 });
