@@ -90,12 +90,12 @@ output.icecast(
     mount="${station.mount_point}",
     name="${station.name}",
     description="${station.description || 'StreamDock station'}",
+    fallible=true,
     source_${id}
 )
 
 `;
         } else {
-            // No fallback - just output the live input directly
             config += `# No fallback - output live input directly
 output.icecast(
     %mp3(bitrate=128),
@@ -105,6 +105,7 @@ output.icecast(
     mount="${station.mount_point}",
     name="${station.name}",
     description="${station.description || 'StreamDock station'}",
+    fallible=true,
     live_${id}
 )
 
