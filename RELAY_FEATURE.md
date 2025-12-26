@@ -56,6 +56,40 @@ Encoder → Liquidsoap (:8001) → Icecast (:8100) → Listeners
 
 ---
 
+## Deploy History
+
+| Commit | Result | Description |
+|--------|--------|-------------|
+| `f5f7469` | ✅ WORKING | Phase 2 - static /stream mount |
+| `25c2acd` | ⚠️ Partial | Phase 3 - dynamic config worked BUT mksafe bug |
+| `c9a1d55` | ❌ Failed | Tried fallible=true, crashed Liquidsoap |
+| `2df6272` | ⚠️ Reverted | Code reverted, station shows OFFLINE |
+| `77b5c83` | ⚠️ Current | Fixed Alpine builder, but station still OFFLINE |
+
+---
+
+## Phase 3 Fix (December 25, 2024 ~11:33 PM)
+
+### The Problem
+Phase 3 (25c2acd) used `mksafe()` on the live input, which caused:
+- Silence output when no encoder connected
+- ALL stations appeared LIVE even without encoder
+
+### The Fix
+Restore dynamic config from Phase 3 but WITHOUT `mksafe()` on the live input.
+- Station shows LIVE only when encoder connected
+- Station shows OFFLINE when encoder disconnected
+
+### Mixxx Settings After Fix
+| Setting | Value |
+|---------|-------|
+| Host | `icecast.supersoul.top` |
+| Port | `8001` |
+| Mount | **Your station's mount** (e.g., `/new`) |
+| Password | `streamdock_source` |
+
+---
+
 ## Phase 3 Attempt & Failure (December 25, 2024 ~10:55 PM)
 
 ### What We Tried
