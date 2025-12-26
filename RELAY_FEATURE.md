@@ -458,3 +458,50 @@ output.icecast(%mp3,
 | Liquidsoap integration | Medium-High | Industry-proven |
 
 **My recommendation:** Liquidsoap. The pause/resume approach is clever but hacky. Liquidsoap is what professionals use.
+
+---
+
+## Liquidsoap Integration Plan Created - December 25, 2024
+
+**Full plan at:** `/Users/paulhenshaw/.gemini/antigravity/brain/054ccaf9-12bd-438a-940e-ee174d1aa306/implementation_plan.md`
+
+### Key Architecture Change
+
+**Before (Current - Broken):**
+```
+Mixxx → Icecast ← FFmpeg (fight for mount)
+```
+
+**After (Liquidsoap):**
+```
+Mixxx → Liquidsoap → Icecast (one stream)
+          ↑
+     HTTP fallback
+```
+
+### Implementation Phases
+1. Add Liquidsoap to Docker
+2. Basic live input (harbor on port 8001)
+3. Add fallback source
+4. Node.js integration
+5. Documentation cleanup
+
+### What Stays The Same
+- React frontend
+- Node.js API
+- Database
+- Stream URLs for listeners
+- Email alerts
+
+### What Changes
+- Encoder connects to port 8001 (not 8100)
+- Liquidsoap manages source priority
+- relayManager.js simplifies or removed
+- icecastConfig.js simplifies
+
+### Future Possibilities
+- AutoDJ (playlist fallback)
+- Scheduled shows
+- Crossfades
+- Silence detection
+- Telnet control from Node.js
