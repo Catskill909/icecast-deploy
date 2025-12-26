@@ -40,47 +40,8 @@ function generateStationConfig(station) {
     if (relayMode === 'primary' && relayEnabled && relayUrl) {
         config += `# Primary mode: relay only (no live input)
 source_${id} = input.http("${relayUrl}")
-source_${id} = mksafe(source_${id})
 
-`;
-    }
-    // For FALLBACK mode: live input with optional HTTP fallback
-    else {
-        // Live input (harbor)
-        config += `# Live input from encoder
-live_${id} = input.harbor(
-    "${mount}",
-    port=8001,
-    password="${ICECAST_SOURCE_PASSWORD}"
-)
-live_${id} = mksafe(live_${id})
-
-`;
-
-        // Add HTTP fallback if configured
-        if (relayEnabled && relayUrl) {
-            config += `# HTTP fallback source
-http_${id} = input.http("${relayUrl}")
-http_${id} = mksafe(http_${id})
-
-# Priority: live first, then HTTP fallback, then silence
-source_${id} = fallback(
-    track_sensitive=false,
-    [live_${id}, http_${id}]
-)
-
-`;
-        } else {
-            // No fallback configured - just use live input
-            config += `# No fallback configured - live only
-source_${id} = live_${id}
-
-`;
-        }
-    }
-
-    // Output to Icecast
-    config += `# Output to Icecast
+# Output to Icecast (fallible - stops when source drops)
 output.icecast(
     %mp3(bitrate=128),
     host="${ICECAST_HOST}",
@@ -89,10 +50,68 @@ output.icecast(
     mount="${station.mount_point}",
     name="${station.name}",
     description="${station.description || 'StreamDock station'}",
+    fallible=true,
     source_${id}
 )
 
 `;
+    }
+    // For FALLBACK mode: live input with optional HTTP fallback
+    else {
+        // Live input (harbor) - NOT wrapped in mksafe so it stops when encoder disconnects
+        config += `# Live input from encoder
+live_${id} = input.harbor(
+    "${mount}",
+    port=8001,
+    password="${ICECAST_SOURCE_PASSWORD}"
+)
+
+`;
+
+        // Add HTTP fallback if configured
+        if (relayEnabled && relayUrl) {
+            config += `# HTTP fallback source
+http_${id} = input.http("${relayUrl}")
+
+# Priority: live first, then HTTP fallback
+# track_sensitive=false means switch immediately when live connects/disconnects
+source_${id} = fallback(
+    track_sensitive=false,
+    [live_${id}, http_${id}]
+)
+
+# Output to Icecast
+output.icecast(
+    %mp3(bitrate=128),
+    host="${ICECAST_HOST}",
+    port=${ICECAST_PORT},
+    password="${ICECAST_SOURCE_PASSWORD}",
+    mount="${station.mount_point}",
+    name="${station.name}",
+    description="${station.description || 'StreamDock station'}",
+    fallible=true,
+    source_${id}
+)
+
+`;
+        } else {
+            // No fallback configured - only output when encoder connected
+            config += `# No fallback configured - output only when encoder connected
+output.icecast(
+    %mp3(bitrate=128),
+    host="${ICECAST_HOST}",
+    port=${ICECAST_PORT},
+    password="${ICECAST_SOURCE_PASSWORD}",
+    mount="${station.mount_point}",
+    name="${station.name}",
+    description="${station.description || 'StreamDock station'}",
+    fallible=true,
+    live_${id}
+)
+
+`;
+        }
+    }
 
     return config;
 }
