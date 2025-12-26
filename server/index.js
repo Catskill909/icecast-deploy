@@ -1082,27 +1082,72 @@ function checkAndGenerateAlerts(activeMounts) {
         if (isActive && !prev.live) {
             const alertKey = `live_${mount}`;
             if (!lastAlertTime[alertKey] || (now - lastAlertTime[alertKey]) > ALERT_COOLDOWN) {
-                db.createAlert(
-                    'success',
-                    'Station Now Broadcasting!',
-                    `${stationInfo.name} is now live`,
-                    stationInfo.id
-                );
-                lastAlertTime[alertKey] = now;
-                console.log(`[ALERT] Station ${mount} went LIVE`);
 
-                // If this station has fallback, set status back to 'ready' (Orange badge)
+                // Check if this is a fallback-enabled station
                 if (station?.relay_enabled && station?.relay_mode === 'fallback') {
-                    db.updateRelayStatus(station.id, 'ready');
-                    debugLog(`[FALLBACK] Encoder reconnected for ${stationInfo.name}, status set to ready.`);
-                }
+                    // Check if fallback was previously active (encoder is NOW reconnecting)
+                    if (station?.relay_status === 'active') {
+                        // Encoder reconnected after being down - THIS is "Stream Recovered"
+                        db.createAlert(
+                            'success',
+                            'Encoder Reconnected',
+                            `${stationInfo.name} encoder is back online`,
+                            stationInfo.id
+                        );
+                        lastAlertTime[alertKey] = now;
+                        console.log(`[ALERT] Station ${mount} encoder RECONNECTED`);
 
-                sendAlertEmail(
-                    'stream_up',
-                    `Stream Recovered: ${stationInfo.name}`,
-                    `The stream "${stationInfo.name}" is now back online and broadcasting.`,
-                    stationInfo
-                );
+                        // Set badge to ORANGE (fallback on standby)
+                        db.updateRelayStatus(station.id, 'ready');
+                        debugLog(`[FALLBACK] Encoder reconnected for ${stationInfo.name}, status set to ready.`);
+
+                        sendAlertEmail(
+                            'stream_up',
+                            `Encoder Reconnected: ${stationInfo.name}`,
+                            `The encoder for "${stationInfo.name}" has reconnected and is now live. Fallback is on standby.`,
+                            stationInfo
+                        );
+                    } else {
+                        // Fallback just started (not encoder reconnecting)
+                        // Set badge to GREEN (fallback is actively playing)
+                        db.updateRelayStatus(station.id, 'active');
+                        debugLog(`[FALLBACK] Fallback started for ${stationInfo.name} (no encoder was connected), status set to active.`);
+
+                        db.createAlert(
+                            'info',
+                            'Fallback Started',
+                            `${stationInfo.name} fallback stream is now playing`,
+                            stationInfo.id
+                        );
+                        lastAlertTime[alertKey] = now;
+                        console.log(`[ALERT] Station ${mount} fallback STARTED`);
+
+                        // Send "Fallback Active" email (not "Stream Recovered")
+                        sendAlertEmail(
+                            'fallback_activated',
+                            `Fallback Active: ${stationInfo.name}`,
+                            `The fallback stream for "${stationInfo.name}" has been activated.`,
+                            stationInfo
+                        );
+                    }
+                } else {
+                    // Normal station (no fallback) - standard "Stream Recovered" behavior
+                    db.createAlert(
+                        'success',
+                        'Station Now Broadcasting!',
+                        `${stationInfo.name} is now live`,
+                        stationInfo.id
+                    );
+                    lastAlertTime[alertKey] = now;
+                    console.log(`[ALERT] Station ${mount} went LIVE`);
+
+                    sendAlertEmail(
+                        'stream_up',
+                        `Stream Recovered: ${stationInfo.name}`,
+                        `The stream "${stationInfo.name}" is now back online and broadcasting.`,
+                        stationInfo
+                    );
+                }
             }
         }
 
