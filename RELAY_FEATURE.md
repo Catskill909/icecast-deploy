@@ -191,6 +191,18 @@ User testing revealed confusion about stream interruptions and badge colors. The
     - **Result:** The badge will remain Orange even if the fallback stream is audible.
     - **UX Decision:** Users should interpret Orange as "Protected" rather than "Waiting".
 
+### UI Improvements Implemented (Phase 5)
+Based on user testing, the following UI changes were made:
+
+1.  **Stream Restart Warning:**
+    - Added an orange warning box in the Edit Station Modal (External Source section).
+    - Text: "Interruption Warning: Saving changes to relay settings will restart the stream engine. If currently live, expect a 2-5 second audio drop."
+
+2.  **Badge Text Clarification:**
+    - Changed badge from "FALLBACK" to "FALLBACK READY".
+    - This sets the expectation that Orange means "Protection Active" rather than "Waiting to Switch".
+
+
 ## Current State (Post-Audit)
 
 **Working:**
