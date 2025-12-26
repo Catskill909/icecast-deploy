@@ -11,6 +11,7 @@ import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
 import * as icecastConfig from './icecastConfig.js';
 import * as liquidsoopConfig from './liquidsoopConfig.js';
+import * as liquidsoapClient from './liquidsoapClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -955,9 +956,49 @@ app.get('/api/icecast-status', async (req, res) => {
     }
 });
 
+// ==========================================
+// PHASE 6: LIQUIDSOAP SOURCE STATUS UPDATE
+// ==========================================
+// Query Liquidsoap telnet to determine which source is active
+// and update the relay_status in the database accordingly
+async function updateSourceStatuses() {
+    try {
+        const allStations = db.getAllStations();
+
+        // Only check stations with fallback enabled
+        const fallbackStations = allStations.filter(
+            s => s.relay_enabled && s.relay_mode === 'fallback' && s.relay_url
+        );
+
+        if (fallbackStations.length === 0) {
+            return; // No fallback stations to check
+        }
+
+        for (const station of fallbackStations) {
+            const activeSource = await liquidsoapClient.getActiveSource(station.id);
+
+            // Update status based on which source is active
+            // 'live' = encoder is connected (fallback on standby) = 'ready' (Orange)
+            // 'fallback' = fallback is playing (encoder disconnected) = 'active' (Green)
+            const newStatus = activeSource === 'fallback' ? 'active' : 'ready';
+
+            // Only update if status changed
+            if (station.relay_status !== newStatus) {
+                db.updateRelayStatus(station.id, newStatus);
+                debugLog(`[PHASE 6] Station ${station.name}: Source is ${activeSource}, status updated to ${newStatus}`);
+            }
+        }
+    } catch (error) {
+        console.error('[PHASE 6] Error updating source statuses:', error.message);
+    }
+}
+
 // Check for status changes and generate alerts
 // Check for status changes and generate alerts
 function checkAndGenerateAlerts(activeMounts) {
+    // Phase 6: Also update relay statuses from Liquidsoap
+    updateSourceStatuses();
+
     const now = Date.now();
     const ALERT_COOLDOWN = 60000; // 1 minute between same alerts
 

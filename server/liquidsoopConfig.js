@@ -96,6 +96,12 @@ output.icecast(
     source_${id}
 )
 
+# Telnet status command for this station (Phase 6)
+server.register(
+    "source_${id}",
+    fun (_) -> if live_${id}.is_ready() then "live" else "fallback" end
+)
+
 `;
         } else {
             config += `# No fallback - output live input directly
@@ -143,6 +149,11 @@ settings.init.allow_root.set(true)
 
 # Harbor settings - accept encoder connections on port 8001
 settings.harbor.bind_addrs.set(["0.0.0.0"])
+
+# Telnet server for external status queries (Phase 6)
+settings.server.telnet.set(true)
+settings.server.telnet.port.set(1234)
+settings.server.telnet.bind_addr.set("127.0.0.1")
 
 `;
 
