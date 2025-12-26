@@ -6,6 +6,9 @@
 set("log.level", 3)
 set("log.stdout", true)
 
+# Allow running as root (required in Docker when using savonet base image)
+set("init.allow_root", true)
+
 # Harbor settings - accept encoder connections
 set("harbor.bind_addrs", ["0.0.0.0"])
 

@@ -663,3 +663,15 @@ RUN apt-get install -y nodejs
 **Issue:** savonet/liquidsoap image has an ENTRYPOINT that runs liquidsoap. Our CMD (`supervisord -n...`) was being passed as arguments to liquidsoap.
 
 **Fix:** Add `ENTRYPOINT []` to override the image's entrypoint.
+
+### Attempt #6 - Container Runs, Services Fail ~9:23 PM
+
+**Progress:** Container deployed! All 3 services attempted to start.
+
+**Issues:**
+1. Icecast: "Couldn't find user 'node'" - wrong user for Debian
+2. Liquidsoap: "security exit, root euid & guid" - refuses to run as root
+
+**Fixes:**
+1. `icecast.xml`: Changed user from `node` to `icecast2`
+2. `radio.liq`: Added `set("init.allow_root", true)`
