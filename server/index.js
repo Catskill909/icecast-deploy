@@ -977,6 +977,12 @@ async function updateSourceStatuses() {
         for (const station of fallbackStations) {
             const activeSource = await liquidsoapClient.getActiveSource(station.id);
 
+            // Skip if we couldn't determine the source (will retry on next poll)
+            if (activeSource === 'unknown') {
+                debugLog(`[PHASE 6] Station ${station.name}: Telnet returned unknown, skipping (will retry)`);
+                continue;
+            }
+
             // Update status based on which source is active
             // 'live' = encoder is connected (fallback on standby) = 'ready' (Orange)
             // 'fallback' = fallback is playing (encoder disconnected) = 'active' (Green)
