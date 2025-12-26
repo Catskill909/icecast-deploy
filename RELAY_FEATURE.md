@@ -1,6 +1,45 @@
 # Relay & Fallback Feature
 
-## ✅ Current Working Configuration (December 25, 2024)
+> **Last Updated:** December 26, 2024 @ 1:56 PM EST
+
+## 🚨 CURRENT STATUS (Handoff Summary)
+
+### What's Working ✅
+| Feature | Status |
+|---------|--------|
+| Streaming | ✅ Working |
+| Mixxx encoder connects | ✅ Working |
+| Audio switches (live → fallback → live) | ✅ Working |
+| Fallback auto-activates when encoder drops | ✅ Working |
+| "Fallback Active" email | ✅ Fixed (commit `5984c63`) |
+
+### What's Being Tested 🔄
+| Feature | Status | Commit |
+|---------|--------|--------|
+| Badge turns GREEN when fallback starts | 🔄 Testing | `f3777af` |
+| Badge turns ORANGE when encoder connects | 🔄 Testing | via Liquidsoap webhooks |
+
+### Known Issues ⚠️
+1. **Liquidsoap webhooks not firing** - `on_connect`/`on_disconnect` callbacks exist in code but never seen in logs
+2. **Badge color updates depend on polling** - 5-second delay before badge changes
+
+### Test Procedure
+1. Disable fallback, wait 10 seconds
+2. Enable fallback → Badge should be **GREEN** + email "Fallback Active"
+3. Connect Mixxx → Badge turns **ORANGE**
+4. Disconnect Mixxx → Badge turns **GREEN** + email "Fallback Active"
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `server/index.js` | API endpoints, `checkAndGenerateAlerts()`, webhook handlers |
+| `server/liquidsoopConfig.js` | Generates `radio.liq` with `on_connect`/`on_disconnect` callbacks |
+| `server/db.js` | `updateRelayStatus()` function |
+| `src/pages/Stations.jsx` | Frontend badge color logic (line 136) |
+
+---
+
+## Current Working Configuration (December 25, 2024)
 
 ### Encoder Settings (Mixxx, BUTT, OBS, etc.)
 
