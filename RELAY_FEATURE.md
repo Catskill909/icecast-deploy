@@ -647,3 +647,11 @@ RUN apt-get install -y icecast2 supervisor
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 RUN apt-get install -y nodejs
 ```
+
+### ❌ Attempt #4 Failed - 9:09 PM
+
+**Error:** `E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)`
+
+**Root cause:** Liquidsoap image runs as non-root user.
+
+**Fix:** Add `USER root` before apt-get commands.

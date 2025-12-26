@@ -15,7 +15,9 @@ RUN npm run build
 # Production stage - Use Liquidsoap as base, add Icecast + Node.js
 FROM savonet/liquidsoap:v2.2.5 AS production
 
-# The Liquidsoap image is Debian-based
+# The Liquidsoap image runs as non-root user, switch to root for package installation
+USER root
+
 # Install Node.js, Icecast, and supervisor
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
