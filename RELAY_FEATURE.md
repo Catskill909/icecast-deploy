@@ -177,6 +177,19 @@ ERROR: gcc-15.2.0-r2: v2 package integrity error
 3. Verified 0 occurrences of `relayManager` or `ffmpeg` in the active codebase.
 
 ---
+### UX & Behavior Notes (Phase 4.4)
+User testing revealed confusion about stream interruptions and badge colors. The following behaviors are confirmed by design:
+
+1.  **Editing Restarts Stream:**
+    - **Behavior:** Clicking "Save" in the Edit Station Modal *always* triggers a full server process restart (Supervisor -> Liquidsoap).
+    - **Result:** If live, the stream *will* drop for 2-5 seconds.
+    - **UX Decision:** We must warn the user before they save. (See Future Work).
+
+2.  **Badge Color Logic:**
+    - **Orange (Ready):** The "FALLBACK" badge is Orange. This is correct. It means "Auto-Switching Enabled (Standby)".
+    - **Green (Active)?** The current system *cannot* detect when Fallback is actively playing vs just standby.
+    - **Result:** The badge will remain Orange even if the fallback stream is audible.
+    - **UX Decision:** Users should interpret Orange as "Protected" rather than "Waiting".
 
 ## Current State (Post-Audit)
 
