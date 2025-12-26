@@ -71,4 +71,6 @@ EXPOSE 8100
 EXPOSE 8001
 
 # Start supervisor
+# Override the Liquidsoap image's ENTRYPOINT so our CMD runs directly
+ENTRYPOINT []
 CMD ["supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]

@@ -655,3 +655,11 @@ RUN apt-get install -y nodejs
 **Root cause:** Liquidsoap image runs as non-root user.
 
 **Fix:** Add `USER root` before apt-get commands.
+
+### Attempt #5 - Partial Success ~9:15 PM
+
+**Result:** Container deployed and ran! But Liquidsoap showing "unknown option '-n'" error.
+
+**Issue:** savonet/liquidsoap image has an ENTRYPOINT that runs liquidsoap. Our CMD (`supervisord -n...`) was being passed as arguments to liquidsoap.
+
+**Fix:** Add `ENTRYPOINT []` to override the image's entrypoint.
