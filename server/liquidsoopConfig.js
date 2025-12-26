@@ -60,21 +60,12 @@ output.icecast(
     }
     // For FALLBACK mode or no relay: live input
     else {
-        // Live input with webhook callbacks (Phase 7)
-        // on_connect/on_disconnect notify Node.js when encoder status changes
-        config += `# Live input from encoder with webhook callbacks (Phase 7)
+        // Live input from encoder
+        config += `# Live input from encoder (NO mksafe - only active when connected)
 live_${id} = input.harbor(
     "${mount}",
     port=8001,
-    password="${ICECAST_SOURCE_PASSWORD}",
-    on_connect=fun(~headers, ~uri, ~protocol, _) -> 
-        log("Encoder connected for ${station.name}")
-        ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/connected -H 'Content-Type: application/json' -d '{}'"))
-    end,
-    on_disconnect=fun() ->
-        log("Encoder disconnected for ${station.name}")
-        ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/disconnected -H 'Content-Type: application/json' -d '{}'"))
-    end
+    password="${ICECAST_SOURCE_PASSWORD}"
 )
 
 `;
