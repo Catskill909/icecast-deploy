@@ -202,11 +202,36 @@ Based on user testing, the following UI changes were made:
     - Changed badge from "FALLBACK" to "AUTO FALLBACK".
     - This sets the expectation that Orange means "Protection Active" rather than "Waiting to Switch".
 
-3.  **Dynamic Badge Color (Phase 5.1):**
-    - Badge now dynamically changes color based on actual state:
-    - 🟠 **Orange:** Fallback is configured, encoder is live (fallback on standby)
-    - 🟢 **Green:** Fallback is actively playing (encoder disconnected)
-    - When encoder reconnects, badge returns to Orange automatically
+3.  **Dynamic Badge Color (Phase 5.1) - LIMITATION DISCOVERED:**
+    - **Intent:** Badge should turn Green when fallback is playing, Orange when standby.
+    - **Implementation:** Added `db.updateRelayStatus('active')` when encoder drops, `db.updateRelayStatus('ready')` when encoder reconnects.
+    - **PROBLEM:** The detection logic relies on Icecast "OFFLINE → LIVE" transitions.
+    - **When fallback is enabled on an offline station:**
+        1. Station is OFFLINE
+        2. User enables fallback → Liquidsoap starts → Icecast shows LIVE
+        3. System detects OFFLINE → LIVE = "Stream Recovered" (not "Fallback Activated")
+        4. Status is set to 'ready' (Orange), not 'active' (Green)
+    - **ROOT CAUSE:** Icecast cannot distinguish between:
+        - LIVE because encoder is connected
+        - LIVE because fallback is connected
+    - **RESULT:** Badge remains Orange regardless of source.
+    - **FUTURE FIX REQUIRED:** Query Liquidsoap via telnet to ask which source is active (new feature scope).
+
+---
+
+## Known Limitation: Badge Color Cannot Detect Active Source
+
+| What We Wanted | What We Got | Why |
+|----------------|-------------|-----|
+| 🟢 Green = Fallback playing | 🟠 Always Orange | Icecast only sees "audio exists", not "which source" |
+| 🟠 Orange = Fallback standby | 🟠 Always Orange | Same as above |
+
+**The only way to fix this** is to:
+1. Connect to Liquidsoap via telnet (port 1234)
+2. Query `source.is_ready("live_input")` or similar
+3. Update badge color based on Liquidsoap's response
+
+This is a **new feature** requiring significant development, not a bug fix.
 
 
 ## Current State (Post-Audit)
