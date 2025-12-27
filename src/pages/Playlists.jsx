@@ -9,6 +9,7 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import TrackDetailModal from '../components/TrackDetailModal';
 import ConfirmModal from '../components/ConfirmModal';
+import AlertModal from '../components/AlertModal';
 
 // Format duration in seconds to mm:ss
 const formatDuration = (seconds) => {
@@ -48,6 +49,9 @@ export default function Playlists() {
     // Playlist Title Editing
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [tempTitle, setTempTitle] = useState('');
+
+    // Alerts
+    const [alertModal, setAlertModal] = useState(null);
 
     // Pagination & Sorting
     const [currentPage, setCurrentPage] = useState(1);
@@ -340,14 +344,26 @@ export default function Playlists() {
                 // Clear progress after 3 seconds
                 setTimeout(() => setUploadProgress(null), 3000);
             } else {
+                const message = result.error || 'Upload failed';
                 setUploadProgress({
                     uploading: false,
-                    error: result.error || 'Upload failed'
+                    error: message
+                });
+                setAlertModal({
+                    title: 'Upload Failed',
+                    message: message,
+                    variant: 'error'
                 });
             }
         } catch (error) {
             console.error('Upload error:', error);
-            setUploadProgress({ uploading: false, error: error.message });
+            const message = error.message || 'An error occurred while uploading.';
+            setUploadProgress({ uploading: false, error: message });
+            setAlertModal({
+                title: 'Upload Failed',
+                message: message,
+                variant: 'error'
+            });
         }
     };
 
@@ -362,7 +378,11 @@ export default function Playlists() {
         );
 
         if (files.length === 0) {
-            alert('Please drop audio files only (MP3, OGG, FLAC, AAC)');
+            setAlertModal({
+                title: 'Invalid File Type',
+                message: 'Please drop audio files only (MP3, OGG, FLAC, AAC).',
+                variant: 'error'
+            });
             return;
         }
 
@@ -377,7 +397,11 @@ export default function Playlists() {
         );
 
         if (files.length === 0) {
-            alert('Please select audio files only (MP3, OGG, FLAC, AAC)');
+            setAlertModal({
+                title: 'Invalid File Type',
+                message: 'Please select audio files only (MP3, OGG, FLAC, AAC).',
+                variant: 'error'
+            });
             return;
         }
 
@@ -1074,6 +1098,15 @@ export default function Playlists() {
                 itemName={deleteConfirm?.name}
                 confirmText="Delete"
                 confirmVariant="danger"
+            />
+
+            {/* Alert Modal */}
+            <AlertModal
+                isOpen={!!alertModal}
+                onClose={() => setAlertModal(null)}
+                title={alertModal?.title}
+                message={alertModal?.message}
+                variant={alertModal?.variant}
             />
         </div>
     );
