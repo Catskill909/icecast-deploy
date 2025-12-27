@@ -46,6 +46,12 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Play/Pause Controls**: Toggle stream audio in-browser
 - **Auto-Stop**: Stops playback when station goes offline
 
+### 🎵 Playlist Manager (Beta)
+- **Audio Library**: Upload and manage MP3/AAC files
+- **Playlist Builder**: Create and edit playlists with drag-and-drop
+- **Track Preview**: Listen to tracks directly in the list
+- **Metadata Support**: auto-extraction of ID3 tags and artwork
+
 ### 📊 Dashboard
 - **Station Overview**: Quick stats on active vs total stations
 - **Server Status**: Online/offline indicator
