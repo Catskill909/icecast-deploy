@@ -725,17 +725,17 @@ export default function Playlists() {
                                                                         setAddToPlaylistMenu(null);
                                                                     } else {
                                                                         const rect = e.currentTarget.getBoundingClientRect();
-                                                                        // Show on top of everything
                                                                         setAddToPlaylistMenu({
                                                                             id: file.id,
-                                                                            x: rect.right,
-                                                                            y: rect.bottom
+                                                                            top: rect.top,
+                                                                            bottom: rect.bottom,
+                                                                            right: rect.right
                                                                         });
                                                                     }
                                                                 }}
                                                                 className={`w-8 h-8 flex items-center justify-center rounded transition-all shadow-sm ${addToPlaylistMenu?.id === file.id
-                                                                        ? 'bg-[#4b7baf] text-white ring-2 ring-[#4b7baf]/30'
-                                                                        : 'bg-[#1e2337] border border-[#2d3555] text-[#4b7baf] hover:bg-[#4b7baf] hover:text-white hover:border-[#4b7baf]'
+                                                                    ? 'bg-[#4b7baf] text-white ring-2 ring-[#4b7baf]/30'
+                                                                    : 'bg-[#1e2337] border border-[#2d3555] text-[#4b7baf] hover:bg-[#4b7baf] hover:text-white hover:border-[#4b7baf]'
                                                                     }`}
                                                                 title="Add to playlist"
                                                             >
@@ -1074,15 +1074,29 @@ export default function Playlists() {
                 const activeFile = library.find(f => f.id === addToPlaylistMenu.id);
                 if (!activeFile) return null; // Should not happen
 
+                // Calculate position
+                const spaceBelow = window.innerHeight - addToPlaylistMenu.bottom;
+                const showAbove = spaceBelow < 250; // Threshold for showing above
+
+                const style = {
+                    left: Math.max(16, addToPlaylistMenu.right - 224),
+                    width: '14rem' // w-56
+                };
+
+                if (showAbove) {
+                    style.bottom = window.innerHeight - addToPlaylistMenu.top + 6;
+                    style.transformOrigin = 'bottom right';
+                } else {
+                    style.top = addToPlaylistMenu.bottom + 6;
+                    style.transformOrigin = 'top right';
+                }
+
                 return (
                     <>
                         <div className="fixed inset-0 z-[60]" onClick={() => setAddToPlaylistMenu(null)} />
                         <div
-                            className="fixed z-[70] w-56 bg-[#1e2337] rounded-lg shadow-xl border border-[#2d3555] py-1 animate-in fade-in zoom-in-95 duration-100"
-                            style={{
-                                top: addToPlaylistMenu.y + 6,
-                                left: Math.max(16, addToPlaylistMenu.x - 224)
-                            }}
+                            className="fixed z-[70] bg-[#1e2337] rounded-lg shadow-xl border border-[#2d3555] py-1 animate-in fade-in zoom-in-95 duration-100"
+                            style={style}
                         >
                             <div className="px-3 py-2 text-xs text-[#64748b] uppercase tracking-wide border-b border-[#2d3555] font-semibold truncate">
                                 Add "{activeFile.title || activeFile.filename}"
