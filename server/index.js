@@ -377,6 +377,17 @@ app.get('/api/diagnostics', async (req, res) => {
     }
 });
 
+// Clear debug logs
+app.post('/api/diagnostics/clear-logs', (req, res) => {
+    try {
+        DEBUG_LOG_BUFFER.length = 0; // Clear the array
+        debugLog('[SYSTEM] Debug logs cleared by user');
+        res.json({ success: true, message: 'Logs cleared' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ==========================================
 // PROTECTED ROUTES (Auth Required)
 // ==========================================
@@ -392,6 +403,9 @@ const requireAuth = (req, res, next) => {
     // Allow encoder webhook endpoints - called by Liquidsoap, not browser
     // Note: req.path is relative to mount point, so it's /encoder/ not /api/encoder/
     if (req.path.startsWith('/encoder/')) return next();
+
+    // Allow diagnostics clear endpoint (it's behind /api/diagnostics which needs auth)
+    if (req.path === '/diagnostics/clear-logs') return next();
 
     res.status(401).json({ error: 'Unauthorized' });
 };

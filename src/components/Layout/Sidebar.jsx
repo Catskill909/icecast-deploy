@@ -19,7 +19,7 @@ const navItems = [
   { path: '/servers', icon: Server, label: 'Stations' },
   { path: '/playlists', icon: ListMusic, label: 'Playlists' },
   { path: '/alerts', icon: Bell, label: 'Alerts' },
-  { path: '/logs', icon: FileText, label: 'Logs' },
+
   { path: '/diagnostics', icon: Activity, label: 'Diagnostics' },
   { path: '/settings', icon: Settings, label: 'Settings' },
   { path: '/help', icon: HelpCircle, label: 'Help' },

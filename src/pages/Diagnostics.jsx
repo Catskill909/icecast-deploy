@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { RefreshCw, Server, Radio, Rss, Database, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { RefreshCw, Server, Radio, Rss, Database, AlertTriangle, CheckCircle, XCircle, Download, Trash2, Search, PauseCircle, PlayCircle } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -10,6 +10,12 @@ export default function Diagnostics() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [lastRefresh, setLastRefresh] = useState(null);
+
+    // Log viewer controls
+    const [logSearch, setLogSearch] = useState('');
+    const [logLevelFilter, setLogLevelFilter] = useState('all');
+    const [autoScroll, setAutoScroll] = useState(true);
+    const logContainerRef = useRef(null);
 
     const fetchDiagnostics = async () => {
         setLoading(true);
@@ -22,6 +28,13 @@ export default function Diagnostics() {
             setData(result);
             setError(null);
             setLastRefresh(new Date().toLocaleTimeString());
+
+            // Auto-scroll to bottom if enabled
+            if (autoScroll && logContainerRef.current) {
+                setTimeout(() => {
+                    logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+                }, 100);
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -43,6 +56,48 @@ export default function Diagnostics() {
             {label}
         </span>
     );
+
+    // Filter logs
+    const filteredLogs = (data?.recentLogs || []).filter(log => {
+        // Level filter
+        if (logLevelFilter !== 'all') {
+            if (!log.includes(`[${logLevelFilter}]`)) return false;
+        }
+        // Search filter
+        if (logSearch && !log.toLowerCase().includes(logSearch.toLowerCase())) {
+            return false;
+        }
+        return true;
+    });
+
+    // Download logs
+    const handleDownloadLogs = () => {
+        const content = (data?.recentLogs || []).join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `streamdock-logs-${new Date().toISOString().split('T')[0]}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // Clear logs
+    const handleClearLogs = async () => {
+        if (!confirm('Clear all logs? This cannot be undone.')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/diagnostics/clear-logs`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (response.ok) {
+                await fetchDiagnostics();
+            }
+        } catch (err) {
+            console.error('Failed to clear logs:', err);
+        }
+    };
 
     return (
         <div className="p-6 max-w-6xl mx-auto">
@@ -185,29 +240,130 @@ export default function Diagnostics() {
                         </CardContent>
                     </Card>
 
-                    {/* Recent Logs */}
+                    {/* Enhanced Logs Viewer */}
                     <Card className="bg-[#0f1729] border-[#1e2a45]">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white">
-                                <Database className="w-5 h-5 text-[#4b7baf]" />
-                                Recent Debug Logs
-                            </CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="flex items-center gap-2 text-white">
+                                    <Database className="w-5 h-5 text-[#4b7baf]" />
+                                    Debug Logs
+                                </CardTitle>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        onClick={() => setAutoScroll(!autoScroll)}
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs"
+                                    >
+                                        {autoScroll ? (
+                                            <>
+                                                <PauseCircle className="w-3 h-3 mr-1" />
+                                                Auto-scroll ON
+                                            </>
+                                        ) : (
+                                            <>
+                                                <PlayCircle className="w-3 h-3 mr-1" />
+                                                Auto-scroll OFF
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        onClick={handleDownloadLogs}
+                                        variant="secondary"
+                                        size="sm"
+                                        disabled={!data?.recentLogs?.length}
+                                    >
+                                        <Download className="w-4 h-4 mr-1" />
+                                        Download
+                                    </Button>
+                                    <Button
+                                        onClick={handleClearLogs}
+                                        variant="danger"
+                                        size="sm"
+                                        disabled={!data?.recentLogs?.length}
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-1" />
+                                        Clear
+                                    </Button>
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="bg-[#0a0e17] rounded p-3 font-mono text-xs max-h-[300px] overflow-y-auto">
-                                {data.recentLogs?.length > 0 ? (
-                                    data.recentLogs.map((log, i) => (
-                                        <div key={i} className={`py-1 ${log.includes('[ERROR]') ? 'text-red-400' :
-                                            log.includes('[FALLBACK]') ? 'text-[#f59e0b]' :
-                                                log.includes('[RELAY]') ? 'text-green-400' :
-                                                    log.includes('[DEBUG]') ? 'text-blue-400' :
-                                                        'text-[#94a3b8]'
-                                            }`}>
-                                            {log}
+                            {/* Filter Controls */}
+                            <div className="mb-3 flex gap-3">
+                                {/* Search */}
+                                <div className="flex-1 relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#64748b]" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search logs..."
+                                        value={logSearch}
+                                        onChange={(e) => setLogSearch(e.target.value)}
+                                        className="w-full bg-[#0a0e17] border border-[#1e2a45] rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-[#64748b] focus:outline-none focus:border-[#4b7baf]"
+                                    />
+                                </div>
+
+                                {/* Level Filter */}
+                                <div className="flex items-center gap-1">
+                                    {['all', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'RELAY', 'FALLBACK'].map((level) => (
+                                        <button
+                                            key={level}
+                                            onClick={() => setLogLevelFilter(level)}
+                                            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${logLevelFilter === level
+                                                    ? level === 'ERROR'
+                                                        ? 'bg-red-400/20 text-red-400'
+                                                        : level === 'WARN'
+                                                            ? 'bg-yellow-400/20 text-yellow-400'
+                                                            : level === 'RELAY'
+                                                                ? 'bg-green-400/20 text-green-400'
+                                                                : level === 'FALLBACK'
+                                                                    ? 'bg-orange-400/20 text-orange-400'
+                                                                    : level === 'DEBUG'
+                                                                        ? 'bg-blue-400/20 text-blue-400'
+                                                                        : 'bg-[#4b7baf] text-white'
+                                                    : 'bg-[#1e2a45] text-[#64748b] hover:text-white'
+                                                }`}
+                                        >
+                                            {level === 'all' ? 'All' : level}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Log Count */}
+                            <div className="mb-2 text-xs text-[#64748b]">
+                                Showing {filteredLogs.length} of {data?.recentLogs?.length || 0} entries
+                            </div>
+
+                            {/* Log Display */}
+                            <div
+                                ref={logContainerRef}
+                                className="bg-[#0a0e17] rounded p-3 font-mono text-xs max-h-[400px] overflow-y-auto"
+                            >
+                                {filteredLogs.length > 0 ? (
+                                    filteredLogs.map((log, i) => (
+                                        <div
+                                            key={i}
+                                            className={`py-1 flex gap-2 hover:bg-[#1a2744]/50 ${log.includes('[ERROR]') ? 'text-red-400' :
+                                                    log.includes('[FALLBACK]') ? 'text-[#f59e0b]' :
+                                                        log.includes('[RELAY]') ? 'text-green-400' :
+                                                            log.includes('[DEBUG]') ? 'text-blue-400' :
+                                                                log.includes('[WARN]') ? 'text-yellow-400' :
+                                                                    'text-[#94a3b8]'
+                                                }`}
+                                        >
+                                            <span className="text-[#64748b] select-none w-8 text-right flex-shrink-0">
+                                                {(data?.recentLogs?.length || 0) - (data?.recentLogs?.indexOf(log) || 0)}
+                                            </span>
+                                            <span className="flex-1">{log}</span>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-[#64748b]">No recent logs</div>
+                                    <div className="text-[#64748b] text-center py-4">
+                                        {logSearch || logLevelFilter !== 'all'
+                                            ? 'No logs match your filters'
+                                            : 'No recent logs'}
+                                    </div>
                                 )}
                             </div>
                         </CardContent>
