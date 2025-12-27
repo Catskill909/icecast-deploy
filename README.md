@@ -68,13 +68,17 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Easy Setup**: Configure via `ADMIN_PASSWORD` environment variable
 - **Logout Support**: Sign out from the Admin dropdown menu
 
-### 🔁 Stream Relay & Restreaming (NEW)
-- **External Sources**: Pull audio from any external stream URL
-- **Primary Mode**: Use relay as the sole source (no encoder needed)
-- **Fallback Mode**: Auto-switch to relay when encoder disconnects
+### 🔁 Stream Relay & Fallback (NEW)
+- **Auto Fallback**: Automatically switch to backup stream when encoder disconnects
+- **Live Badge Colors**: 🟢 GREEN = fallback active, 🟠 ORANGE = fallback on standby
+- **Real-Time Updates**: Badge updates within 5 seconds, no refresh needed
+- **External Sources**: Pull audio from any HTTP/HTTPS stream URL
+- **Primary Mode**: Use relay as sole source (no encoder needed)
 - **URL Validation**: Test external URLs before enabling relay
 - **Format Support**: MP3, AAC, Ogg Vorbis, Opus, and more
-- **Auto-Start**: Primary mode relays start automatically on server boot
+
+> 📖 See [docs/RELAY_FEATURE.md](docs/RELAY_FEATURE.md) for full documentation
+
 
 ## 🛠 Tech Stack
 

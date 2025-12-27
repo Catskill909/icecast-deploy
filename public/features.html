@@ -431,7 +431,7 @@
                 </ul>
             </div>
 
-            <div class="feature-card">
+            <div class="feature-card" onclick="openModal('relay-restreaming')" style="cursor: pointer;">
                 <h3>
                     <i class="fa-solid fa-rotate feature-icon"></i> Stream Relay & Restreaming
                     <span class="integration-badge">New</span>
@@ -513,6 +513,11 @@
                 title: 'StationDock Integration',
                 description: 'StreamDock integrates with StationDock for stream monitoring, automated recording, and failover support.',
                 screenshots: ['stationdock-streams.png', 'integration-settings.png']
+            },
+            'relay-restreaming': {
+                title: 'Stream Relay & Fallback',
+                description: 'Pull audio from external streams without an encoder. Auto-fallback mode switches to backup URL when your encoder disconnects. Green/Orange badge indicates active source.',
+                screenshots: ['relay-settings.png', 'fallback-badge.png']
             }
         };
 

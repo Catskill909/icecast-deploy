@@ -298,9 +298,9 @@ for (const station of stations) {
 - [x] Auto-stop relay when disabled ✅ (Dec 2024)
 - [x] Update station cards to show relay status indicator ✅ DONE (Dec 2024) - Green badge when active
 - [x] Implement fallback activation logic (auto-switch when encoder drops) ✅ DONE (Dec 2024)
-- [ ] Implement encoder-return detection (switch back from fallback)
+- [x] Implement encoder-return detection (switch back from fallback) ✅ DONE (Dec 2024)
 - [x] Add relay-specific alerts (Fallback Activated, Encoder Restored) ✅ DONE (Dec 2024)
-- [x] Documentation & Help page updates ✅ (Dec 2024)
+- [x] Documentation & Help page updates ✅ DONE (Dec 2024) - including badge color guide
 
 ---
 

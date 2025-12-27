@@ -127,10 +127,23 @@ const ARTICLES = {
         )
     },
     'relay-restreaming': {
-        title: 'Stream Relay & Restreaming',
+        title: 'Stream Relay & Fallback',
         content: (
             <div className="space-y-4 text-[#8896ab]">
                 <p>StreamDock can pull audio from external stream URLs and rebroadcast it through your stations. This is useful for syndicating content or creating automatic failovers.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Badge Color Legend</h3>
+                <div className="bg-[#0f1633] border border-[#1e2337] rounded-lg p-4 mt-2 space-y-3">
+                    <div className="flex items-center gap-3">
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-full border bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20">AUTO FALLBACK</span>
+                        <span className="text-sm">Fallback is <strong>actively streaming</strong> (encoder disconnected)</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-full border bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20">AUTO FALLBACK</span>
+                        <span className="text-sm">Fallback is <strong>on standby</strong> (encoder is live)</span>
+                    </div>
+                </div>
+                <p className="text-sm text-[#64748b]">Badge updates automatically within 5 seconds — no page refresh needed!</p>
 
                 <h3 className="text-white font-bold text-lg mt-6">Setting Up a Relay</h3>
                 <ol className="list-decimal pl-5 space-y-2">
