@@ -336,7 +336,10 @@ export default function Stations() {
         fetchLiveStatus();
 
         // Poll live status every 5 seconds
-        const interval = setInterval(fetchLiveStatus, 5000);
+        const interval = setInterval(() => {
+            fetchLiveStatus();
+            fetchStations(); // Also refresh station data to get updated relayStatus
+        }, 5000);
         return () => clearInterval(interval);
     }, []);
 
