@@ -2107,7 +2107,25 @@ app.use('/status', async (req, res) => {
     }
 });
 
-// Catch-all for React app in production (serves index.html for client-side routing)
+// Global Error Handler for API
+app.use((err, req, res, next) => {
+    // If it's an API request or an explicit JSON request, return JSON
+    if (req.path.startsWith('/api') || req.headers.accept?.includes('json')) {
+        console.error('[API ERROR]', err);
+
+        // Multer errors
+        if (err instanceof multer.MulterError) {
+            return res.status(400).json({ error: `Upload error: ${err.message}` });
+        }
+
+        return res.status(err.status || 500).json({
+            error: err.message || 'Internal Server Error'
+        });
+    }
+    // Otherwise fallback to default (HTML)
+    next(err);
+});
+
 if (process.env.NODE_ENV === 'production') {
     app.use((req, res, next) => {
         // Skip API routes and streams
