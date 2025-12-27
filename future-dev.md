@@ -436,6 +436,7 @@ Based on immediate needs for public radio stations:
 - In-app alerts ✅ DONE (Dec 2024)
 - Listener milestones ✅ DONE (Dec 2024)
 - Email notifications ✅ DONE (Dec 2024)
+- Enhanced diagnostics page ✅ DONE (Dec 2024) - Search, filter, download, line numbers
 - Real Icecast log parsing (coming)
 - Uptime tracking
 

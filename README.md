@@ -85,6 +85,16 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 
 > 📖 See [docs/RELAY_FEATURE.md](docs/RELAY_FEATURE.md) for full documentation
 
+### 🔍 Enhanced Diagnostics & Logging
+- **Real-Time System Monitoring**: View Icecast status, active mounts, and relay configurations
+- **Advanced Log Management**: Search, filter, and analyze debug logs
+- **Level Filtering**: Quick filter by ERROR, WARN, INFO, DEBUG, RELAY, FALLBACK
+- **Line Numbers**: Easy reference for debugging
+- **Download Logs**: Export all logs to timestamped text files
+- **Clear Logs**: Manage log buffer with confirmation
+- **Auto-Scroll**: Toggle automatic scrolling to newest log entries
+- **Entry Count**: Track filtered vs total log entries
+
 
 ## 🛠 Tech Stack
 

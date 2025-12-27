@@ -183,6 +183,54 @@ const ARTICLES = {
                 </div>
             </div>
         )
+    },
+    'diagnostics': {
+        title: 'System Diagnostics & Logs',
+        content: (
+            <div className="space-y-4 text-[#8896ab]">
+                <p>The Diagnostics page provides comprehensive system monitoring and advanced log management for debugging your Icecast server.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Real-Time Monitoring</h3>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li><strong>Icecast Status:</strong> Connection status, active mounts, total listeners, and uptime</li>
+                    <li><strong>Station Configuration:</strong> View all stations with relay settings and live status</li>
+                    <li><strong>Active Relays:</strong> Monitor running relay streams and their health</li>
+                    <li><strong>Auto-Refresh:</strong> Updates every 5 seconds automatically</li>
+                </ul>
+
+                <h3 className="text-white font-bold text-lg mt-6">Enhanced Log Viewer</h3>
+                <p>Navigate to the <strong>Debug Logs</strong> section at the bottom of the Diagnostics page to access powerful log management features:</p>
+
+                <h4 className="text-white font-medium mt-4">Search & Filter</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Text Search:</strong> Find specific errors, mount points, or events instantly</li>
+                    <li><strong>Level Filters:</strong> Quick buttons for ERROR, WARN, INFO, DEBUG, RELAY, FALLBACK</li>
+                    <li><strong>Entry Count:</strong> See how many logs match your filters (e.g., "Showing 12 of 100 entries")</li>
+                </ul>
+
+                <h4 className="text-white font-medium mt-4">Log Management</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Line Numbers:</strong> Each log entry is numbered for easy reference</li>
+                    <li><strong>Download:</strong> Export all logs to a timestamped .txt file for offline analysis</li>
+                    <li><strong>Clear Logs:</strong> Delete all log entries (with confirmation)</li>
+                    <li><strong>Auto-Scroll:</strong> Toggle automatic scrolling to newest log entries</li>
+                </ul>
+
+                <h4 className="text-white font-medium mt-4">Understanding Log Colors</h4>
+                <div className="bg-[#0f1633] border border-[#1e2337] rounded-lg p-3 mt-2 text-sm space-y-2">
+                    <div><span className="text-red-400">• RED</span> = ERROR messages</div>
+                    <div><span className="text-yellow-400">• YELLOW</span> = WARN messages</div>
+                    <div><span className="text-green-400">• GREEN</span> = RELAY messages</div>
+                    <div><span className="text-orange-400">• ORANGE</span> = FALLBACK messages</div>
+                    <div><span className="text-blue-400">• BLUE</span> = DEBUG messages</div>
+                    <div><span className="text-gray-400">• GRAY</span> = INFO messages</div>
+                </div>
+
+                <div className="bg-[#4b7baf]/10 p-4 rounded-lg border border-[#4b7baf]/20 mt-4">
+                    <p className="text-[#4b7baf] text-sm font-medium">💡 Tip: Use the search box to quickly find specific mount points, timestamps, or error messages. Combine with level filters for precise debugging.</p>
+                </div>
+            </div>
+        )
     }
 };
 
@@ -232,7 +280,8 @@ export default function Help() {
                 { id: 'encoders', label: "Connecting your Encoder" },
                 { id: 'alerts', label: "Understanding Alerts" },
                 { id: 'email-alerts', label: "Setting up Email Alerts" },
-                { id: 'relay-restreaming', label: "Stream Relay & Restreaming" }
+                { id: 'relay-restreaming', label: "Stream Relay & Restreaming" },
+                { id: 'diagnostics', label: "System Diagnostics & Logs" }
             ]
         },
         {
