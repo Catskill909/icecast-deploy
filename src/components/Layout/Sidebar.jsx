@@ -8,7 +8,8 @@ import {
   FileText,
   Settings,
   HelpCircle,
-  GripVertical
+  GripVertical,
+  ListMusic
 } from 'lucide-react';
 import Tooltip from '../ui/Tooltip';
 
@@ -16,6 +17,7 @@ const navItems = [
   { path: '/create', icon: Radio, label: 'Create Station', highlight: true },
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/servers', icon: Server, label: 'Stations' },
+  { path: '/playlists', icon: ListMusic, label: 'Playlists' },
   { path: '/alerts', icon: Bell, label: 'Alerts' },
   { path: '/logs', icon: FileText, label: 'Logs' },
   { path: '/diagnostics', icon: Activity, label: 'Diagnostics' },

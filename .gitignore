@@ -27,3 +27,4 @@ server/*.db
 *.njsproj
 *.sln
 *.sw?
+server/audiofiles/

@@ -8,6 +8,7 @@ import Logs from './pages/Logs';
 import Settings from './pages/Settings';
 import CreateStation from './pages/CreateStation';
 import Help from './pages/Help';
+import Playlists from './pages/Playlists';
 import Login from './pages/Login';
 import Diagnostics from './pages/Diagnostics';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -40,6 +41,7 @@ function App() {
             <Route path="/logs" element={<Logs />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/help" element={<Help />} />
+            <Route path="/playlists" element={<Playlists />} />
             <Route path="/diagnostics" element={<Diagnostics />} />
           </Route>
         </Routes>

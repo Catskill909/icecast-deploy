@@ -70,6 +70,7 @@ ENV ICECAST_PORT=8100
 ENV ICECAST_PUBLIC_HOST=icecast.supersoul.top
 ENV ICECAST_SOURCE_PASSWORD=streamdock_source
 ENV DATABASE_PATH=/app/data/stations.db
+ENV AUDIO_FILES_PATH=/app/data/audiofiles
 
 # Ports
 EXPOSE 3000

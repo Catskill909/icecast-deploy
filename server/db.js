@@ -208,6 +208,175 @@ const ensureSettings = db.prepare(`
 `);
 ensureSettings.run();
 
+// ==========================================
+// AUDIO LIBRARY TABLE (AutoDJ - Phase 1)
+// ==========================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS audio_files (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    filename TEXT NOT NULL,
+    filepath TEXT NOT NULL UNIQUE,
+    title TEXT,
+    artist TEXT,
+    album TEXT,
+    duration INTEGER,
+    bitrate INTEGER,
+    format TEXT,
+    filesize INTEGER,
+    uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_played TEXT
+  )
+`);
+
+// ==========================================
+// PLAYLISTS TABLE (AutoDJ - Phase 1)
+// ==========================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS playlists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    is_active INTEGER DEFAULT 0
+  )
+`);
+
+// ==========================================
+// PLAYLIST TRACKS TABLE (AutoDJ - Phase 1)
+// ==========================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS playlist_tracks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    playlist_id INTEGER NOT NULL,
+    audio_file_id INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    added_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+    FOREIGN KEY (audio_file_id) REFERENCES audio_files(id) ON DELETE CASCADE
+  )
+`);
+
+// ==========================================
+// AUDIO LIBRARY FUNCTIONS
+// ==========================================
+const createAudioFile = (file) => {
+    const stmt = db.prepare(`
+        INSERT INTO audio_files (filename, filepath, title, artist, album, duration, bitrate, format, filesize, uploaded_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    return stmt.run(
+        file.filename,
+        file.filepath,
+        file.title || file.filename,
+        file.artist || 'Unknown Artist',
+        file.album || 'Unknown Album',
+        file.duration || 0,
+        file.bitrate || 0,
+        file.format || 'mp3',
+        file.filesize || 0,
+        new Date().toISOString()
+    );
+};
+
+const getAllAudioFiles = () => {
+    return db.prepare('SELECT * FROM audio_files ORDER BY uploaded_at DESC').all();
+};
+
+const getAudioFileById = (id) => {
+    return db.prepare('SELECT * FROM audio_files WHERE id = ?').get(id);
+};
+
+const deleteAudioFile = (id) => {
+    return db.prepare('DELETE FROM audio_files WHERE id = ?').run(id);
+};
+
+const updateAudioFile = (id, updates) => {
+    const { title, artist, album } = updates;
+    return db.prepare(`
+        UPDATE audio_files SET title = ?, artist = ?, album = ? WHERE id = ?
+    `).run(title, artist, album, id);
+};
+
+const updateAudioFileLastPlayed = (id) => {
+    return db.prepare('UPDATE audio_files SET last_played = ? WHERE id = ?').run(new Date().toISOString(), id);
+};
+
+// ==========================================
+// PLAYLIST FUNCTIONS
+// ==========================================
+const createPlaylist = (name, description = '') => {
+    const stmt = db.prepare(`
+        INSERT INTO playlists (name, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
+    `);
+    const now = new Date().toISOString();
+    return stmt.run(name, description, now, now);
+};
+
+const getAllPlaylists = () => {
+    return db.prepare('SELECT * FROM playlists ORDER BY updated_at DESC').all();
+};
+
+const getPlaylistById = (id) => {
+    return db.prepare('SELECT * FROM playlists WHERE id = ?').get(id);
+};
+
+const updatePlaylist = (id, name, description) => {
+    return db.prepare(`
+        UPDATE playlists SET name = ?, description = ?, updated_at = ? WHERE id = ?
+    `).run(name, description, new Date().toISOString(), id);
+};
+
+const deletePlaylist = (id) => {
+    return db.prepare('DELETE FROM playlists WHERE id = ?').run(id);
+};
+
+const setActivePlaylist = (id) => {
+    // Deactivate all playlists first
+    db.prepare('UPDATE playlists SET is_active = 0').run();
+    // Activate the selected one
+    return db.prepare('UPDATE playlists SET is_active = 1 WHERE id = ?').run(id);
+};
+
+// ==========================================
+// PLAYLIST TRACKS FUNCTIONS
+// ==========================================
+const getPlaylistTracks = (playlistId) => {
+    return db.prepare(`
+        SELECT pt.*, af.filename, af.title, af.artist, af.album, af.duration, af.format
+        FROM playlist_tracks pt
+        JOIN audio_files af ON pt.audio_file_id = af.id
+        WHERE pt.playlist_id = ?
+        ORDER BY pt.position ASC
+    `).all(playlistId);
+};
+
+const addTrackToPlaylist = (playlistId, audioFileId) => {
+    // Get the next position
+    const result = db.prepare('SELECT MAX(position) as maxPos FROM playlist_tracks WHERE playlist_id = ?').get(playlistId);
+    const nextPos = (result.maxPos || 0) + 1;
+
+    const stmt = db.prepare(`
+        INSERT INTO playlist_tracks (playlist_id, audio_file_id, position, added_at)
+        VALUES (?, ?, ?, ?)
+    `);
+    return stmt.run(playlistId, audioFileId, nextPos, new Date().toISOString());
+};
+
+const removeTrackFromPlaylist = (playlistId, trackId) => {
+    return db.prepare('DELETE FROM playlist_tracks WHERE playlist_id = ? AND id = ?').run(playlistId, trackId);
+};
+
+const reorderPlaylistTracks = (playlistId, trackIds) => {
+    // trackIds is an array of track IDs in the new order
+    const stmt = db.prepare('UPDATE playlist_tracks SET position = ? WHERE id = ? AND playlist_id = ?');
+    trackIds.forEach((trackId, index) => {
+        stmt.run(index + 1, trackId, playlistId);
+    });
+    return { success: true };
+};
+
 const getSettings = () => {
     return db.prepare('SELECT * FROM settings WHERE id = ?').get('singleton');
 };
@@ -272,5 +441,25 @@ export {
     markAllAlertsRead,
     getSettings,
     updateSmtpSettings,
-    updateAlertSettings
+    updateAlertSettings,
+    // AutoDJ - Audio Library
+    createAudioFile,
+    getAllAudioFiles,
+    getAudioFileById,
+    deleteAudioFile,
+    updateAudioFile,
+    updateAudioFileLastPlayed,
+    // AutoDJ - Playlists
+    createPlaylist,
+    getAllPlaylists,
+    getPlaylistById,
+    updatePlaylist,
+    deletePlaylist,
+    setActivePlaylist,
+    // AutoDJ - Playlist Tracks
+    getPlaylistTracks,
+    addTrackToPlaylist,
+    removeTrackFromPlaylist,
+    reorderPlaylistTracks
 };
+

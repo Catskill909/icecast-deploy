@@ -7,6 +7,9 @@ import http from 'http';
 import httpProxy from 'http-proxy';
 import nodemailer from 'nodemailer';
 import cookieParser from 'cookie-parser';
+import multer from 'multer';
+import * as musicMetadata from 'music-metadata';
+import fs from 'fs/promises';
 import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
 import * as icecastConfig from './icecastConfig.js';
@@ -31,6 +34,52 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 const STREAM_HOST = process.env.STREAM_HOST || 'stream.supersoul.top';
 // Liquidsoap port for encoder connections (encoders connect here, not to Icecast)
 const LIQUIDSOAP_PORT = process.env.LIQUIDSOAP_PORT || 8001;
+
+// AutoDJ Audio Files Path
+// Production (Coolify): /app/data/audiofiles (persistent volume)
+// Local development: ./server/audiofiles (relative to project)
+const AUDIO_FILES_PATH = process.env.AUDIO_FILES_PATH || path.join(__dirname, 'audiofiles');
+
+// Ensure audio files directory exists
+(async () => {
+    try {
+        await fs.mkdir(AUDIO_FILES_PATH, { recursive: true });
+        console.log(`[AUTODJ] Audio files directory: ${AUDIO_FILES_PATH}`);
+    } catch (e) {
+        console.error('[AUTODJ] Failed to create audio directory:', e.message);
+    }
+})();
+
+// Multer storage configuration for audio uploads
+const audioStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, AUDIO_FILES_PATH);
+    },
+    filename: (req, file, cb) => {
+        // Preserve original filename but make it unique
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        const base = path.basename(file.originalname, ext);
+        cb(null, `${base}-${uniqueSuffix}${ext}`);
+    }
+});
+
+const audioUpload = multer({
+    storage: audioStorage,
+    limits: { fileSize: 400 * 1024 * 1024 }, // 400MB
+    fileFilter: (req, file, cb) => {
+        // Accept audio files only
+        const allowedMimes = ['audio/mpeg', 'audio/mp3', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/mp4', 'audio/x-m4a'];
+        const allowedExts = ['.mp3', '.ogg', '.flac', '.aac', '.m4a'];
+        const ext = path.extname(file.originalname).toLowerCase();
+
+        if (allowedMimes.includes(file.mimetype) || allowedExts.includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(new Error(`Invalid file type: ${file.mimetype}. Only MP3, OGG, FLAC, AAC allowed.`));
+        }
+    }
+});
 
 // Track previous mount status for alert generation
 let previousMountStatus = {}; // { "/mount": { live: true, listeners: 0 } }
@@ -793,6 +842,497 @@ app.get('/api/relay/:stationId/status', (req, res) => {
 // Get all active relays (Stubbed - Phase 4)
 app.get('/api/relays/active', (req, res) => {
     res.json([]);
+});
+
+// ==========================================
+// AUTODJ - AUDIO LIBRARY API (Phase 1)
+// ==========================================
+
+// Get all audio files
+app.get('/api/library', (req, res) => {
+    try {
+        const files = db.getAllAudioFiles();
+        res.json(files);
+    } catch (error) {
+        console.error('Error fetching audio library:', error);
+        res.status(500).json({ error: 'Failed to fetch audio library' });
+    }
+});
+
+// Upload audio files
+app.post('/api/library/upload', audioUpload.array('files', 50), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No files uploaded' });
+        }
+
+        const results = [];
+
+        for (const file of req.files) {
+            try {
+                // Parse audio metadata (ID3 tags)
+                let metadata = {
+                    title: path.basename(file.originalname, path.extname(file.originalname)),
+                    artist: 'Unknown Artist',
+                    album: 'Unknown Album',
+                    genre: '',
+                    year: null,
+                    trackNumber: null,
+                    duration: 0,
+                    bitrate: 0,
+                    sampleRate: 0,
+                    channels: 0,
+                    hasArtwork: false
+                };
+
+                try {
+                    const parsed = await musicMetadata.parseFile(file.path);
+
+                    metadata.title = parsed.common.title || metadata.title;
+                    metadata.artist = parsed.common.artist || metadata.artist;
+                    metadata.album = parsed.common.album || metadata.album;
+                    metadata.genre = parsed.common.genre?.[0] || '';
+                    metadata.year = parsed.common.year || null;
+                    metadata.trackNumber = parsed.common.track?.no || null;
+                    metadata.duration = Math.floor(parsed.format.duration || 0);
+                    metadata.bitrate = parsed.format.bitrate ? Math.floor(parsed.format.bitrate / 1000) : 0;
+                    metadata.sampleRate = parsed.format.sampleRate || 0;
+                    metadata.channels = parsed.format.numberOfChannels || 0;
+
+                    // Extract album artwork if present
+                    if (parsed.common.picture && parsed.common.picture.length > 0) {
+                        const picture = parsed.common.picture[0];
+                        const ext = picture.format.includes('png') ? 'png' : 'jpg';
+                        const artworkFilename = `${path.basename(file.filename, path.extname(file.filename))}.${ext}`;
+                        const artworkPath = path.join(AUDIO_FILES_PATH, 'artwork', artworkFilename);
+
+                        // Ensure artwork directory exists
+                        await fs.mkdir(path.join(AUDIO_FILES_PATH, 'artwork'), { recursive: true });
+                        await fs.writeFile(artworkPath, picture.data);
+
+                        metadata.hasArtwork = true;
+                        console.log(`[AUTODJ] Extracted artwork for: ${file.originalname}`);
+                    }
+                } catch (parseError) {
+                    console.warn(`[AUTODJ] Could not parse metadata for ${file.originalname}:`, parseError.message);
+                }
+
+                // Get format from extension
+                const ext = path.extname(file.originalname).toLowerCase();
+                const formatMap = { '.mp3': 'MP3', '.ogg': 'OGG', '.flac': 'FLAC', '.aac': 'AAC', '.m4a': 'AAC' };
+                const format = formatMap[ext] || 'MP3';
+
+                // Save to database
+                const dbResult = db.createAudioFile({
+                    filename: file.originalname,
+                    filepath: file.path,
+                    title: metadata.title,
+                    artist: metadata.artist,
+                    album: metadata.album,
+                    duration: metadata.duration,
+                    bitrate: metadata.bitrate,
+                    format: format,
+                    filesize: file.size
+                });
+
+                results.push({
+                    id: dbResult.lastInsertRowid,
+                    filename: file.originalname,
+                    title: metadata.title,
+                    artist: metadata.artist,
+                    duration: metadata.duration,
+                    success: true
+                });
+
+                console.log(`[AUTODJ] Uploaded: ${file.originalname} → ${metadata.title} by ${metadata.artist}`);
+
+            } catch (fileError) {
+                console.error(`[AUTODJ] Error processing ${file.originalname}:`, fileError);
+                results.push({
+                    filename: file.originalname,
+                    success: false,
+                    error: fileError.message
+                });
+            }
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        res.json({
+            success: true,
+            message: `Uploaded ${successCount} of ${req.files.length} files`,
+            files: results
+        });
+
+    } catch (error) {
+        console.error('Error uploading files:', error);
+        res.status(500).json({ error: error.message || 'Failed to upload files' });
+    }
+});
+
+// Stream audio file
+app.get('/api/library/:id/stream', async (req, res) => {
+    try {
+        const file = db.getAudioFileById(parseInt(req.params.id));
+        if (!file) {
+            return res.status(404).json({ error: 'Audio file not found' });
+        }
+
+        // Check if file exists
+        try {
+            await fs.access(file.filepath);
+        } catch {
+            return res.status(404).json({ error: 'Audio file missing from disk' });
+        }
+
+        const stat = await fs.stat(file.filepath);
+        const range = req.headers.range;
+
+        // Determine content type
+        const ext = path.extname(file.filepath).toLowerCase();
+        const mimeTypes = { '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.flac': 'audio/flac', '.aac': 'audio/aac', '.m4a': 'audio/mp4' };
+        const contentType = mimeTypes[ext] || 'audio/mpeg';
+
+        if (range) {
+            // Partial content (seeking support)
+            const parts = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+            const chunkSize = end - start + 1;
+
+            const { createReadStream } = await import('fs');
+            const stream = createReadStream(file.filepath, { start, end });
+
+            res.writeHead(206, {
+                'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunkSize,
+                'Content-Type': contentType
+            });
+            stream.pipe(res);
+        } else {
+            // Full file
+            const { createReadStream } = await import('fs');
+            res.writeHead(200, {
+                'Content-Length': stat.size,
+                'Content-Type': contentType,
+                'Accept-Ranges': 'bytes'
+            });
+            createReadStream(file.filepath).pipe(res);
+        }
+    } catch (error) {
+        console.error('Error streaming audio:', error);
+        res.status(500).json({ error: 'Failed to stream audio' });
+    }
+});
+
+// Get album artwork for a file
+app.get('/api/library/:id/artwork', async (req, res) => {
+    try {
+        const file = db.getAudioFileById(parseInt(req.params.id));
+        if (!file) {
+            return res.status(404).json({ error: 'Audio file not found' });
+        }
+
+        // Try to find artwork file
+        const baseFilename = path.basename(file.filepath, path.extname(file.filepath));
+        const artworkDir = path.join(AUDIO_FILES_PATH, 'artwork');
+
+        for (const ext of ['jpg', 'png']) {
+            const artworkPath = path.join(artworkDir, `${baseFilename}.${ext}`);
+            try {
+                await fs.access(artworkPath);
+                return res.sendFile(artworkPath);
+            } catch {
+                // Continue to next extension
+            }
+        }
+
+        // No artwork found - return 204 No Content (suppresses console errors)
+        res.status(204).end();
+    } catch (error) {
+        console.error('Error fetching artwork:', error);
+        res.status(500).json({ error: 'Failed to fetch artwork' });
+    }
+});
+
+// Get full metadata for a file (re-parse from file for complete data)
+app.get('/api/library/:id/metadata', async (req, res) => {
+    try {
+        const file = db.getAudioFileById(parseInt(req.params.id));
+        if (!file) {
+            return res.status(404).json({ error: 'Audio file not found' });
+        }
+
+        // Parse fresh metadata from file
+        let fullMetadata = {
+            // From database
+            id: file.id,
+            filename: file.filename,
+            filepath: file.filepath,
+            filesize: file.filesize,
+            uploadedAt: file.uploaded_at,
+            // Will be filled from parsing
+            title: file.title,
+            artist: file.artist,
+            album: file.album,
+            duration: file.duration,
+            bitrate: file.bitrate,
+            format: file.format
+        };
+
+        try {
+            const parsed = await musicMetadata.parseFile(file.filepath);
+            fullMetadata = {
+                ...fullMetadata,
+                // Common tags
+                title: parsed.common.title || file.title,
+                artist: parsed.common.artist || file.artist,
+                album: parsed.common.album || file.album,
+                albumArtist: parsed.common.albumartist || null,
+                genre: parsed.common.genre || [],
+                year: parsed.common.year || null,
+                trackNumber: parsed.common.track?.no || null,
+                trackTotal: parsed.common.track?.of || null,
+                discNumber: parsed.common.disk?.no || null,
+                discTotal: parsed.common.disk?.of || null,
+                composer: parsed.common.composer || [],
+                comment: parsed.common.comment || [],
+                lyrics: parsed.common.lyrics || [],
+                bpm: parsed.common.bpm || null,
+                // Format info
+                duration: parsed.format.duration || file.duration,
+                bitrate: parsed.format.bitrate ? Math.floor(parsed.format.bitrate / 1000) : file.bitrate,
+                sampleRate: parsed.format.sampleRate || null,
+                channels: parsed.format.numberOfChannels || null,
+                codec: parsed.format.codec || null,
+                lossless: parsed.format.lossless || false,
+                container: parsed.format.container || null,
+                // Artwork
+                hasArtwork: parsed.common.picture && parsed.common.picture.length > 0
+            };
+        } catch (parseError) {
+            console.warn(`[AUTODJ] Could not re-parse metadata for ${file.filename}:`, parseError.message);
+        }
+
+        res.json(fullMetadata);
+    } catch (error) {
+        console.error('Error fetching metadata:', error);
+        res.status(500).json({ error: 'Failed to fetch metadata' });
+    }
+});
+
+// Get single audio file
+app.get('/api/library/:id', (req, res) => {
+    try {
+        const file = db.getAudioFileById(parseInt(req.params.id));
+        if (!file) {
+            return res.status(404).json({ error: 'Audio file not found' });
+        }
+        res.json(file);
+    } catch (error) {
+        console.error('Error fetching audio file:', error);
+        res.status(500).json({ error: 'Failed to fetch audio file' });
+    }
+});
+
+// Delete audio file
+app.delete('/api/library/:id', async (req, res) => {
+    try {
+        const file = db.getAudioFileById(parseInt(req.params.id));
+        if (!file) {
+            return res.status(404).json({ error: 'Audio file not found' });
+        }
+
+        // Delete from filesystem
+        const fs = await import('fs/promises');
+        try {
+            await fs.unlink(file.filepath);
+        } catch (e) {
+            console.warn('Could not delete file from disk:', e.message);
+        }
+
+        // Delete from database
+        db.deleteAudioFile(parseInt(req.params.id));
+        res.json({ success: true, message: 'Audio file deleted' });
+    } catch (error) {
+        console.error('Error deleting audio file:', error);
+        res.status(500).json({ error: 'Failed to delete audio file' });
+    }
+});
+
+// Update audio file metadata
+app.patch('/api/library/:id', (req, res) => {
+    try {
+        const file = db.getAudioFileById(parseInt(req.params.id));
+        if (!file) {
+            return res.status(404).json({ error: 'Audio file not found' });
+        }
+
+        const { title, artist, album } = req.body;
+        db.updateAudioFile(parseInt(req.params.id), {
+            title: title || file.title,
+            artist: artist || file.artist,
+            album: album || file.album
+        });
+
+        res.json({ success: true, message: 'Audio file updated' });
+    } catch (error) {
+        console.error('Error updating audio file:', error);
+        res.status(500).json({ error: 'Failed to update audio file' });
+    }
+});
+
+// ==========================================
+// AUTODJ - PLAYLIST API (Phase 1)
+// ==========================================
+
+// Get all playlists
+app.get('/api/playlists', (req, res) => {
+    try {
+        const playlists = db.getAllPlaylists();
+        // Add track count for each playlist
+        const playlistsWithCount = playlists.map(p => ({
+            ...p,
+            trackCount: db.getPlaylistTracks(p.id).length
+        }));
+        res.json(playlistsWithCount);
+    } catch (error) {
+        console.error('Error fetching playlists:', error);
+        res.status(500).json({ error: 'Failed to fetch playlists' });
+    }
+});
+
+// Create playlist
+app.post('/api/playlists', (req, res) => {
+    try {
+        const { name, description } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Playlist name is required' });
+        }
+
+        const result = db.createPlaylist(name.trim(), description || '');
+        res.status(201).json({
+            success: true,
+            id: result.lastInsertRowid,
+            message: 'Playlist created'
+        });
+    } catch (error) {
+        console.error('Error creating playlist:', error);
+        res.status(500).json({ error: 'Failed to create playlist' });
+    }
+});
+
+// Get single playlist with tracks
+app.get('/api/playlists/:id', (req, res) => {
+    try {
+        const playlist = db.getPlaylistById(parseInt(req.params.id));
+        if (!playlist) {
+            return res.status(404).json({ error: 'Playlist not found' });
+        }
+
+        const tracks = db.getPlaylistTracks(parseInt(req.params.id));
+        res.json({ ...playlist, tracks });
+    } catch (error) {
+        console.error('Error fetching playlist:', error);
+        res.status(500).json({ error: 'Failed to fetch playlist' });
+    }
+});
+
+// Update playlist
+app.put('/api/playlists/:id', (req, res) => {
+    try {
+        const playlist = db.getPlaylistById(parseInt(req.params.id));
+        if (!playlist) {
+            return res.status(404).json({ error: 'Playlist not found' });
+        }
+
+        const { name, description } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Playlist name is required' });
+        }
+
+        db.updatePlaylist(parseInt(req.params.id), name.trim(), description || '');
+        res.json({ success: true, message: 'Playlist updated' });
+    } catch (error) {
+        console.error('Error updating playlist:', error);
+        res.status(500).json({ error: 'Failed to update playlist' });
+    }
+});
+
+// Delete playlist
+app.delete('/api/playlists/:id', (req, res) => {
+    try {
+        const playlist = db.getPlaylistById(parseInt(req.params.id));
+        if (!playlist) {
+            return res.status(404).json({ error: 'Playlist not found' });
+        }
+
+        db.deletePlaylist(parseInt(req.params.id));
+        res.json({ success: true, message: 'Playlist deleted' });
+    } catch (error) {
+        console.error('Error deleting playlist:', error);
+        res.status(500).json({ error: 'Failed to delete playlist' });
+    }
+});
+
+// Add track to playlist
+app.post('/api/playlists/:id/tracks', (req, res) => {
+    try {
+        const playlistId = parseInt(req.params.id);
+        const { audioFileId } = req.body;
+
+        if (!audioFileId) {
+            return res.status(400).json({ error: 'Audio file ID is required' });
+        }
+
+        const playlist = db.getPlaylistById(playlistId);
+        if (!playlist) {
+            return res.status(404).json({ error: 'Playlist not found' });
+        }
+
+        const audioFile = db.getAudioFileById(parseInt(audioFileId));
+        if (!audioFile) {
+            return res.status(404).json({ error: 'Audio file not found' });
+        }
+
+        db.addTrackToPlaylist(playlistId, parseInt(audioFileId));
+        res.json({ success: true, message: 'Track added to playlist' });
+    } catch (error) {
+        console.error('Error adding track to playlist:', error);
+        res.status(500).json({ error: 'Failed to add track' });
+    }
+});
+
+// Remove track from playlist
+app.delete('/api/playlists/:id/tracks/:trackId', (req, res) => {
+    try {
+        const playlistId = parseInt(req.params.id);
+        const trackId = parseInt(req.params.trackId);
+
+        db.removeTrackFromPlaylist(playlistId, trackId);
+        res.json({ success: true, message: 'Track removed from playlist' });
+    } catch (error) {
+        console.error('Error removing track from playlist:', error);
+        res.status(500).json({ error: 'Failed to remove track' });
+    }
+});
+
+// Reorder tracks in playlist
+app.put('/api/playlists/:id/tracks/reorder', (req, res) => {
+    try {
+        const playlistId = parseInt(req.params.id);
+        const { trackIds } = req.body;
+
+        if (!Array.isArray(trackIds)) {
+            return res.status(400).json({ error: 'trackIds must be an array' });
+        }
+
+        db.reorderPlaylistTracks(playlistId, trackIds);
+        res.json({ success: true, message: 'Tracks reordered' });
+    } catch (error) {
+        console.error('Error reordering tracks:', error);
+        res.status(500).json({ error: 'Failed to reorder tracks' });
+    }
 });
 
 // ==========================================
