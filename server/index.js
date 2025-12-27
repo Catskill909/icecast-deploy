@@ -340,6 +340,9 @@ const requireAuth = (req, res, next) => {
     // Check if it's a debug connection (allow)
     if (req.path.startsWith('/api/debug-connection')) return next();
 
+    // Allow encoder webhook endpoints - called by Liquidsoap, not browser
+    if (req.path.startsWith('/api/encoder/')) return next();
+
     res.status(401).json({ error: 'Unauthorized' });
 };
 
