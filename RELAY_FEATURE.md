@@ -1,11 +1,11 @@
 # Relay & Fallback Feature
 
-> **Last Updated:** December 26, 2024 @ 6:22 PM EST
+> **Last Updated:** December 26, 2024 @ 7:07 PM EST
 
 ---
-## ⚠️⚠️⚠️ THE ONLY ISSUE - READ THIS FIRST ⚠️⚠️⚠️
+## ⚠️⚠️⚠️ THE ONLY REMAINING ISSUE ⚠️⚠️⚠️
 
-**EVERYTHING ELSE WORKS. IT'S JUST THE BUTTON COLOR.**
+**EVERYTHING ELSE WORKS. ONE BUG LEFT: `on_connect` webhook not reaching API.**
 
 ### Badge Color Rules
 - 🟢 **GREEN** = Fallback is THE ACTIVE source (streaming audio right now)
@@ -13,21 +13,81 @@
 
 ---
 
-## 🧪 LATEST TEST (December 26, 2024 @ 6:17 PM)
+## 🧪 LATEST TEST (December 26, 2024 @ 7:00 PM)
 
 | Step | Action | Expected | Actual | Status |
 |------|--------|----------|--------|--------|
 | 1 | Station off | - | - | ✅ |
-| 2 | Enable fallback, save | GREEN | GREEN | ✅ |
-| 3 | **Refresh page** | GREEN | **ORANGE** | ❌ BUG |
+| 2 | Enable fallback, save | GREEN | GREEN | ✅ **FIXED** |
+| 3 | Refresh page | GREEN | GREEN | ✅ **FIXED** |
+| 4 | Connect Mixxx | ORANGE | GREEN | ❌ **ONLY BUG LEFT** |
+| 5 | Disconnect Mixxx | GREEN | GREEN | ✅ |
 
 ---
 
-## 🔍 DOUBLE AUDIT COMPLETE (December 26, 2024 @ 6:22 PM)
+## 🔍 COMPLETE AUDIT: ENCODER CONNECT FLOW (December 26, 2024 @ 7:07 PM)
 
-### All 9 Places That Set Button Color
+### All 8 Files That Touch This Flow
 
-| Line | Context | Sets | Correct? |
+| File | Role | Issue? |
+|------|------|--------|
+| `radio.liq` | Static template (no webhooks) | ⚠️ Used if config not generated |
+| `Dockerfile` | Sets PORT=3000, copies template | ✅ |
+| `start-liquidsoap.sh` | Waits 15s for config, fallback to template | ✅ |
+| `supervisord.conf` | Sets PORT="3000" | ✅ |
+| `server/index.js` | Fallback port 3001, webhook API, 5s startup delay | ⚠️ |
+| `server/liquidsoopConfig.js` | Generates config with webhooks | **❌ HARDCODED PORT 3001** |
+| `server/db.js` | updateRelayStatus() | ✅ |
+| `src/pages/Stations.jsx` | Badge display logic | ✅ |
+
+### ❌ ROOT CAUSE FOUND: Port Mismatch
+
+**File:** `server/liquidsoopConfig.js` lines 69-70:
+```javascript
+on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/connected"))
+```
+
+**Problem:** 
+- This curl hits port **3001**
+- Node.js runs on port **3000** (set by supervisord.conf)
+- curl fails silently → API never receives request → badge never updates
+
+### The Complete Flow (What Happens Now)
+
+```
+1. Mixxx connects to Liquidsoap port 8001     ✅
+2. Liquidsoap detects connection              ✅
+3. on_connect callback fires                  ✅
+4. curl tries http://127.0.0.1:3001/...       ❌ WRONG PORT!
+5. curl fails (connection refused)            ❌
+6. Node.js never receives request             ❌
+7. Badge stays GREEN                          ❌
+```
+
+### Evidence
+Liquidsoap log shows switch happened:
+```
+2025/12/26 23:59:41 [switch:3] Switch to input.harbor.3 with transition.
+```
+
+Node.js logs show NO `[ENCODER] Connected` message. The webhook never arrived.
+
+---
+
+## ✅ THE FIX
+
+**Change port in `server/liquidsoopConfig.js` lines 69-70:**
+
+```diff
+- http://127.0.0.1:3001/api/encoder/${station.id}/connected
++ http://127.0.0.1:3000/api/encoder/${station.id}/connected
+```
+
+---
+
+## 🔍 PREVIOUS AUDIT: Polling Overrides (Fixed)
+
+### All places that set button color:
 |------|---------|------|----------|
 | 545 | `PUT /api/stations/:id` - Edit station | GREEN when enabled | ✅ |
 | 757 | `POST /api/relay/start` - Start endpoint | ORANGE | n/a (not used by UI) |

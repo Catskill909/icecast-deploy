@@ -66,8 +66,8 @@ live_${id} = input.harbor(
     "${mount}",
     port=8001,
     password="${ICECAST_SOURCE_PASSWORD}",
-    on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/connected")),
-    on_disconnect=fun() -> ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/disconnected"))
+    on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3000/api/encoder/${station.id}/connected")),
+    on_disconnect=fun() -> ignore(process.run("curl -s -X POST http://127.0.0.1:3000/api/encoder/${station.id}/disconnected"))
 )
 
 `;
