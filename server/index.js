@@ -948,6 +948,14 @@ app.post('/api/library/upload', audioUpload.array('files', 50), async (req, res)
 
             } catch (fileError) {
                 console.error(`[AUTODJ] Error processing ${file.originalname}:`, fileError);
+                // Attempt to delete the file
+                try {
+                    await fs.unlink(file.path);
+                    console.log(`[AUTODJ] Deleted failed upload: ${file.path}`);
+                } catch (unlinkError) {
+                    console.warn(`[AUTODJ] Failed to delete file ${file.path}:`, unlinkError.message);
+                }
+
                 results.push({
                     filename: file.originalname,
                     success: false,
