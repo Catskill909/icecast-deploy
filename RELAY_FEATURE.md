@@ -40,19 +40,25 @@
 | `server/db.js` | updateRelayStatus() | ✅ |
 | `src/pages/Stations.jsx` | Badge display logic | ✅ |
 
-### ❌ ROOT CAUSE FOUND: Port Mismatch
+### ✅ ROOT CAUSE FIXED: Port Mismatch (Commit `19e24fb`)
 
-**File:** `server/liquidsoopConfig.js` lines 69-70:
+**File:** `server/liquidsoopConfig.js` lines 69-70
+
+**Was:**
 ```javascript
-on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3001/api/encoder/${station.id}/connected"))
+on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3001/..."))
 ```
 
-**Problem:** 
-- This curl hits port **3001**
-- Node.js runs on port **3000** (set by supervisord.conf)
-- curl fails silently → API never receives request → badge never updates
+**Now:**
+```javascript
+on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3000/..."))
+```
 
-### The Complete Flow (What Happens Now)
+**Problem was:** 
+- curl was hitting port **3001** but Node.js runs on **3000**
+- curl failed silently → API never received request → badge never updated
+
+### The Complete Flow (After Fix)
 
 ```
 1. Mixxx connects to Liquidsoap port 8001     ✅
