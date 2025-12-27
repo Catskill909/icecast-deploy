@@ -1099,7 +1099,7 @@ export default function Playlists() {
                             style={style}
                         >
                             <div className="px-3 py-2 text-xs text-[#64748b] uppercase tracking-wide border-b border-[#2d3555] font-semibold truncate">
-                                Add "{activeFile.title || activeFile.filename}"
+                                ADD TO PLAYLIST
                             </div>
                             <div className="max-h-56 overflow-y-auto">
                                 {playlists.length === 0 ? (
