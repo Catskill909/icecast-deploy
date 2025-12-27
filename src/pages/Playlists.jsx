@@ -717,61 +717,30 @@ export default function Playlists() {
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            {/* Add to Playlist dropdown */}
-                                                            <div className="relative">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setAddToPlaylistMenu(addToPlaylistMenu === file.id ? null : file.id);
-                                                                    }}
-                                                                    className="p-1.5 rounded hover:bg-[#4b7baf]/20 text-[#4b7baf]"
-                                                                    title="Add to playlist"
-                                                                >
-                                                                    <Plus className="w-4 h-4" />
-                                                                </button>
-
-                                                                {/* Playlist Dropdown */}
-                                                                {addToPlaylistMenu === file.id && (
-                                                                    <div className="absolute right-0 top-full mt-1 w-48 bg-[#1e2337] rounded-lg shadow-xl border border-[#2d3555] z-50 py-1">
-                                                                        <div className="px-3 py-2 text-xs text-[#64748b] uppercase tracking-wide border-b border-[#2d3555]">
-                                                                            Add to Playlist
-                                                                        </div>
-                                                                        {playlists.length === 0 ? (
-                                                                            <div className="px-3 py-2 text-sm text-[#8896ab]">
-                                                                                No playlists yet
-                                                                            </div>
-                                                                        ) : (
-                                                                            playlists.map(pl => (
-                                                                                <button
-                                                                                    key={pl.id}
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        addToAnyPlaylist(file.id, pl.id);
-                                                                                    }}
-                                                                                    className="w-full text-left px-3 py-2 text-sm text-[#8896ab] hover:bg-[#151b30] hover:text-white flex items-center gap-2"
-                                                                                >
-                                                                                    <ListMusic className="w-4 h-4 text-[#4b7baf]" />
-                                                                                    {pl.name}
-                                                                                </button>
-                                                                            ))
-                                                                        )}
-                                                                        <div className="border-t border-[#2d3555] mt-1 pt-1">
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setAddToPlaylistMenu(null);
-                                                                                    setShowNewPlaylist(true);
-                                                                                    setActiveTab('playlists');
-                                                                                }}
-                                                                                className="w-full text-left px-3 py-2 text-sm text-[#4b7baf] hover:bg-[#151b30] flex items-center gap-2"
-                                                                            >
-                                                                                <Plus className="w-4 h-4" />
-                                                                                Create New Playlist
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // Toggle or open new
+                                                                    if (addToPlaylistMenu?.id === file.id) {
+                                                                        setAddToPlaylistMenu(null);
+                                                                    } else {
+                                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                                        // Show on top of everything
+                                                                        setAddToPlaylistMenu({
+                                                                            id: file.id,
+                                                                            x: rect.right,
+                                                                            y: rect.bottom
+                                                                        });
+                                                                    }
+                                                                }}
+                                                                className={`w-8 h-8 flex items-center justify-center rounded transition-all shadow-sm ${addToPlaylistMenu?.id === file.id
+                                                                        ? 'bg-[#4b7baf] text-white ring-2 ring-[#4b7baf]/30'
+                                                                        : 'bg-[#1e2337] border border-[#2d3555] text-[#4b7baf] hover:bg-[#4b7baf] hover:text-white hover:border-[#4b7baf]'
+                                                                    }`}
+                                                                title="Add to playlist"
+                                                            >
+                                                                <Plus className="w-4 h-4" />
+                                                            </button>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); handleDeleteFile(file); }}
                                                                 className="p-1.5 rounded hover:bg-red-500/20 text-red-400"
@@ -1099,6 +1068,60 @@ export default function Playlists() {
                 confirmText="Delete"
                 confirmVariant="danger"
             />
+
+            {/* Fixed Add to Playlist Menu */}
+            {addToPlaylistMenu && (() => {
+                const activeFile = library.find(f => f.id === addToPlaylistMenu.id);
+                if (!activeFile) return null; // Should not happen
+
+                return (
+                    <>
+                        <div className="fixed inset-0 z-[60]" onClick={() => setAddToPlaylistMenu(null)} />
+                        <div
+                            className="fixed z-[70] w-56 bg-[#1e2337] rounded-lg shadow-xl border border-[#2d3555] py-1 animate-in fade-in zoom-in-95 duration-100"
+                            style={{
+                                top: addToPlaylistMenu.y + 6,
+                                left: Math.max(16, addToPlaylistMenu.x - 224)
+                            }}
+                        >
+                            <div className="px-3 py-2 text-xs text-[#64748b] uppercase tracking-wide border-b border-[#2d3555] font-semibold truncate">
+                                Add "{activeFile.title || activeFile.filename}"
+                            </div>
+                            <div className="max-h-56 overflow-y-auto">
+                                {playlists.length === 0 ? (
+                                    <div className="px-3 py-4 text-sm text-[#8896ab] text-center italic">
+                                        No playlists found
+                                    </div>
+                                ) : (
+                                    playlists.map(pl => (
+                                        <button
+                                            key={pl.id}
+                                            onClick={() => addToAnyPlaylist(activeFile.id, pl.id)}
+                                            className="w-full text-left px-3 py-2.5 text-sm text-[#c8d0df] hover:bg-[#4b7baf] hover:text-white flex items-center gap-2 transition-colors border-l-2 border-transparent hover:border-white"
+                                        >
+                                            <ListMusic className="w-4 h-4 shrink-0" />
+                                            <span className="truncate">{pl.name}</span>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                            <div className="border-t border-[#2d3555] mt-1 pt-1">
+                                <button
+                                    onClick={() => {
+                                        setAddToPlaylistMenu(null);
+                                        setShowNewPlaylist(true);
+                                        setActiveTab('playlists');
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm text-[#4b7baf] hover:bg-[#151b30] flex items-center gap-2 font-medium"
+                                >
+                                    <Plus className="w-4 h-4 shrink-0" />
+                                    New Playlist
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                );
+            })()}
 
             {/* Alert Modal */}
             <AlertModal
