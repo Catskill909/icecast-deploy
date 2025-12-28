@@ -62,6 +62,20 @@ try {
     db.exec(`ALTER TABLE stations ADD COLUMN relay_status TEXT DEFAULT 'idle'`);
 } catch (e) { /* Column already exists */ }
 
+// Migration: AutoDJ columns for playlist-based automation
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN autodj_enabled INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN autodj_playlist_id INTEGER DEFAULT NULL`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN autodj_mode TEXT DEFAULT 'shuffle'`);
+} catch (e) { /* Column already exists */ }
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN autodj_crossfade INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+
 // Migration: Update old stream URLs to new subdomain format
 // Old format: https://icecast.supersoul.top/stream/mount
 // New format: https://stream.supersoul.top/mount

@@ -43,16 +43,16 @@ COPY --from=builder /app/dist ./dist
 # Copy server code
 COPY server ./server
 
-# Create directories
-RUN mkdir -p /app/data /var/log/icecast2 /var/log/supervisor
+# Create directories for data persistence
+RUN mkdir -p /app/data /app/data/audiofiles /app/data/playlists /var/log/icecast2 /var/log/supervisor
 VOLUME ["/app/data"]
 
 # Copy Icecast config
 COPY icecast.xml /etc/icecast2/icecast.xml
 RUN chmod 666 /etc/icecast2/icecast.xml
 
-# Fix Icecast permissions
-RUN chown -R liquidsoap:liquidsoap /var/log/icecast2
+# Fix permissions for liquidsoap user
+RUN chown -R liquidsoap:liquidsoap /app/data /var/log/icecast2
 
 # Supervisor config
 COPY supervisord.conf /etc/supervisor/conf.d/streamdock.conf
@@ -71,6 +71,7 @@ ENV ICECAST_PUBLIC_HOST=icecast.supersoul.top
 ENV ICECAST_SOURCE_PASSWORD=streamdock_source
 ENV DATABASE_PATH=/app/data/stations.db
 ENV AUDIO_FILES_PATH=/app/data/audiofiles
+ENV PLAYLISTS_PATH=/app/data/playlists
 
 # Ports
 EXPOSE 3000
