@@ -178,7 +178,8 @@ export default function Diagnostics() {
                                             <th className="text-left py-2">Live</th>
                                             <th className="text-left py-2">Relay Enabled</th>
                                             <th className="text-left py-2">Relay Mode</th>
-                                            <th className="text-left py-2">Relay URL</th>
+                                            <th className="text-left py-2">AutoDJ</th>
+                                            <th className="text-left py-2">Playlist</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -195,8 +196,15 @@ export default function Diagnostics() {
                                                     </span>
                                                 </td>
                                                 <td className="py-2 text-white">{station.relay_mode || '-'}</td>
-                                                <td className="py-2 text-[#64748b] text-xs max-w-[200px] truncate">
-                                                    {station.relay_url || '-'}
+                                                <td className="py-2">
+                                                    <span className={station.autodj_enabled ? 'text-[#9333ea]' : 'text-[#64748b]'}>
+                                                        {station.autodj_enabled ? 'YES' : 'NO'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-2 text-[#64748b] text-xs">
+                                                    {station.autodj_enabled && station.autodj_playlist_id
+                                                        ? `Playlist ${station.autodj_playlist_id} (${station.autodj_mode})`
+                                                        : '-'}
                                                 </td>
                                             </tr>
                                         ))}
@@ -310,18 +318,18 @@ export default function Diagnostics() {
                                             key={level}
                                             onClick={() => setLogLevelFilter(level)}
                                             className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${logLevelFilter === level
-                                                    ? level === 'ERROR'
-                                                        ? 'bg-red-400/20 text-red-400'
-                                                        : level === 'WARN'
-                                                            ? 'bg-yellow-400/20 text-yellow-400'
-                                                            : level === 'RELAY'
-                                                                ? 'bg-green-400/20 text-green-400'
-                                                                : level === 'FALLBACK'
-                                                                    ? 'bg-orange-400/20 text-orange-400'
-                                                                    : level === 'DEBUG'
-                                                                        ? 'bg-blue-400/20 text-blue-400'
-                                                                        : 'bg-[#4b7baf] text-white'
-                                                    : 'bg-[#1e2a45] text-[#64748b] hover:text-white'
+                                                ? level === 'ERROR'
+                                                    ? 'bg-red-400/20 text-red-400'
+                                                    : level === 'WARN'
+                                                        ? 'bg-yellow-400/20 text-yellow-400'
+                                                        : level === 'RELAY'
+                                                            ? 'bg-green-400/20 text-green-400'
+                                                            : level === 'FALLBACK'
+                                                                ? 'bg-orange-400/20 text-orange-400'
+                                                                : level === 'DEBUG'
+                                                                    ? 'bg-blue-400/20 text-blue-400'
+                                                                    : 'bg-[#4b7baf] text-white'
+                                                : 'bg-[#1e2a45] text-[#64748b] hover:text-white'
                                                 }`}
                                         >
                                             {level === 'all' ? 'All' : level}
@@ -345,11 +353,11 @@ export default function Diagnostics() {
                                         <div
                                             key={i}
                                             className={`py-1 flex gap-2 hover:bg-[#1a2744]/50 ${log.includes('[ERROR]') ? 'text-red-400' :
-                                                    log.includes('[FALLBACK]') ? 'text-[#f59e0b]' :
-                                                        log.includes('[RELAY]') ? 'text-green-400' :
-                                                            log.includes('[DEBUG]') ? 'text-blue-400' :
-                                                                log.includes('[WARN]') ? 'text-yellow-400' :
-                                                                    'text-[#94a3b8]'
+                                                log.includes('[FALLBACK]') ? 'text-[#f59e0b]' :
+                                                    log.includes('[RELAY]') ? 'text-green-400' :
+                                                        log.includes('[DEBUG]') ? 'text-blue-400' :
+                                                            log.includes('[WARN]') ? 'text-yellow-400' :
+                                                                'text-[#94a3b8]'
                                                 }`}
                                         >
                                             <span className="text-[#64748b] select-none w-8 text-right flex-shrink-0">

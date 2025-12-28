@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Headphones, ExternalLink, Pencil, Loader2, Globe, Rss } from 'lucide-react';
+import { Radio, Plus, Copy, Check, Trash2, Eye, EyeOff, AlertTriangle, Play, Pause, Headphones, ExternalLink, Pencil, Loader2, Globe, Rss, Music } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -139,6 +139,13 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                                 }`}>
                                 <Rss className="w-2.5 h-2.5" />
                                 {station.relayMode === 'primary' ? 'RELAY' : 'AUTO FALLBACK'}
+                            </span>
+                        )}
+                        {/* AutoDJ indicator */}
+                        {station.autodj_enabled && (
+                            <span className="flex items-center gap-1 px-2 py-0.5 bg-[#9333ea]/20 text-[#9333ea] border border-[#9333ea]/30 text-[10px] font-medium rounded-full">
+                                <Music className="w-2.5 h-2.5" />
+                                AUTO DJ
                             </span>
                         )}
                     </div>
