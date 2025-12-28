@@ -106,8 +106,8 @@ function generateIcecastConfig() {
     <security>
         <chroot>0</chroot>
         <changeowner>
-            <user>node</user>
-            <group>node</group>
+            <user>liquidsoap</user>
+            <group>liquidsoap</group>
         </changeowner>
     </security>
 
