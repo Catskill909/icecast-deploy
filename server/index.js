@@ -516,7 +516,11 @@ app.get('/api/stations', (req, res) => {
             relayUrl: s.relay_url || '',
             relayEnabled: s.relay_enabled === 1,
             relayMode: s.relay_mode || 'fallback',
-            relayStatus: s.relay_status || 'idle'
+            relayStatus: s.relay_status || 'idle',
+            autodj_enabled: s.autodj_enabled === 1,
+            autodj_playlist_id: s.autodj_playlist_id || null,
+            autodj_mode: s.autodj_mode || 'shuffle',
+            autodj_crossfade: s.autodj_crossfade || 0
         })));
     } catch (error) {
         console.error('Error fetching stations:', error);
