@@ -358,7 +358,7 @@ const setActivePlaylist = (id) => {
 // ==========================================
 const getPlaylistTracks = (playlistId) => {
     return db.prepare(`
-        SELECT pt.*, af.filename, af.title, af.artist, af.album, af.duration, af.format
+        SELECT pt.*, af.filename, af.filepath, af.title, af.artist, af.album, af.duration, af.format
         FROM playlist_tracks pt
         JOIN audio_files af ON pt.audio_file_id = af.id
         WHERE pt.playlist_id = ?
