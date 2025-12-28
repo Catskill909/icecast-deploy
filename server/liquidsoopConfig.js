@@ -3,6 +3,7 @@
  * 
  * Generates radio.liq dynamically based on stations in database.
  * Each station gets its own harbor input and Icecast output.
+ * Supports AutoDJ playlist playback as fallback source.
  * 
  * FIX: No mksafe() on live input - station only shows LIVE when encoder connected.
  */
@@ -10,6 +11,7 @@
 import fs from 'fs';
 import { exec } from 'child_process';
 import * as db from './db.js';
+import { generateM3UPlaylist, getM3UPath } from './playlistGenerator.js';
 
 // Icecast config from environment
 const ICECAST_HOST = process.env.ICECAST_HOST || '127.0.0.1';
@@ -21,98 +23,141 @@ const LIQUIDSOAP_CONFIG_PATH = '/app/radio.liq';
 
 /**
  * Generate Liquidsoap config for a single station
- * NO mksafe() on live input - mount only active when encoder connected
+ * Supports: Live encoder, AutoDJ playlists, HTTP relay
+ * Priority: Live > AutoDJ/Relay > Silence
  */
-function generateStationConfig(station) {
+async function generateStationConfig(station) {
     const id = station.id.replace(/-/g, '_');
     const mount = station.mount_point.replace('/', '');
+
+    // Relay configuration
     const relayUrl = station.relay_url || null;
     const relayMode = station.relay_mode || 'fallback';
     const relayEnabled = station.relay_enabled === 1 || station.relay_enabled === true;
+
+    // AutoDJ configuration
+    const autoDJEnabled = station.autodj_enabled === 1 || station.autodj_enabled === true;
+    const playlistId = station.autodj_playlist_id;
+    const autoDJMode = station.autodj_mode || 'shuffle';
+    const crossfade = station.autodj_crossfade || 0;
 
     let config = `
 # ==========================================
 # Station: ${station.name}
 # Mount: ${station.mount_point}
-# Mode: ${relayMode}
 # ==========================================
 
 `;
 
-    // For PRIMARY mode: only use relay (no live input) - BUT ONLY IF RELAY IS ENABLED
+    // ═══════════════════════════════════════════════════════
+    // VALIDATION: Mutual Exclusivity (Relay vs AutoDJ)
+    // ═══════════════════════════════════════════════════════
+    if (relayEnabled && autoDJEnabled) {
+        throw new Error(`Station "${station.name}": Cannot have both Relay and AutoDJ enabled simultaneously`);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // MODE 1: RELAY PRIMARY (No live encoder, relay only)
+    // ═══════════════════════════════════════════════════════
     if (relayEnabled && relayMode === 'primary' && relayUrl) {
-        config += `# Primary mode: relay only
-source_${id} = input.http("${relayUrl}")
-source_${id} = mksafe(source_${id})
+        config += `# Primary Relay Mode: relay stream only\n`;
+        config += `source_${id} = input.http("${relayUrl}")\n`;
+        config += `source_${id} = mksafe(source_${id})\n\n`;
 
-output.icecast(
-    %mp3(bitrate=128),
-    host="${ICECAST_HOST}",
-    port=${ICECAST_PORT},
-    password="${ICECAST_SOURCE_PASSWORD}",
-    mount="${station.mount_point}",
-    name="${station.name}",
-    description="${station.description || 'StreamDock station'}",
-    source_${id}
-)
+        config += `output.icecast(\n`;
+        config += `    %mp3(bitrate=128),\n`;
+        config += `    host="${ICECAST_HOST}",\n`;
+        config += `    port=${ICECAST_PORT},\n`;
+        config += `    password="${ICECAST_SOURCE_PASSWORD}",\n`;
+        config += `    mount="${station.mount_point}",\n`;
+        config += `    name="${station.name}",\n`;
+        config += `    description="${station.description || 'StreamDock station'}",\n`;
+        config += `    source_${id}\n`;
+        config += `)\n\n`;
 
-`;
+        return config;
     }
-    // For FALLBACK mode or no relay: live input
-    else {
-        // Live input from encoder with webhook callbacks
-        config += `# Live input from encoder with webhook callbacks
-live_${id} = input.harbor(
-    "${mount}",
-    port=8001,
-    password="${ICECAST_SOURCE_PASSWORD}",
-    on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3000/api/encoder/${station.id}/connected")),
-    on_disconnect=fun() -> ignore(process.run("curl -s -X POST http://127.0.0.1:3000/api/encoder/${station.id}/disconnected"))
-)
 
-`;
+    // ═══════════════════════════════════════════════════════
+    // MODES 2-5: Live Encoder as Primary Source
+    // ═══════════════════════════════════════════════════════
 
-        // If relay fallback is configured
-        if (relayEnabled && relayUrl) {
-            config += `# HTTP fallback source
-http_${id} = input.http("${relayUrl}")
+    // Always create live harbor input (for all non-primary-relay modes)
+    config += `# Live encoder input (Harbor)\n`;
+    config += `live_${id} = input.harbor(\n`;
+    config += `    "${mount}",\n`;
+    config += `    port=8001,\n`;
+    config += `    password="${ICECAST_SOURCE_PASSWORD}",\n`;
+    config += `    on_connect=fun(_) -> ignore(process.run("curl -s -X POST http://127.0.0.1:3000/api/encoder/${station.id}/connected")),\n`;
+    config += `    on_disconnect=fun() -> ignore(process.run("curl -s -X POST http://127.0.0.1:3000/api/encoder/${station.id}/disconnected"))\n`;
+    config += `)\n\n`;
 
-# Priority: live first, then HTTP fallback
-source_${id} = fallback(
-    track_sensitive=false,
-    [live_${id}, http_${id}]
-)
+    // Build fallback chain based on station configuration
+    const sources = [`live_${id}`]; // Live encoder always first priority
 
-output.icecast(
-    %mp3(bitrate=128),
-    host="${ICECAST_HOST}",
-    port=${ICECAST_PORT},
-    password="${ICECAST_SOURCE_PASSWORD}",
-    mount="${station.mount_point}",
-    name="${station.name}",
-    description="${station.description || 'StreamDock station'}",
-    fallible=true,
-    source_${id}
-)
-
-`;
-        } else {
-            config += `# No fallback - output live input directly
-output.icecast(
-    %mp3(bitrate=128),
-    host="${ICECAST_HOST}",
-    port=${ICECAST_PORT},
-    password="${ICECAST_SOURCE_PASSWORD}",
-    mount="${station.mount_point}",
-    name="${station.name}",
-    description="${station.description || 'StreamDock station'}",
-    fallible=true,
-    live_${id}
-)
-
-`;
+    // ═══════════════════════════════════════════════════════
+    // MODE 2: Live + AutoDJ Fallback
+    // ═══════════════════════════════════════════════════════
+    if (autoDJEnabled && playlistId) {
+        // Generate M3U playlist file
+        let m3uPath;
+        try {
+            m3uPath = await generateM3UPlaylist(playlistId);
+            console.log(`[LIQUIDSOAP] Generated M3U for station "${station.name}": ${m3uPath}`);
+        } catch (error) {
+            console.error(`[LIQUIDSOAP] Failed to generate M3U for station "${station.name}":`, error.message);
+            throw new Error(`AutoDJ playlist generation failed: ${error.message}`);
         }
+
+        config += `# AutoDJ fallback source from playlist ID ${playlistId}\n`;
+
+        // Liquidsoap 2.2.5 playlist syntax
+        const liqMode = autoDJMode === 'shuffle' ? 'randomize' : 'normal';
+        config += `autodj_${id} = playlist(mode="${liqMode}", reload_mode="watch", "${m3uPath}")\n`;
+        config += `autodj_${id} = mksafe(autodj_${id})\n`;
+
+        // Add crossfade if configured
+        if (crossfade > 0 && crossfade <= 10) {
+            config += `autodj_${id} = crossfade(duration=${crossfade}.0, autodj_${id})\n`;
+        }
+
+        config += `\n`;
+        sources.push(`autodj_${id}`);
     }
+
+    // ═══════════════════════════════════════════════════════
+    // MODE 3: Live + Relay Fallback
+    // ═══════════════════════════════════════════════════════
+    else if (relayEnabled && relayUrl) {
+        config += `# HTTP relay fallback\n`;
+        config += `http_${id} = input.http("${relayUrl}")\n\n`;
+        sources.push(`http_${id}`);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Final Fallback Chain & Output
+    // ═══════════════════════════════════════════════════════
+
+    if (sources.length > 1) {
+        config += `# Fallback priority chain: ${sources.join(' > ')}\n`;
+        config += `source_${id} = fallback(track_sensitive=false, [${sources.join(', ')}])\n\n`;
+    } else {
+        config += `# No fallback - live only\n`;
+        config += `source_${id} = ${sources[0]}\n\n`;
+    }
+
+    // Output to Icecast
+    config += `output.icecast(\n`;
+    config += `    %mp3(bitrate=128),\n`;
+    config += `    host="${ICECAST_HOST}",\n`;
+    config += `    port=${ICECAST_PORT},\n`;
+    config += `    password="${ICECAST_SOURCE_PASSWORD}",\n`;
+    config += `    mount="${station.mount_point}",\n`;
+    config += `    name="${station.name}",\n`;
+    config += `    description="${station.description || 'StreamDock station'}",\n`;
+    config += `    fallible=true,\n`;
+    config += `    source_${id}\n`;
+    config += `)\n\n`;
 
     return config;
 }
@@ -120,7 +165,7 @@ output.icecast(
 /**
  * Generate complete radio.liq content
  */
-function generateLiquidsoapConfig() {
+async function generateLiquidsoapConfig() {
     const stations = db.getAllStations();
 
     let config = `#!/usr/bin/liquidsoap
@@ -151,8 +196,10 @@ settings.harbor.bind_addrs.set(["0.0.0.0"])
 
 `;
     } else {
+        // Generate configs for all stations (await each one)
         for (const station of stations) {
-            config += generateStationConfig(station);
+            const stationConfig = await generateStationConfig(station);
+            config += stationConfig;
         }
     }
 
@@ -172,7 +219,7 @@ print("Listening on port 8001 for encoder connections")
  */
 export async function regenerateLiquidsoapConfig() {
     try {
-        const config = generateLiquidsoapConfig();
+        const config = await generateLiquidsoapConfig();
         const stations = db.getAllStations();
 
         fs.writeFileSync(LIQUIDSOAP_CONFIG_PATH, config, 'utf8');
