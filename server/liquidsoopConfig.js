@@ -39,8 +39,8 @@ function generateStationConfig(station) {
 
 `;
 
-    // For PRIMARY mode: only use relay (no live input)
-    if (relayMode === 'primary' && relayEnabled && relayUrl) {
+    // For PRIMARY mode: only use relay (no live input) - BUT ONLY IF RELAY IS ENABLED
+    if (relayEnabled && relayMode === 'primary' && relayUrl) {
         config += `# Primary mode: relay only
 source_${id} = input.http("${relayUrl}")
 source_${id} = mksafe(source_${id})
