@@ -55,7 +55,7 @@ RUN chmod 666 /etc/icecast2/icecast.xml
 RUN chown -R liquidsoap:liquidsoap /var/log/icecast2
 
 # Supervisor config
-COPY supervisord.conf /etc/supervisord.conf
+COPY supervisord.conf /etc/supervisor/conf.d/streamdock.conf
 
 # Liquidsoap config (template only - regenerated on startup with webhooks)
 COPY radio.liq /app/radio.liq.template
@@ -80,4 +80,4 @@ EXPOSE 8001
 # Start supervisor
 # Override the Liquidsoap image's ENTRYPOINT so our CMD runs directly
 ENTRYPOINT []
-CMD ["supervisord", "-n", "-c", "/etc/supervisord.conf"]
+CMD ["supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
