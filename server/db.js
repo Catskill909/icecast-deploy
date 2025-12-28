@@ -131,11 +131,17 @@ const deleteStation = (id) => {
 };
 
 const updateStation = (id, updates) => {
-    const { name, description, genre, logoUrl, websiteUrl, alertEmails, relayUrl, relayEnabled, relayMode } = updates;
+    const {
+        name, description, genre, logoUrl, websiteUrl, alertEmails,
+        relayUrl, relayEnabled, relayMode,
+        autodj_enabled, autodj_playlist_id, autodj_mode, autodj_crossfade
+    } = updates;
     return db.prepare(`
         UPDATE stations 
         SET name = ?, description = ?, genre = ?, logo_url = ?, website_url = ?, alert_emails = ?, 
-            relay_url = ?, relay_enabled = ?, relay_mode = ?, updated_at = ?
+            relay_url = ?, relay_enabled = ?, relay_mode = ?,
+            autodj_enabled = ?, autodj_playlist_id = ?, autodj_mode = ?, autodj_crossfade = ?,
+            updated_at = ?
         WHERE id = ?
     `).run(
         name,
@@ -147,6 +153,10 @@ const updateStation = (id, updates) => {
         relayUrl || null,
         relayEnabled ? 1 : 0,
         relayMode || 'fallback',
+        autodj_enabled ? 1 : 0,
+        autodj_playlist_id || null,
+        autodj_mode || 'shuffle',
+        autodj_crossfade || 0,
         new Date().toISOString(),
         id
     );
