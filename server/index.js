@@ -550,6 +550,10 @@ app.get('/api/stations/:id', (req, res) => {
             relayEnabled: station.relay_enabled === 1,
             relayMode: station.relay_mode || 'fallback',
             relayStatus: station.relay_status || 'idle',
+            autodj_enabled: station.autodj_enabled === 1,
+            autodj_playlist_id: station.autodj_playlist_id || null,
+            autodj_mode: station.autodj_mode || 'shuffle',
+            autodj_crossfade: station.autodj_crossfade || 0,
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
                 port: LIQUIDSOAP_PORT,
