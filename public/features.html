@@ -456,6 +456,34 @@
                 </ul>
             </div>
 
+            <div class="feature-card" onclick="openModal('playlist-manager')" style="cursor: pointer;">
+                <h3>
+                    <i class="fa-solid fa-list-music feature-icon"></i> Playlist Manager
+                    <span class="integration-badge">New</span>
+                </h3>
+                <ul>
+                    <li>Upload MP3/AAC files with drag-and-drop</li>
+                    <li>Create unlimited playlists</li>
+                    <li>Drag-and-drop track reordering</li>
+                    <li>Quick '+ Add to Playlist' button</li>
+                    <li>Auto-extract ID3 tags and artwork</li>
+                </ul>
+            </div>
+
+            <div class="feature-card" onclick="openModal('autodj')" style="cursor: pointer;">
+                <h3>
+                    <i class="fa-solid fa-robot feature-icon"></i> AutoDJ
+                    <span class="integration-badge">New</span>
+                </h3>
+                <ul>
+                    <li>24/7 automated playback from playlists</li>
+                    <li>Primary or Fallback modes</li>
+                    <li>Configurable crossfade transitions</li>
+                    <li>Purple badge on station cards</li>
+                    <li>No encoder required (Primary mode)</li>
+                </ul>
+            </div>
+
         </div>
     </main>
 
@@ -529,6 +557,16 @@
                 title: 'Stream Relay & Fallback',
                 description: 'Pull audio from external streams without an encoder. Auto-fallback mode switches to backup URL when your encoder disconnects. Green/Orange badge indicates active source.',
                 screenshots: ['relay-settings.png', 'fallback-badge.png']
+            },
+            'playlist-manager': {
+                title: 'Playlist Manager',
+                description: 'Upload and organize your audio library. Create unlimited playlists, reorder tracks with drag-and-drop, and add tracks from your library with a single click. Auto-extracts ID3 tags, artwork, duration, and bitrate for all uploaded files.',
+                screenshots: ['library-view.png', 'playlist-builder.png', 'track-details.png']
+            },
+            'autodj': {
+                title: 'AutoDJ - 24/7 Automation',
+                description: 'Stream from playlists automatically without an encoder. Primary mode plays continuously, or use Fallback mode to automatically activate when your encoder disconnects. Features smooth crossfade transitions and shows a purple "AUTO DJ" badge on station cards.',
+                screenshots: ['autodj-settings.png', 'autodj-badge.png']
             }
         };
 

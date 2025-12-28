@@ -46,11 +46,22 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Play/Pause Controls**: Toggle stream audio in-browser
 - **Auto-Stop**: Stops playback when station goes offline
 
-### 🎵 Playlist Manager (Beta)
-- **Audio Library**: Upload and manage MP3/AAC files
-- **Playlist Builder**: Create and edit playlists with drag-and-drop
-- **Track Preview**: Listen to tracks directly in the list
-- **Metadata Support**: auto-extraction of ID3 tags and artwork
+### 🎵 Playlist Manager
+- **Audio Library**: Upload and manage MP3/AAC files with drag-and-drop
+- **Playlist Builder**: Create unlimited playlists with drag-and-drop track reordering
+- **Add to Playlist**: Quick '+' button to add library tracks to any playlist
+- **Track Preview**: Built-in audio player for library tracks
+- **Metadata Support**: Auto-extraction of ID3 tags, artwork, duration, and bitrate
+- **File Management**: Delete tracks, rename playlists, and organize your library
+- **Track Details**: View comprehensive file info including format, sample rate, and channels
+
+### 🤖 AutoDJ
+- **Automated Playback**: Stream from playlists 24/7 without an encoder
+- **Dual Modes**: Primary (always-on) or Fallback (activates when encoder drops)
+- **Playlist Integration**: Select any playlist as your AutoDJ source
+- **Crossfade**: Smooth transitions between tracks with configurable fade duration
+- **Live Badge**: Purple "AUTO DJ" badge on station cards shows active status
+- **Diagnostics**: View AutoDJ settings and status in the diagnostics page
 
 ### 📊 Dashboard
 - **Station Overview**: Quick stats on active vs total stations

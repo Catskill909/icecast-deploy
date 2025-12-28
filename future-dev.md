@@ -10,6 +10,31 @@ Brainstorming session for StreamDock features and StationDock integration.
 
 ---
 
+## 🎵 Playlist Management & AutoDJ (COMPLETED - Dec 2024)
+
+### Playlist System ✅
+- [x] **Audio Library** - Upload MP3/AAC files with drag-and-drop
+- [x] **Metadata Extraction** - Auto-parse ID3 tags, artwork, duration, bitrate
+- [x] **Playlist Builder** - Create unlimited playlists
+- [x] **Drag-and-Drop Reordering** - Rearrange tracks within playlists
+- [x] **Add to Playlist** - Quick '+' button from library view
+- [x] **Track Preview** - Built-in audio player for library tracks
+- [x] **File Management** - Delete tracks, rename playlists
+- [x] **Track Details Modal** - View comprehensive file info
+
+### AutoDJ Feature ✅
+- [x] **Enable/Disable Toggle** - Per-station AutoDJ activation
+- [x] **Playlist Selection** - Choose any playlist as AutoDJ source
+- [x] **Primary Mode** - Use AutoDJ as sole source (24/7 automation)
+- [x] **Fallback Mode** - AutoDJ activates when encoder disconnects
+- [x] **Crossfade** - Smooth transitions with configurable fade duration (0-10s)
+- [x] **Station Card Badge** - Purple "AUTO DJ" indicator on station cards
+- [x] **Diagnostics Integration** - View AutoDJ settings and playlist info
+- [x] **Liquidsoap Integration** - Generate dynamic configs with AutoDJ sources
+- [x] **Database Schema** - `autodj_enabled`, `autodj_playlist_id`, `autodj_mode`, `autodj_crossfade`
+
+---
+
 ## 🔗 StationDock Integration
 
 ### Stream Source Integration
@@ -418,9 +443,11 @@ Based on immediate needs for public radio stations:
 5. **Secure Icecast status page** ✅ DONE (Dec 2024)
 6. **Real-time alerts (stream live/offline)** ✅ DONE (Dec 2024)
 7. **Listener milestone alerts** ✅ DONE (Dec 2024)
-8. **DJ account management**
-9. **Alert emails when stream drops** ✅ DONE (Dec 2024)
-10. **Listener count history**
+8. **Playlist management system** ✅ DONE (Dec 2024)
+9. **AutoDJ with playlist integration** ✅ DONE (Dec 2024)
+10. **Alert emails when stream drops** ✅ DONE (Dec 2024)
+11. **DJ account management**
+12. **Listener count history**
 
 
 ---

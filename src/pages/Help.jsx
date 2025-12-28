@@ -231,6 +231,116 @@ const ARTICLES = {
                 </div>
             </div>
         )
+    },
+    'playlists': {
+        title: 'Playlist Manager',
+        content: (
+            <div className="space-y-4 text-[#8896ab]">
+                <p>The Playlist Manager allows you to upload audio files, organize them into playlists, and use them with AutoDJ for automated broadcasting.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Audio Library</h3>
+                <p>Your library is where all uploaded audio files are stored. Access it from the <strong>Playlists</strong> page in the sidebar.</p>
+
+                <h4 className="text-white font-medium mt-4">Uploading Files</h4>
+                <ol className="list-decimal pl-5 space-y-2">
+                    <li>Navigate to <strong>Playlists → Library</strong></li>
+                    <li>Click the <strong>"Upload Files"</strong> button or drag-and-drop files directly onto the library area</li>
+                    <li>Supported formats: <strong>MP3, AAC</strong></li>
+                    <li>StreamDock automatically extracts ID3 tags, artwork, duration, bitrate, and other metadata</li>
+                </ol>
+
+                <h4 className="text-white font-medium mt-4">Library Features</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Preview:</strong> Click the Play button to listen to any track</li>
+                    <li><strong>Track Details:</strong> Click the Info icon to view comprehensive file information</li>
+                    <li><strong>Add to Playlist:</strong> Click the '+' button next to any track to add it to a playlist</li>
+                    <li><strong>Delete Files:</strong> Remove unwanted files from your library</li>
+                    <li><strong>Sort & Search:</strong> Organize your library by title, artist, duration, or file size</li>
+                </ul>
+
+                <h3 className="text-white font-bold text-lg mt-6">Creating Playlists</h3>
+                <ol className="list-decimal pl-5 space-y-2">
+                    <li>Click <strong>"New Playlist"</strong> in the playlists sidebar</li>
+                    <li>Enter a name for your playlist</li>
+                    <li>Click <strong>Create</strong></li>
+                </ol>
+
+                <h3 className="text-white font-bold text-lg mt-6">Managing Playlists</h3>
+                <h4 className="text-white font-medium mt-4">Adding Tracks</h4>
+                <ul className="list-disc pl-5 space-y-2">
+                    <li><strong>From Library:</strong> Click the '+' icon next to any track and select a playlist</li>
+                    <li><strong>From Playlist View:</strong> Click "Add Tracks" and browse your library</li>
+                </ul>
+
+                <h4 className="text-white font-medium mt-4">Reordering Tracks</h4>
+                <p>Drag and drop tracks within a playlist to change the playback order. Grab the grip icon on the left side of each track.</p>
+
+                <h4 className="text-white font-medium mt-4">Removing Tracks</h4>
+                <p>Click the trash icon next to any track to remove it from the playlist (this does not delete the file from your library).</p>
+
+                <div className="bg-[#4b7baf]/10 p-4 rounded-lg border border-[#4b7baf]/20 mt-4">
+                    <p className="text-[#4b7baf] text-sm font-medium">💡 Tip: Create multiple playlists for different shows, genres, or times of day. You can quickly switch between them in AutoDJ settings.</p>
+                </div>
+            </div>
+        )
+    },
+    'autodj': {
+        title: 'AutoDJ - 24/7 Automation',
+        content: (
+            <div className="space-y-4 text-[#8896ab]">
+                <p>AutoDJ allows your station to broadcast continuously from a playlist without needing a live encoder. Perfect for overnight programming, backup content, or fully automated stations.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Setting Up AutoDJ</h3>
+                <ol className="list-decimal pl-5 space-y-2">
+                    <li>Create a playlist with at least one audio file (see <strong>Playlist Manager</strong>)</li>
+                    <li>Click <strong>Edit</strong> on any station card</li>
+                    <li>Scroll to the <strong>AutoDJ Settings</strong> section</li>
+                    <li>Toggle <strong>Enable AutoDJ</strong> on</li>
+                    <li>Select a <strong>Playlist</strong> from the dropdown</li>
+                    <li>Choose your <strong>Mode</strong> (Primary or Fallback)</li>
+                    <li>Set <strong>Crossfade Duration</strong> (0-10 seconds)</li>
+                    <li>Click <strong>Save Changes</strong></li>
+                </ol>
+
+                <h3 className="text-white font-bold text-lg mt-6">AutoDJ Modes</h3>
+                <div className="bg-[#0f1633] border border-[#1e2337] rounded-lg p-4 mt-2 space-y-4">
+                    <div>
+                        <h4 className="text-white font-medium">🎯 Primary Mode</h4>
+                        <p className="text-sm">AutoDJ is the main source. The station streams continuously from the selected playlist. No encoder is needed.</p>
+                        <p className="text-sm mt-1"><em>Best for: 24/7 automated stations, music-only channels, syndicated content</em></p>
+                    </div>
+                    <div className="pt-3 border-t border-[#1e2337]">
+                        <h4 className="text-white font-medium">🔄 Fallback Mode</h4>
+                        <p className="text-sm">Your live encoder is the primary source. If the encoder disconnects, AutoDJ automatically takes over and plays the playlist. When your encoder reconnects, it seamlessly switches back.</p>
+                        <p className="text-sm mt-1"><em>Best for: Live shows with backup content, preventing dead air during technical issues</em></p>
+                    </div>
+                </div>
+
+                <h3 className="text-white font-bold text-lg mt-6">Crossfade</h3>
+                <p>The crossfade setting creates smooth transitions between tracks by fading out the current song while fading in the next one.</p>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>0 seconds:</strong> Hard cuts (instant transition)</li>
+                    <li><strong>2-4 seconds:</strong> Natural, radio-style transitions</li>
+                    <li><strong>6-10 seconds:</strong> Long, smooth blends (club/mix style)</li>
+                </ul>
+
+                <h3 className="text-white font-bold text-lg mt-6">Visual Indicators</h3>
+                <p>When AutoDJ is active, you'll see a <strong className="text-[#9333ea]">purple "AUTO DJ" badge</strong> on the station card in the Stations page. You can also view AutoDJ settings in the <strong>Diagnostics</strong> page under Station Configuration.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Important Notes</h3>
+                <div className="bg-[#fbbf24]/10 p-4 rounded-lg border border-[#fbbf24]/20 mt-4">
+                    <ul className="space-y-2 text-sm text-[#fbbf24]">
+                        <li>⚠️ <strong>Relay + AutoDJ:</strong> You cannot enable both Relay and AutoDJ simultaneously. Choose one or connect a live encoder.</li>
+                        <li>⚠️ <strong>Empty Playlists:</strong> AutoDJ will not start if the selected playlist has no tracks. Add at least one file first.</li>
+                        <li>⚠️ <strong>Server Restart:</strong> Changing AutoDJ settings requires a Liquidsoap restart, which takes a few seconds.</li>
+                    </ul>
+                </div>
+
+                <div className="bg-[#4b7baf]/10 p-4 rounded-lg border border-[#4b7baf]/20 mt-4">
+                    <p className="text-[#4b7baf] text-sm font-medium">💡 Tip: Use AutoDJ in Fallback mode as a safety net for live shows. If your internet drops or your encoder crashes, listeners will hear music instead of silence.</p>
+                </div>
+            </div>
+        )
     }
 };
 
@@ -281,6 +391,8 @@ export default function Help() {
                 { id: 'alerts', label: "Understanding Alerts" },
                 { id: 'email-alerts', label: "Setting up Email Alerts" },
                 { id: 'relay-restreaming', label: "Stream Relay & Restreaming" },
+                { id: 'playlists', label: "Playlist Manager" },
+                { id: 'autodj', label: "AutoDJ - 24/7 Automation" },
                 { id: 'diagnostics', label: "System Diagnostics & Logs" }
             ]
         },
