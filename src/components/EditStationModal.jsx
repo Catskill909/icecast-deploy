@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image, Globe, Save, Settings, Bell, Plus, X, AlertTriangle, Rss, Radio, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { Image, Globe, Save, Settings, Bell, Plus, X, AlertTriangle, Rss, Radio, CheckCircle2, Loader2, XCircle, Music } from 'lucide-react';
 import Modal from './ui/Modal';
 import Input from './ui/Input';
 import Button from './ui/Button';
@@ -16,12 +16,17 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
         alertEmails: [],
         relayUrl: '',
         relayEnabled: false,
-        relayMode: 'fallback'
+        relayMode: 'fallback',
+        autodj_enabled: false,
+        autodj_playlist_id: null,
+        autodj_mode: 'shuffle',
+        autodj_crossfade: 0
     });
     const [newEmail, setNewEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [relayTest, setRelayTest] = useState({ testing: false, result: null });
+    const [playlists, setPlaylists] = useState([]);
 
     // Populate form when station changes
     useEffect(() => {
@@ -35,10 +40,24 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                 alertEmails: station.alertEmails || [],
                 relayUrl: station.relayUrl || '',
                 relayEnabled: station.relayEnabled || false,
-                relayMode: station.relayMode || 'fallback'
+                relayMode: station.relayMode || 'fallback',
+                autodj_enabled: station.autodj_enabled || false,
+                autodj_playlist_id: station.autodj_playlist_id || null,
+                autodj_mode: station.autodj_mode || 'shuffle',
+                autodj_crossfade: station.autodj_crossfade || 0
             });
         }
     }, [station]);
+
+    // Fetch playlists when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            fetch(`${API_URL}/api/playlists`)
+                .then(res => res.json())
+                .then(data => setPlaylists(data))
+                .catch(err => console.error('Failed to fetch playlists:', err));
+        }
+    }, [isOpen]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -259,123 +278,249 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                         </div>
 
                         {/* External Source Section */}
-                        <div className="pt-3 mt-3 border-t border-[#2d3555]">
-                            <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
-                                <Rss className="w-3.5 h-3.5 text-[#4b7baf]" />
-                                <span className="text-[#4b7baf]">External Source</span>
-                            </h3>
+                        {!formData.autodj_enabled && (
+                            <div className="pt-3 mt-3 border-t border-[#2d3555]">
+                                <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <Rss className="w-3.5 h-3.5 text-[#4b7baf]" />
+                                    <span className="text-[#4b7baf]">External Source</span>
+                                </h3>
 
-                            <p className="text-[10px] text-[#94a3b8] mb-2">
-                                Pull audio from an external stream URL as primary source or auto-fallback.
-                            </p>
-
-                            {/* Stream Restart Warning */}
-                            <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
-                                <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-[#f59e0b] leading-relaxed">
-                                    <span className="font-semibold">Interruption Warning:</span> Saving changes to relay settings will restart the stream engine. If currently live, expect a 2-5 second audio drop.
+                                <p className="text-[10px] text-[#94a3b8] mb-2">
+                                    Pull audio from an external stream URL as primary source or auto-fallback.
                                 </p>
-                            </div>
 
-                            <div className="space-y-3 bg-[#1a1f35] rounded-lg p-3 border border-[#2d3555]">
-                                <div className="flex gap-2">
-                                    <div className="flex-1">
-                                        <Input
-                                            label="Relay URL"
-                                            name="relayUrl"
-                                            value={formData.relayUrl}
-                                            onChange={(e) => {
-                                                handleChange(e);
-                                                setRelayTest({ testing: false, result: null });
-                                            }}
-                                            placeholder="https://stream.example.com/mount"
-                                            icon={Radio}
-                                        />
-                                    </div>
-                                    <div className="flex items-end pb-[1px]">
-                                        <button
-                                            type="button"
-                                            disabled={!formData.relayUrl || relayTest.testing}
-                                            onClick={async () => {
-                                                setRelayTest({ testing: true, result: null });
-                                                try {
-                                                    const res = await fetch(`${API_URL}/api/relay/test-url`, {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        credentials: 'include',
-                                                        body: JSON.stringify({ url: formData.relayUrl })
-                                                    });
-                                                    const data = await res.json();
-                                                    setRelayTest({ testing: false, result: data });
-                                                } catch (err) {
-                                                    setRelayTest({ testing: false, result: { valid: false, error: err.message } });
-                                                }
-                                            }}
-                                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${!formData.relayUrl || relayTest.testing
-                                                ? 'bg-[#2d3555] text-[#64748b] cursor-not-allowed'
-                                                : 'bg-[#4b7baf] text-white hover:bg-[#3b6a9e]'
-                                                }`}
-                                        >
-                                            {relayTest.testing ? (
-                                                <><Loader2 className="w-3 h-3 animate-spin" /> Testing</>
-                                            ) : (
-                                                'Test'
-                                            )}
-                                        </button>
-                                    </div>
+                                {/* Stream Restart Warning */}
+                                <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
+                                    <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+                                    <p className="text-[10px] text-[#f59e0b] leading-relaxed">
+                                        <span className="font-semibold">Interruption Warning:</span> Saving changes to relay settings will restart the stream engine. If currently live, expect a 2-5 second audio drop.
+                                    </p>
                                 </div>
 
-                                {relayTest.result && (
-                                    <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${relayTest.result.valid
-                                        ? 'bg-[#22c55e]/10 border border-[#22c55e]/30 text-[#22c55e]'
-                                        : 'bg-[#f87171]/10 border border-[#f87171]/30 text-[#f87171]'
-                                        }`}>
-                                        {relayTest.result.valid ? (
-                                            <><CheckCircle2 className="w-4 h-4 flex-shrink-0" /> Valid • {relayTest.result.formatDetails}</>
-                                        ) : (
-                                            <><XCircle className="w-4 h-4 flex-shrink-0" /> {relayTest.result.error}</>
+                                <div className="space-y-3 bg-[#1a1f35] rounded-lg p-3 border border-[#2d3555]">
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <Input
+                                                label="Relay URL"
+                                                name="relayUrl"
+                                                value={formData.relayUrl}
+                                                onChange={(e) => {
+                                                    handleChange(e);
+                                                    setRelayTest({ testing: false, result: null });
+                                                }}
+                                                placeholder="https://stream.example.com/mount"
+                                                icon={Radio}
+                                            />
+                                        </div>
+                                        <div className="flex items-end pb-[1px]">
+                                            <button
+                                                type="button"
+                                                disabled={!formData.relayUrl || relayTest.testing}
+                                                onClick={async () => {
+                                                    setRelayTest({ testing: true, result: null });
+                                                    try {
+                                                        const res = await fetch(`${API_URL}/api/relay/test-url`, {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            credentials: 'include',
+                                                            body: JSON.stringify({ url: formData.relayUrl })
+                                                        });
+                                                        const data = await res.json();
+                                                        setRelayTest({ testing: false, result: data });
+                                                    } catch (err) {
+                                                        setRelayTest({ testing: false, result: { valid: false, error: err.message } });
+                                                    }
+                                                }}
+                                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${!formData.relayUrl || relayTest.testing
+                                                    ? 'bg-[#2d3555] text-[#64748b] cursor-not-allowed'
+                                                    : 'bg-[#4b7baf] text-white hover:bg-[#3b6a9e]'
+                                                    }`}
+                                            >
+                                                {relayTest.testing ? (
+                                                    <><Loader2 className="w-3 h-3 animate-spin" /> Testing</>
+                                                ) : (
+                                                    'Test'
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {relayTest.result && (
+                                        <div className={`flex items-center gap-2 p-2 rounded-lg text-xs ${relayTest.result.valid
+                                            ? 'bg-[#22c55e]/10 border border-[#22c55e]/30 text-[#22c55e]'
+                                            : 'bg-[#f87171]/10 border border-[#f87171]/30 text-[#f87171]'
+                                            }`}>
+                                            {relayTest.result.valid ? (
+                                                <><CheckCircle2 className="w-4 h-4 flex-shrink-0" /> Valid • {relayTest.result.formatDetails}</>
+                                            ) : (
+                                                <><XCircle className="w-4 h-4 flex-shrink-0" /> {relayTest.result.error}</>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center justify-between pt-2 border-t border-[#2d3555]">
+                                        <div className="flex items-center gap-2">
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.relayEnabled}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, relayEnabled: e.target.checked }))}
+                                                    className="sr-only peer"
+                                                />
+                                                <div className="w-9 h-5 bg-[#2d3555] peer-focus:ring-2 peer-focus:ring-[#4b7baf]/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4b7baf]"></div>
+                                            </label>
+                                            <span className="text-xs font-medium text-white">Enable</span>
+                                        </div>
+                                        {formData.relayEnabled && (
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4b7baf]/20 text-[#4b7baf] font-medium">Active</span>
                                         )}
                                     </div>
-                                )}
 
-                                <div className="flex items-center justify-between pt-2 border-t border-[#2d3555]">
-                                    <div className="flex items-center gap-2">
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.relayEnabled}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, relayEnabled: e.target.checked }))}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-9 h-5 bg-[#2d3555] peer-focus:ring-2 peer-focus:ring-[#4b7baf]/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#4b7baf]"></div>
-                                        </label>
-                                        <span className="text-xs font-medium text-white">Enable</span>
-                                    </div>
-                                    {formData.relayEnabled && (
-                                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#4b7baf]/20 text-[#4b7baf] font-medium">Active</span>
+                                    {formData.relayEnabled && formData.relayUrl && (
+                                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2d3555]">
+                                            <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs ${formData.relayMode === 'primary'
+                                                ? 'border-[#4b7baf] bg-[#4b7baf]/10'
+                                                : 'border-[#2d3555]'
+                                                }`}>
+                                                <input type="radio" name="relayMode" value="primary" checked={formData.relayMode === 'primary'} onChange={handleChange} className="w-3 h-3" />
+                                                <span className="text-white">Primary</span>
+                                            </label>
+                                            <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs ${formData.relayMode === 'fallback'
+                                                ? 'border-[#4b7baf] bg-[#4b7baf]/10'
+                                                : 'border-[#2d3555]'
+                                                }`}>
+                                                <input type="radio" name="relayMode" value="fallback" checked={formData.relayMode === 'fallback'} onChange={handleChange} className="w-3 h-3" />
+                                                <span className="text-white">Fallback</span>
+                                            </label>
+                                        </div>
                                     )}
                                 </div>
-
-                                {formData.relayEnabled && formData.relayUrl && (
-                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2d3555]">
-                                        <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs ${formData.relayMode === 'primary'
-                                            ? 'border-[#4b7baf] bg-[#4b7baf]/10'
-                                            : 'border-[#2d3555]'
-                                            }`}>
-                                            <input type="radio" name="relayMode" value="primary" checked={formData.relayMode === 'primary'} onChange={handleChange} className="w-3 h-3" />
-                                            <span className="text-white">Primary</span>
-                                        </label>
-                                        <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs ${formData.relayMode === 'fallback'
-                                            ? 'border-[#4b7baf] bg-[#4b7baf]/10'
-                                            : 'border-[#2d3555]'
-                                            }`}>
-                                            <input type="radio" name="relayMode" value="fallback" checked={formData.relayMode === 'fallback'} onChange={handleChange} className="w-3 h-3" />
-                                            <span className="text-white">Fallback</span>
-                                        </label>
-                                    </div>
-                                )}
                             </div>
-                        </div>
+                        )}
+
+                        {/* AutoDJ Section */}
+                        {!formData.relayEnabled && (
+                            <div className="pt-3 mt-3 border-t border-[#2d3555]">
+                                <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <Music className="w-3.5 h-3.5 text-[#9333ea]" />
+                                    <span className="text-[#9333ea]">Auto DJ</span>
+                                </h3>
+
+                                <p className="text-[10px] text-[#94a3b8] mb-2">
+                                    Play music from a playlist when live encoder disconnects.
+                                </p>
+
+                                {/* Stream Restart Warning */}
+                                <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
+                                    <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+                                    <p className="text-[10px] text-[#f59e0b] leading-relaxed">
+                                        <span className="font-semibold">Interruption Warning:</span> Saving AutoDJ settings will restart the stream engine. If currently live, expect a 2-5 second audio drop.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-3 bg-[#1a1f35] rounded-lg p-3 border border-[#2d3555]">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <label className="relative inline-flex items-center cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.autodj_enabled}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked && formData.relayEnabled) {
+                                                            setError('Cannot enable AutoDJ while Relay is active');
+                                                            return;
+                                                        }
+                                                        setFormData(prev => ({ ...prev, autodj_enabled: e.target.checked }));
+                                                        setError('');
+                                                    }}
+                                                    className="sr-only peer"
+                                                />
+                                                <div className="w-9 h-5 bg-[#2d3555] peer-focus:ring-2 peer-focus:ring-[#9333ea]/50 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#9333ea]"></div>
+                                            </label>
+                                            <span className="text-xs font-medium text-white">Enable AutoDJ</span>
+                                        </div>
+                                        {formData.autodj_enabled && (
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#9333ea]/20 text-[#9333ea] font-medium">Active</span>
+                                        )}
+                                    </div>
+
+                                    {formData.autodj_enabled && (
+                                        <>
+                                            <div className="pt-2 border-t border-[#2d3555]">
+                                                <label className="block text-xs font-medium text-[#94a3b8] mb-1.5">Playlist</label>
+                                                <select
+                                                    value={formData.autodj_playlist_id || ''}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, autodj_playlist_id: parseInt(e.target.value) || null }))}
+                                                    className="w-full bg-[#0d1229] border border-[#2d3555] rounded-lg px-3 py-2 text-xs text-white focus:ring-2 focus:ring-[#9333ea]/50 focus:border-[#9333ea]"
+                                                >
+                                                    <option value="">-- Select Playlist --</option>
+                                                    {playlists.map(playlist => (
+                                                        <option key={playlist.id} value={playlist.id}>
+                                                            {playlist.name} ({playlist.trackCount || 0} tracks)
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {playlists.length === 0 && (
+                                                    <p className="text-[10px] text-[#64748b] mt-1">
+                                                        No playlists found. Create one in the <a href="/playlists" className="text-[#9333ea] hover:underline">Playlists</a> page.
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="pt-2 border-t border-[#2d3555]">
+                                                <label className="block text-xs font-medium text-[#94a3b8] mb-2">Mode</label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs ${formData.autodj_mode === 'shuffle'
+                                                        ? 'border-[#9333ea] bg-[#9333ea]/10'
+                                                        : 'border-[#2d3555]'
+                                                        }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="autodj_mode"
+                                                            value="shuffle"
+                                                            checked={formData.autodj_mode === 'shuffle'}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, autodj_mode: e.target.value }))}
+                                                            className="w-3 h-3"
+                                                        />
+                                                        <span className="text-white">Shuffle</span>
+                                                    </label>
+                                                    <label className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs ${formData.autodj_mode === 'sequential'
+                                                        ? 'border-[#9333ea] bg-[#9333ea]/10'
+                                                        : 'border-[#2d3555]'
+                                                        }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="autodj_mode"
+                                                            value="sequential"
+                                                            checked={formData.autodj_mode === 'sequential'}
+                                                            onChange={(e) => setFormData(prev => ({ ...prev, autodj_mode: e.target.value }))}
+                                                            className="w-3 h-3"
+                                                        />
+                                                        <span className="text-white">Sequential</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-2 border-t border-[#2d3555]">
+                                                <label className="block text-xs font-medium text-[#94a3b8] mb-1.5">
+                                                    Crossfade: {formData.autodj_crossfade} seconds
+                                                </label>
+                                                <input
+                                                    type="range"
+                                                    min="0"
+                                                    max="10"
+                                                    step="1"
+                                                    value={formData.autodj_crossfade}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, autodj_crossfade: parseInt(e.target.value) }))}
+                                                    className="w-full h-2 bg-[#2d3555] rounded-lg appearance-none cursor-pointer accent-[#9333ea]"
+                                                />
+                                                <p className="text-[10px] text-[#64748b] mt-1">Smooth transition between tracks (0 = no crossfade)</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
