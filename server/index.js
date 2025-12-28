@@ -573,19 +573,66 @@ app.put('/api/stations/:id', async (req, res) => {
             return res.status(404).json({ error: 'Station not found' });
         }
 
-        const { name, description, genre, logoUrl, websiteUrl, alertEmails, relayUrl, relayEnabled, relayMode } = req.body;
+        const {
+            name, description, genre, logoUrl, websiteUrl, alertEmails,
+            relayUrl, relayEnabled, relayMode,
+            autodj_enabled, autodj_playlist_id, autodj_mode, autodj_crossfade
+        } = req.body;
 
         // Validate required fields
         if (!name || !name.trim()) {
             return res.status(400).json({ error: 'Station name is required' });
         }
 
-        // Check if relay setting changed
+        // ═══ VALIDATION: Mutual Exclusivity (Relay vs AutoDJ) ═══
+        if (relayEnabled && autodj_enabled) {
+            return res.status(400).json({
+                error: 'Cannot enable both Relay and AutoDJ simultaneously. Please disable one first.'
+            });
+        }
+
+        // ═══ VALIDATION: AutoDJ Requires Playlist ═══
+        if (autodj_enabled) {
+            if (!autodj_playlist_id) {
+                return res.status(400).json({
+                    error: 'AutoDJ requires a playlist selection'
+                });
+            }
+
+            // Verify playlist exists and has tracks
+            const playlist = db.getPlaylistById(autodj_playlist_id);
+            if (!playlist) {
+                return res.status(400).json({
+                    error: 'Selected playlist not found'
+                });
+            }
+
+            const tracks = db.getPlaylistTracks(autodj_playlist_id);
+            if (tracks.length === 0) {
+                return res.status(400).json({
+                    error: `Playlist "${playlist.name}" is empty. Add tracks before enabling AutoDJ.`
+                });
+            }
+
+            console.log(`[AutoDJ] Station ${req.params.id}: AutoDJ enabled with playlist "${playlist.name}" (${tracks.length} tracks)`);
+        }
+
+        // Check if relay or AutoDJ settings changed
         const wasRelayEnabled = station.relay_enabled === 1;
         const isNowRelayEnabled = relayEnabled === true;
+        const wasAutoDJEnabled = station.autodj_enabled === 1;
+        const isNowAutoDJEnabled = autodj_enabled === true;
+
         const relaySettingsChanged = wasRelayEnabled !== isNowRelayEnabled ||
             station.relay_url !== relayUrl ||
             station.relay_mode !== relayMode;
+
+        const autoDJSettingsChanged = wasAutoDJEnabled !== isNowAutoDJEnabled ||
+            station.autodj_playlist_id !== autodj_playlist_id ||
+            station.autodj_mode !== autodj_mode ||
+            station.autodj_crossfade !== autodj_crossfade;
+
+        const configNeedsRegeneration = relaySettingsChanged || autoDJSettingsChanged;
 
         db.updateStation(req.params.id, {
             name: name.trim(),
@@ -596,24 +643,25 @@ app.put('/api/stations/:id', async (req, res) => {
             alertEmails: Array.isArray(alertEmails) ? alertEmails : null,
             relayUrl: relayUrl || null,
             relayEnabled: relayEnabled || false,
-            relayMode: relayMode || 'fallback'
+            relayMode: relayMode || 'fallback',
+            autodj_enabled: autodj_enabled || false,
+            autodj_playlist_id: autodj_playlist_id || null,
+            autodj_mode: autodj_mode || 'shuffle',
+            autodj_crossfade: autodj_crossfade || 0
         });
 
         // Handle relay start/stop based on settings change
-        // Handle relay settings change - Liquidsoap handles logic via config regeneration
         if (relaySettingsChanged) {
             console.log(`[Relay] Station ${req.params.id}: Relay settings changed, regenerating config...`);
 
-            // Fix: Explicitly update relayStatus based on enabled state
-            // If enabled -> 'active' (GREEN) because fallback IS now streaming
-            // If disabled -> 'idle'
+            // Update relay status based on enabled state
             const newStatus = isNowRelayEnabled ? 'active' : 'idle';
-
             db.updateRelayStatus(req.params.id, newStatus);
         }
 
-        // Regenerate configs if relay settings changed
-        if (relaySettingsChanged) {
+        // Regenerate configs if relay or AutoDJ settings changed
+        if (configNeedsRegeneration) {
+            console.log(`[CONFIG] Station ${req.params.id}: Regenerating Liquidsoap configuration...`);
             icecastConfig.regenerateIcecastConfig();
             await liquidsoopConfig.regenerateLiquidsoapConfig();
         }
@@ -621,7 +669,7 @@ app.put('/api/stations/:id', async (req, res) => {
         res.json({ success: true, message: 'Station updated' });
     } catch (error) {
         console.error('Error updating station:', error);
-        res.status(500).json({ error: 'Failed to update station' });
+        res.status(500).json({ error: error.message || 'Failed to update station' });
     }
 });
 
