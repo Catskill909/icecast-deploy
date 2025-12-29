@@ -163,6 +163,7 @@ export default function CreateStation() {
                                 onChange={handleInputChange}
                                 required
                             />
+                            <p className="text-xs text-[#64748b] -mt-2">You can change this later, but the mount point stays the same</p>
 
                             <Input
                                 label="Description"
@@ -179,6 +180,7 @@ export default function CreateStation() {
                                 value={formData.genre}
                                 onChange={handleInputChange}
                             />
+                            <p className="text-xs text-[#64748b] -mt-2">Separate multiple genres with commas</p>
 
                             {error && (
                                 <p className="text-[#f87171] text-sm">{error}</p>
