@@ -424,13 +424,19 @@ export default function Help() {
             links: [
                 { id: 'quick-start', label: "Quick Start Guide" },
                 { id: 'mount-points', label: "Understanding Mount Points" },
-                { id: 'encoders', label: "Connecting your Encoder" },
+                { id: 'encoders', label: "Connecting your Encoder" }
+            ]
+        },
+        {
+            icon: FileText,
+            title: "Features & Tools",
+            description: "Learn about playlists, alerts, automation, and more.",
+            links: [
                 { id: 'alerts', label: "Understanding Alerts" },
                 { id: 'email-alerts', label: "Setting up Email Alerts" },
-                { id: 'relay-restreaming', label: "Stream Relay & Restreaming" },
+                { id: 'relay-restreaming', label: "Stream Relay & Fallback" },
                 { id: 'playlists', label: "Playlist Manager" },
-                { id: 'autodj', label: "AutoDJ - 24/7 Automation" },
-                { id: 'diagnostics', label: "System Diagnostics & Logs" }
+                { id: 'autodj', label: "AutoDJ - 24/7 Automation" }
             ]
         },
         {
@@ -438,7 +444,8 @@ export default function Help() {
             title: "Server Management",
             description: "Configure and monitor your Icecast server settings.",
             links: [
-                { id: 'server-config', label: "Server Configuration" }
+                { id: 'server-config', label: "Server Configuration" },
+                { id: 'diagnostics', label: "System Diagnostics & Logs" }
             ]
         },
         {
