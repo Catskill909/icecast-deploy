@@ -275,35 +275,51 @@ export default function IcecastConfigForm() {
                     <div className="border-t border-[#1e2337] pt-6 space-y-4">
                         <h3 className="text-sm font-medium text-[#94a3b8] uppercase">Web Player Access (CORS)</h3>
                         <p className="text-xs text-[#64748b]">
-                            Allow your website's player to access streams without browser errors
+                            Control which websites can embed your stream in a web player. <strong>Default: Full access (*)</strong> - any website can play your stream.
                         </p>
 
+                        <div className="p-3 rounded-lg bg-[#4b7baf]/10 border border-[#4b7baf]/20">
+                            <p className="text-xs text-[#94a3b8]">
+                                <strong>For public radio:</strong> Full access (*) is recommended - it lets anyone embed your player and increases reach. Only add specific origins if you want to prevent other sites from using your stream.
+                            </p>
+                        </div>
+
                         <div className="space-y-2">
-                            {settings.corsOrigins.map((origin, idx) => (
-                                <div key={idx} className="flex gap-2">
-                                    <Input
-                                        value={origin}
-                                        onChange={(e) => handleCorsChange(idx, e.target.value)}
-                                        placeholder="https://mystation.org"
-                                        className="flex-1"
-                                    />
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleCorsRemove(idx)}
-                                    >
-                                        ×
-                                    </Button>
-                                </div>
-                            ))}
+                            {settings.corsOrigins.length === 0 ? (
+                                <p className="text-sm text-[#64748b] italic">
+                                    No origins configured - using default full access (*)
+                                </p>
+                            ) : (
+                                settings.corsOrigins.map((origin, idx) => (
+                                    <div key={idx} className="flex gap-2">
+                                        <Input
+                                            value={origin}
+                                            onChange={(e) => handleCorsChange(idx, e.target.value)}
+                                            placeholder="https://mystation.org"
+                                            className="flex-1"
+                                        />
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => handleCorsRemove(idx)}
+                                        >
+                                            ×
+                                        </Button>
+                                    </div>
+                                ))
+                            )}
 
                             <Button
                                 variant="secondary"
                                 size="sm"
                                 onClick={handleCorsAdd}
                             >
-                                + Add Origin
+                                + Add Specific Origin
                             </Button>
+
+                            <p className="text-xs text-[#64748b]">
+                                <strong>Tip:</strong> Leave empty for full access (*), or add specific domains to restrict access
+                            </p>
                         </div>
                     </div>
 
