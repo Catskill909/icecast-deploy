@@ -372,7 +372,44 @@ for (const station of stations) {
 ## 🔧 Technical Infrastructure
 
 ### Server Management
-- [ ] **Icecast config editor** - edit XML from UI
+### Icecast Configuration Management
+**Philosophy:** Safe, validated editing via GUI - avoid raw XML risks
+
+#### Phase 1: Global Settings UI
+- [ ] **Server Limits** - Max sources, max clients, burst size
+- [ ] **Authentication** - Admin password, source password policy
+- [ ] **Logging** - Access logs, error logs, log level
+- [ ] **SSL/TLS** - Certificate paths, force HTTPS toggle
+- [ ] **CORS Settings** - Allow origins for web players
+- [ ] **Hostname Configuration** - Public hostname for stream URLs
+- [ ] **Form validation** - Prevent invalid configs before applying
+
+#### Phase 2: Live Config Preview
+- [ ] **Real-time XML preview** - Show generated config as you edit
+- [ ] **Syntax highlighting** - Color-coded XML display
+- [ ] **Diff view** - See what changed before saving
+- [ ] **Impact warnings** - "This will restart Icecast" alerts
+
+#### Phase 3: Health Monitoring & Optimization
+- [ ] **Auto-detect misconfigurations** - Warn if burst-size too low for bitrate
+- [ ] **Performance suggestions** - "Your buffer could be optimized"
+- [ ] **One-click presets**:
+  - Optimize for Low Latency
+  - Optimize for Mobile/High Concurrency
+  - Podcast Mode (voice-optimized)
+- [ ] **Health score** - Overall config rating (0-100)
+
+#### Phase 4: Config History & Recovery
+- [ ] **Version control** - Git-like history of icecast.xml changes
+- [ ] **Rollback** - One-click undo to previous config
+- [ ] **Compare versions** - Side-by-side diff of any two configs
+- [ ] **Changelog** - "What changed and when" timeline
+
+**Why NOT Raw XML Editor:**
+- Too dangerous (invalid XML = crashed server)
+- Doesn't add value over SSH access
+- Breaks "safe by default" philosophy
+- GUI provides better UX and validation
 - [ ] **Server restart** button
 - [ ] **Mount point limits** configuration
 - [ ] **Relay setup** for load balancing
