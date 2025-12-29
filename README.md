@@ -108,6 +108,8 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 
 ### 🔍 Enhanced Diagnostics & Logging
 - **Real-Time System Monitoring**: View Icecast status, active mounts, and relay configurations
+- **Stations & Relay Table**: Live status, listener counts, relay mode, and AutoDJ override detection
+- **AutoDJ Override Indicator**: Shows "OVERRIDE" when live encoder has taken over from AutoDJ
 - **Advanced Log Management**: Search, filter, and analyze debug logs
 - **Level Filtering**: Quick filter by ERROR, WARN, INFO, DEBUG, RELAY, FALLBACK
 - **Line Numbers**: Easy reference for debugging
