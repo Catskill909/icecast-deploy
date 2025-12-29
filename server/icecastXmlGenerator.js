@@ -54,8 +54,7 @@ export function generateIcecastXML(config) {
     <port>8100</port>
   </listen-socket>
 
-${corsHeaders ? `  <http-headers>\n${corsHeaders}\n  </http-headers>\n` : ''}
-  <paths>
+${corsHeaders ? `  <http-headers>\n${corsHeaders}\n  </http-headers>\n` : ''}  <paths>
     <basedir>/usr/share/icecast2</basedir>
     <logdir>/var/log/icecast2</logdir>
   </paths>
