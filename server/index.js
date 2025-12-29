@@ -345,10 +345,12 @@ app.get('/api/diagnostics', async (req, res) => {
         // Mark which stations are live based on Icecast status and update listeners
         const stationsWithStatus = stations.map(s => {
             const icecastMount = icecastStatus.mounts?.find(m => m.mount === s.mount_point);
+            const isLive = !!icecastMount;
             return {
                 ...s,
-                isLive: !!icecastMount,
-                listeners: icecastMount?.listeners || 0  // Use real-time data from Icecast
+                isLive,
+                listeners: icecastMount?.listeners || 0,  // Use real-time data from Icecast
+                isEncoderConnected: isLive && s.autodj_enabled  // Encoder overriding AutoDJ
             };
         });
 
