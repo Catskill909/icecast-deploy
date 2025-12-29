@@ -288,7 +288,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                 </p>
 
                                 {/* Stream Restart Warning - Only show if newly enabling */}
-                                {formData.relayEnabled && !station.relayEnabled && (
+                                {station && formData.relayEnabled && !station.relayEnabled && (
                                     <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
                                         <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
                                         <p className="text-[10px] text-[#f59e0b] leading-relaxed">
@@ -411,7 +411,7 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                 </p>
 
                                 {/* Stream Restart Warning - Only show if newly enabling */}
-                                {formData.autodj_enabled && !station.autodj_enabled && (
+                                {station && formData.autodj_enabled && !station.autodj_enabled && (
                                     <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
                                         <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
                                         <p className="text-[10px] text-[#f59e0b] leading-relaxed">
