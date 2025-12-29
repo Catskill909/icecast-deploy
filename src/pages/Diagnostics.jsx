@@ -176,6 +176,7 @@ export default function Diagnostics() {
                                             <th className="text-left py-2">Station</th>
                                             <th className="text-left py-2">Mount</th>
                                             <th className="text-left py-2">Live</th>
+                                            <th className="text-left py-2">Listeners</th>
                                             <th className="text-left py-2">Relay Enabled</th>
                                             <th className="text-left py-2">Relay Mode</th>
                                             <th className="text-left py-2">AutoDJ</th>
@@ -190,6 +191,7 @@ export default function Diagnostics() {
                                                 <td className="py-2">
                                                     <StatusBadge ok={station.isLive} label={station.isLive ? 'LIVE' : 'OFF'} />
                                                 </td>
+                                                <td className="py-2 text-white font-mono">{station.listeners || 0}</td>
                                                 <td className="py-2">
                                                     <span className={station.relay_enabled ? 'text-green-400' : 'text-[#64748b]'}>
                                                         {station.relay_enabled ? 'YES' : 'NO'}
@@ -214,39 +216,6 @@ export default function Diagnostics() {
                         </CardContent>
                     </Card>
 
-                    {/* Active Relays */}
-                    <Card className="bg-[#0f1729] border-[#1e2a45]">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-white">
-                                <Rss className="w-5 h-5 text-[#f59e0b]" />
-                                Active Relays
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {data.activeRelays?.length > 0 ? (
-                                <div className="space-y-2">
-                                    {data.activeRelays.map((relay, i) => (
-                                        <div key={i} className="bg-[#1a2744] rounded p-3">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <span className="text-white font-medium">{relay.stationId}</span>
-                                                    <span className="text-[#64748b] ml-2">→ {relay.mountPoint}</span>
-                                                </div>
-                                                <StatusBadge ok={relay.status === 'running'} label={relay.status} />
-                                            </div>
-                                            <div className="text-xs text-[#64748b] mt-1">
-                                                URL: {relay.url}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-[#64748b] text-center py-4">
-                                    No active relays
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
 
                     {/* Enhanced Logs Viewer */}
                     <Card className="bg-[#0f1729] border-[#1e2a45]">
