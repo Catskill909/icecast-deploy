@@ -289,13 +289,15 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                     Pull audio from an external stream URL as primary source or auto-fallback.
                                 </p>
 
-                                {/* Stream Restart Warning */}
-                                <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
-                                    <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-                                    <p className="text-[10px] text-[#f59e0b] leading-relaxed">
-                                        <span className="font-semibold">Interruption Warning:</span> Saving changes to relay settings will restart the stream engine. If currently live, expect a 2-5 second audio drop.
-                                    </p>
-                                </div>
+                                {/* Stream Restart Warning - Only show if newly enabling */}
+                                {formData.relayEnabled && !station.relayEnabled && (
+                                    <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
+                                        <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+                                        <p className="text-[10px] text-[#f59e0b] leading-relaxed">
+                                            <span className="font-semibold">Interruption Warning:</span> Saving changes to relay settings will restart the stream engine. If currently live, expect a 2-5 second audio drop.
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="space-y-3 bg-[#1a1f35] rounded-lg p-3 border border-[#2d3555]">
                                     <div className="flex gap-2">
@@ -410,13 +412,15 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
                                     Play music from a playlist when live encoder disconnects.
                                 </p>
 
-                                {/* Stream Restart Warning */}
-                                <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
-                                    <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-                                    <p className="text-[10px] text-[#f59e0b] leading-relaxed">
-                                        <span className="font-semibold">Interruption Warning:</span> Saving AutoDJ settings will restart the stream engine. If currently live, expect a 2-5 second audio drop.
-                                    </p>
-                                </div>
+                                {/* Stream Restart Warning - Only show if newly enabling */}
+                                {formData.autodj_enabled && !station.autodj_enabled && (
+                                    <div className="flex items-start gap-2 p-2 mb-3 rounded-lg bg-[#f59e0b]/10 border border-[#f59e0b]/30">
+                                        <AlertTriangle className="w-4 h-4 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+                                        <p className="text-[10px] text-[#f59e0b] leading-relaxed">
+                                            <span className="font-semibold">Interruption Warning:</span> Saving AutoDJ settings will restart the stream engine. If currently live, expect a 2-5 second audio drop.
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="space-y-3 bg-[#1a1f35] rounded-lg p-3 border border-[#2d3555]">
                                     <div className="flex items-center justify-between">

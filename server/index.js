@@ -520,7 +520,8 @@ app.get('/api/stations', (req, res) => {
             autodj_enabled: s.autodj_enabled === 1,
             autodj_playlist_id: s.autodj_playlist_id || null,
             autodj_mode: s.autodj_mode || 'shuffle',
-            autodj_crossfade: s.autodj_crossfade || 0
+            autodj_crossfade: s.autodj_crossfade || 0,
+            isEncoderConnected: s.is_encoder_connected === 1
         })));
     } catch (error) {
         console.error('Error fetching stations:', error);
@@ -558,6 +559,7 @@ app.get('/api/stations/:id', (req, res) => {
             autodj_playlist_id: station.autodj_playlist_id || null,
             autodj_mode: station.autodj_mode || 'shuffle',
             autodj_crossfade: station.autodj_crossfade || 0,
+            isEncoderConnected: station.is_encoder_connected === 1,
             connectionInfo: {
                 server: ICECAST_PUBLIC_HOST,
                 port: LIQUIDSOAP_PORT,
@@ -1430,6 +1432,9 @@ app.post('/api/encoder/:stationId/connected', (req, res) => {
 
     debugLog(`[ENCODER] Connected: ${station.name}`);
 
+    // Mark encoder as connected (for AutoDJ override UI)
+    db.updateEncoderConnectionStatus(station.id, true);
+
     // If fallback was active, update badge to ORANGE (standby)
     if (station.relay_enabled && station.relay_mode === 'fallback') {
         db.updateRelayStatus(station.id, 'ready');
@@ -1454,6 +1459,9 @@ app.post('/api/encoder/:stationId/disconnected', (req, res) => {
     }
 
     debugLog(`[ENCODER] Disconnected: ${station.name}`);
+
+    // Mark encoder as disconnected
+    db.updateEncoderConnectionStatus(station.id, false);
 
     if (station.relay_enabled && station.relay_mode === 'fallback' && station.relay_url) {
         // Update badge to GREEN (fallback is now active)

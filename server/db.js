@@ -76,6 +76,11 @@ try {
     db.exec(`ALTER TABLE stations ADD COLUMN autodj_crossfade INTEGER DEFAULT 0`);
 } catch (e) { /* Column already exists */ }
 
+// Migration: Live Overtake Status
+try {
+    db.exec(`ALTER TABLE stations ADD COLUMN is_encoder_connected INTEGER DEFAULT 0`);
+} catch (e) { /* Column already exists */ }
+
 // Migration: Update old stream URLs to new subdomain format
 // Old format: https://icecast.supersoul.top/stream/mount
 // New format: https://stream.supersoul.top/mount
@@ -448,6 +453,14 @@ const updateRelayStatus = (id, status) => {
     );
 };
 
+const updateEncoderConnectionStatus = (id, isConnected) => {
+    return db.prepare('UPDATE stations SET is_encoder_connected = ?, updated_at = ? WHERE id = ?').run(
+        isConnected ? 1 : 0,
+        new Date().toISOString(),
+        id
+    );
+};
+
 export {
     db,
     createStation,
@@ -458,6 +471,7 @@ export {
     updateStation,
     updateListeners,
     updateRelayStatus,
+    updateEncoderConnectionStatus,
     createAlert,
     getAllAlerts,
     getUnreadAlertCount,

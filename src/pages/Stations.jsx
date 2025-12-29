@@ -143,10 +143,17 @@ function StationCard({ station, onDelete, onEdit, isLive = false, listeners = 0 
                         )}
                         {/* AutoDJ indicator */}
                         {station.autodj_enabled && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 bg-[#9333ea]/20 text-[#9333ea] border border-[#9333ea]/30 text-[10px] font-medium rounded-full">
-                                <Music className="w-2.5 h-2.5" />
-                                AUTO DJ
-                            </span>
+                            station.isEncoderConnected ? (
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-purple-600 text-white border border-purple-400 text-[10px] font-bold rounded-full animate-pulse shadow-[0_0_10px_rgba(147,51,234,0.5)]">
+                                    <Radio className="w-2.5 h-2.5" />
+                                    LIVE OVERRIDE
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-1 px-2 py-0.5 bg-[#9333ea]/20 text-[#9333ea] border border-[#9333ea]/30 text-[10px] font-medium rounded-full">
+                                    <Music className="w-2.5 h-2.5" />
+                                    AUTO DJ
+                                </span>
+                            )
                         )}
                     </div>
 
