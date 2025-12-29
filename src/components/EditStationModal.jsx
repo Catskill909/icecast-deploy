@@ -213,15 +213,13 @@ export default function EditStationModal({ isOpen, onClose, station, onSave }) {
 
                     {/* Right Column: Alerts */}
                     <div className="md:pl-6 md:border-l md:border-[#2d3555]">
-                        <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center gap-2">
-                            <Bell className="w-3.5 h-3.5" />
-                            Alert Settings
-                        </h3>
-
-                        <div className="bg-[#1e2337]/50 rounded-lg p-2 text-[#94a3b8] mb-3 border border-[#2d3555]">
-                            <p className="text-white text-xs font-medium mb-0.5">Station-Specific Recipients</p>
-                            <p className="text-[10px] leading-relaxed opacity-80">
-                                Alerts for <strong>{formData.name || 'this station'}</strong> go to these emails.
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                            <h3 className="text-xs font-medium text-[#94a3b8] uppercase tracking-wider flex items-center gap-2">
+                                <Bell className="w-3.5 h-3.5" />
+                                Alert Settings
+                            </h3>
+                            <p className="text-[10px] text-[#64748b] leading-relaxed">
+                                Alerts for <strong className="text-[#8896ab]">{formData.name || 'this station'}</strong> go to these emails
                             </p>
                         </div>
 
