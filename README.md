@@ -63,6 +63,16 @@ A modern Icecast streaming server management interface with a clean dark-mode UI
 - **Live Badge**: Purple "AUTO DJ" badge on station cards shows active status
 - **Diagnostics**: View AutoDJ settings and status in the diagnostics page
 
+### ⚙️ Server Configuration Management
+- **No SSH Required**: Configure Icecast from the web UI (Settings → Server Config)
+- **Server Limits**: Set max listeners, sources, burst size, and queue size
+- **Smart Presets**: Quick configs for Small/Regional/Large NPR stations
+- **Logging Control**: Adjust log levels, IP tracking, and user agent logging
+- **CORS Management**: Control which websites can embed your stream (default: full access)
+- **Validation**: Prevents invalid configs with helpful warnings
+- **Safe Restarts**: One-click Icecast restart after saving changes
+- **Production Ready**: Fully compatible with Coolify/Docker deployments
+
 ### 📊 Dashboard
 - **Station Overview**: Quick stats on active vs total stations
 - **Server Status**: Online/offline indicator

@@ -375,14 +375,14 @@ for (const station of stations) {
 ### Icecast Configuration Management
 **Philosophy:** Safe, validated editing via GUI - avoid raw XML risks
 
-#### Phase 1: Global Settings UI
-- [ ] **Server Limits** - Max sources, max clients, burst size
-- [ ] **Authentication** - Admin password, source password policy
-- [ ] **Logging** - Access logs, error logs, log level
-- [ ] **SSL/TLS** - Certificate paths, force HTTPS toggle
-- [ ] **CORS Settings** - Allow origins for web players
-- [ ] **Hostname Configuration** - Public hostname for stream URLs
-- [ ] **Form validation** - Prevent invalid configs before applying
+#### Phase 1: Global Settings UI (✅ COMPLETED - Dec 2024)
+- [x] **Server Limits** - Max sources, max clients, burst size
+- [x] **Logging** - Access logs, error logs, log level
+- [x] **CORS Settings** - Allow origins for web players
+- [x] **Hostname Configuration** - Public hostname for stream URLs
+- [x] **Form validation** - Prevent invalid configs before applying
+- [ ] **SSL/TLS** - Certificate paths, force HTTPS toggle (moved to Phase 2)
+- [ ] **Authentication** - Admin password, source password policy (moved to Phase 2)
 
 #### Phase 2: Live Config Preview
 - [ ] **Real-time XML preview** - Show generated config as you edit

@@ -341,8 +341,45 @@ const ARTICLES = {
                 </div>
             </div>
         )
+    },
+    'server-config': {
+        title: 'Server Configuration',
+        content: (
+            <div className="space-y-4 text-[#8896ab]">
+                <p>Configure your Icecast server settings directly from the web UI - no SSH required!</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Accessing Server Config</h3>
+                <p>Navigate to <strong>Settings → Server Config</strong> in the sidebar. This opens the server configuration panel.</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">Quick Presets</h3>
+                <p>Use the <strong>Quick Preset</strong> dropdown to automatically configure your server based on station size:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                    <li><strong>Small/Community:</strong> Up to 100 listeners (250 max clients, 5 sources)</li>
+                    <li><strong>Regional Public Radio:</strong> 100-500 listeners (750 max clients, 15 sources)</li>
+                    <li><strong>Large Market / NPR:</strong> 500+ listeners (2,000 max clients, 30 sources)</li>
+                </ul>
+
+                <h3 className="text-white font-bold text-lg mt-6">Server Limits</h3>
+                <p><strong>Max Clients:</strong> Maximum simultaneous listeners. <strong>Max Sources:</strong> Maximum encoders/stations.</p>
+                <p><strong>Burst Size:</strong> Initial buffer for faster playback start. <strong>Queue Size:</strong> Per-client buffer (higher = smoother, more memory).</p>
+
+                <h3 className="text-white font-bold text-lg mt-6">CORS Settings</h3>
+                <div className="bg-[#4b7baf]/10 p-4 rounded-lg border border-[#4b7baf]/20 mt-2">
+                    <p className="text-[#4b7baf] text-sm font-medium">💡 <strong>Default: Full Access (*)</strong> - Any website can play your stream. Recommended for public radio to maximize reach.</p>
+                </div>
+
+                <h3 className="text-white font-bold text-lg mt-6">Saving Changes</h3>
+                <ol className="list-decimal pl-5 space-y-2">
+                    <li>Make your configuration changes</li>
+                    <li>Click <strong>Save Configuration</strong></li>
+                    <li>Click the yellow <strong>Restart Icecast</strong> button</li>
+                    <li>Confirm the restart (streams reconnect automatically)</li>
+                </ol>
+            </div>
+        )
     }
 };
+
 
 function HelpCategory({ icon: Icon, title, description, links, onOpenArticle }) {
     return (
@@ -399,11 +436,9 @@ export default function Help() {
         {
             icon: Server,
             title: "Server Management",
-            description: "Guides on managing server settings and performance.",
+            description: "Configure and monitor your Icecast server settings.",
             links: [
-                { id: 'quick-start', label: "Understanding Bitrates" },
-                { id: 'mount-points', label: "Server Status & Monitoring" },
-                { id: 'encoders', label: "Managing Multiple Stations" }
+                { id: 'server-config', label: "Server Configuration" }
             ]
         },
         {
