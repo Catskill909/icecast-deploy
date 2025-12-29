@@ -384,9 +384,20 @@ for (const station of stations) {
 
 ### API Enhancements
 - [ ] **API key authentication**
+  - Generate/revoke API keys from Settings page
+  - Secure token storage (hashed in database)
+  - Per-key permissions/scopes
 - [ ] **Rate limiting**
 - [ ] **Webhook callbacks** for events
 - [ ] **OpenAPI/Swagger** documentation
+
+**API Key Use Cases:**
+- **Automation & Scripts**: Start/stop streams, update metadata, query stats programmatically
+- **Third-Party Integrations**: Connect to Discord bots, website widgets, analytics dashboards
+- **Mobile/Desktop Apps**: Build native apps without storing admin password
+- **CI/CD Pipelines**: Automate stream deployment and configuration
+- **Webhooks**: Real-time notifications to external systems when streams go live/offline
+- **Custom Monitoring**: Pull listener data into external monitoring platforms
 
 ---
 
