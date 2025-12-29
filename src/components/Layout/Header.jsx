@@ -184,10 +184,16 @@ export default function Header() {
                 <p className="text-xs text-[#64748b]">admin@example.com</p>
               </div>
               <div className="py-1">
-                <button className="w-full px-4 py-2 text-left text-sm text-[#94a3b8] hover:bg-[#252b45] hover:text-white transition-colors">
+                <button
+                  onClick={() => window.location.href = '/settings'}
+                  className="w-full px-4 py-2 text-left text-sm text-[#94a3b8] hover:bg-[#252b45] hover:text-white transition-colors"
+                >
                   Profile Settings
                 </button>
-                <button className="w-full px-4 py-2 text-left text-sm text-[#94a3b8] hover:bg-[#252b45] hover:text-white transition-colors">
+                <button
+                  onClick={() => window.location.href = '/settings?tab=api'}
+                  className="w-full px-4 py-2 text-left text-sm text-[#94a3b8] hover:bg-[#252b45] hover:text-white transition-colors"
+                >
                   API Keys
                 </button>
                 <button

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Bell, Mail, Key, Save, Check } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -15,6 +15,15 @@ export default function Settings() {
     email: 'admin@supersoul.top',
     timezone: 'America/New_York',
   });
+
+  // Check URL for tab parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab && ['profile', 'email', 'alerts', 'api'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, []);
 
   const handleSave = () => {
     setSaved(true);
