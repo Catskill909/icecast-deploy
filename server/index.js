@@ -339,11 +339,15 @@ app.get('/api/diagnostics', async (req, res) => {
         // Get active relays
         const activeRelays = []; // Phase 4: Managed by Liquidsoap
 
-        // Mark which stations are live based on Icecast status
-        const stationsWithStatus = stations.map(s => ({
-            ...s,
-            isLive: icecastStatus.mounts?.some(m => m.mount === s.mount_point) || false
-        }));
+        // Mark which stations are live based on Icecast status and update listeners
+        const stationsWithStatus = stations.map(s => {
+            const icecastMount = icecastStatus.mounts?.find(m => m.mount === s.mount_point);
+            return {
+                ...s,
+                isLive: !!icecastMount,
+                listeners: icecastMount?.listeners || 0  // Use real-time data from Icecast
+            };
+        });
 
         // Generate icecast config preview (mount sections only)
         let icecastConfig = '';
