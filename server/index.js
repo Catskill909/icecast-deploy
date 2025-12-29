@@ -14,6 +14,9 @@ import * as db from './db.js';
 import { encrypt, decrypt, isEncrypted } from './crypto.js';
 import * as icecastConfig from './icecastConfig.js';
 import * as liquidsoopConfig from './liquidsoopConfig.js';
+import { validateIcecastConfig } from './icecastConfigValidator.js';
+import { writeIcecastXML } from './icecastXmlGenerator.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -2117,6 +2120,98 @@ app.post('/api/settings/alerts', (req, res) => {
     } catch (error) {
         console.error('Error saving alert settings:', error);
         res.status(500).json({ error: 'Failed to save alert settings' });
+    }
+});
+
+// ==========================================
+// ICECAST CONFIGURATION API
+// ==========================================
+
+// Get Icecast configuration
+app.get('/api/icecast-config', (req, res) => {
+    try {
+        const config = db.getIcecastConfig();
+        res.json({
+            maxClients: config?.max_clients || 500,
+            maxSources: config?.max_sources || 10,
+            burstSize: config?.burst_size || 65535,
+            queueSize: config?.queue_size || 524288,
+            logLevel: config?.log_level || 'INFO',
+            logIPs: config?.log_ips === 1,
+            logUserAgents: config?.log_user_agents === 1,
+            corsOrigins: config?.cors_origins ? JSON.parse(config.cors_origins) : [],
+            hostname: config?.hostname || ''
+        });
+    } catch (error) {
+        console.error('Error fetching Icecast config:', error);
+        res.status(500).json({ error: 'Failed to fetch configuration' });
+    }
+});
+
+// Save Icecast configuration
+app.post('/api/icecast-config', (req, res) => {
+    try {
+        const config = req.body;
+
+        // Validation
+        const { errors, warnings } = validateIcecastConfig(config);
+        if (errors.length > 0) {
+            return res.status(400).json({ errors, warnings });
+        }
+
+        // Save to database
+        db.updateIcecastConfig(config);
+
+        // Generate new icecast.xml
+        const xmlResult = writeIcecastXML(config);
+
+        if (!xmlResult.success) {
+            return res.status(500).json({
+                error: 'Configuration saved but XML generation failed',
+                details: xmlResult.error
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Configuration saved. Restart Icecast for changes to take effect.',
+            warnings
+        });
+    } catch (error) {
+        console.error('Error saving Icecast config:', error);
+        res.status(500).json({ error: 'Failed to save configuration' });
+    }
+});
+
+// Restart Icecast service
+app.post('/api/icecast-config/restart', async (req, res) => {
+    try {
+        const { exec } = await import('child_process');
+        const { promisify } = await import('util');
+        const execPromise = promisify(exec);
+
+        // Try to restart via supervisorctl (Docker environment)
+        try {
+            await execPromise('supervisorctl restart icecast');
+            res.json({
+                success: true,
+                message: 'Icecast restarted successfully'
+            });
+        } catch (error) {
+            console.error('Supervisorctl restart failed, trying killall:', error);
+            // Fallback: use killall (Icecast will be restarted by supervisor)
+            await execPromise('killall -HUP icecast2 || true');
+            res.json({
+                success: true,
+                message: 'Icecast reload signal sent'
+            });
+        }
+    } catch (error) {
+        console.error('Error restarting Icecast:', error);
+        res.status(500).json({
+            error: 'Failed to restart Icecast',
+            details: error.message
+        });
     }
 });
 

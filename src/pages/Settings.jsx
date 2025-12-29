@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { User, Bell, Mail, Key, Save, Check } from 'lucide-react';
+import { User, Bell, Mail, Key, Server, Save, Check } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input, { Select } from '../components/ui/Input';
 import SMTPConfigForm from '../components/SMTPConfigForm';
 import AlertEmailSettings from '../components/AlertEmailSettings';
+import IcecastConfigForm from '../components/IcecastConfigForm';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -20,7 +21,7 @@ export default function Settings() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    if (tab && ['profile', 'email', 'alerts', 'api'].includes(tab)) {
+    if (tab && ['profile', 'email', 'alerts', 'server', 'api'].includes(tab)) {
       setActiveTab(tab);
     }
   }, []);
@@ -34,6 +35,7 @@ export default function Settings() {
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'email', label: 'Email Config', icon: Mail },
     { id: 'alerts', label: 'Stream Alerts', icon: Bell },
+    { id: 'server', label: 'Server Config', icon: Server },
     { id: 'api', label: 'API Keys', icon: Key },
   ];
 
@@ -114,6 +116,10 @@ export default function Settings() {
 
           {activeTab === 'alerts' && (
             <AlertEmailSettings />
+          )}
+
+          {activeTab === 'server' && (
+            <IcecastConfigForm />
           )}
 
           {activeTab === 'api' && (

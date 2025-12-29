@@ -238,6 +238,32 @@ const ensureSettings = db.prepare(`
 ensureSettings.run();
 
 // ==========================================
+// ICECAST CONFIG TABLE (Server Configuration)
+// ==========================================
+db.exec(`
+  CREATE TABLE IF NOT EXISTS icecast_config (
+    id TEXT PRIMARY KEY DEFAULT 'singleton',
+    max_clients INTEGER DEFAULT 500,
+    max_sources INTEGER DEFAULT 10,
+    burst_size INTEGER DEFAULT 65535,
+    queue_size INTEGER DEFAULT 524288,
+    log_level TEXT DEFAULT 'INFO',
+    log_ips INTEGER DEFAULT 1,
+    log_user_agents INTEGER DEFAULT 1,
+    cors_origins TEXT,
+    hostname TEXT,
+    updated_at TEXT
+  )
+`);
+
+// Ensure singleton icecast_config row exists
+const ensureIcecastConfig = db.prepare(`
+    INSERT OR IGNORE INTO icecast_config (id) VALUES ('singleton')
+`);
+ensureIcecastConfig.run();
+
+
+// ==========================================
 // AUDIO LIBRARY TABLE (AutoDJ - Phase 1)
 // ==========================================
 db.exec(`
@@ -461,6 +487,35 @@ const updateEncoderConnectionStatus = (id, isConnected) => {
     );
 };
 
+// ==========================================
+// ICECAST CONFIG FUNCTIONS
+// ==========================================
+const getIcecastConfig = () => {
+    return db.prepare('SELECT * FROM icecast_config WHERE id = ?').get('singleton');
+};
+
+const updateIcecastConfig = (config) => {
+    return db.prepare(`
+        UPDATE icecast_config
+        SET max_clients = ?, max_sources = ?, burst_size = ?, queue_size = ?,
+            log_level = ?, log_ips = ?, log_user_agents = ?,
+            cors_origins = ?, hostname = ?, updated_at = ?
+        WHERE id = 'singleton'
+    `).run(
+        config.maxClients,
+        config.maxSources,
+        config.burstSize,
+        config.queueSize,
+        config.logLevel,
+        config.logIPs ? 1 : 0,
+        config.logUserAgents ? 1 : 0,
+        JSON.stringify(config.corsOrigins || []),
+        config.hostname || null,
+        new Date().toISOString()
+    );
+};
+
+
 export {
     db,
     createStation,
@@ -498,6 +553,10 @@ export {
     getPlaylistTracks,
     addTrackToPlaylist,
     removeTrackFromPlaylist,
-    reorderPlaylistTracks
+    reorderPlaylistTracks,
+    // Icecast Configuration
+    getIcecastConfig,
+    updateIcecastConfig
 };
+
 
