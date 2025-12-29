@@ -199,9 +199,13 @@ export default function Diagnostics() {
                                                 </td>
                                                 <td className="py-2 text-white">{station.relay_mode || '-'}</td>
                                                 <td className="py-2">
-                                                    <span className={station.autodj_enabled ? 'text-[#9333ea]' : 'text-[#64748b]'}>
-                                                        {station.autodj_enabled ? 'YES' : 'NO'}
-                                                    </span>
+                                                    {station.autodj_enabled && station.isLive ? (
+                                                        <span className="text-[#9333ea] font-medium">OVERRIDE</span>
+                                                    ) : (
+                                                        <span className={station.autodj_enabled ? 'text-[#9333ea]' : 'text-[#64748b]'}>
+                                                            {station.autodj_enabled ? 'YES' : 'NO'}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="py-2 text-[#64748b] text-xs">
                                                     {station.autodj_enabled && station.autodj_playlist_id
